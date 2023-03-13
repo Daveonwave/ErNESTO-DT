@@ -5,7 +5,7 @@ ureg = UnitRegistry()
 
 def check_data_unit(param, unit: ureg.Unit):
     """
-    Check
+    #TODO: speed up if we need a magnitude and we don't want to convert it to Quantity
     """
     # Param is float or int: convert it to float quantity
     if isinstance(param, float) or isinstance(param, int):

@@ -23,7 +23,6 @@ class ECMComponent:
 
         # Collections related to the specific component
         self._v_series = []
-        self._i_series = []
         self._t_series = []
 
     @property
@@ -31,22 +30,43 @@ class ECMComponent:
         return self._name
 
     @property
-    def v_series(self):
+    def v_series(self, k=None):
+        """
+        Getter of the specific value at step K, if specified, otherwise of the entire collection
+        """
+        if k:
+            assert type(k) == int,\
+                "Cannot retrieve voltage of {} at step K, since it has to be an integer".format(self._name)
+
+            if len(self._v_series) > k:
+                return self._v_series[k]
+            else:
+                raise IndexError("Voltage V of {} at step K not computed yet".format(self._name))
         return self._v_series
 
     @property
-    def i_series(self):
-        return self._i_series
+    def t_series(self, k=None):
+        """
+        Getter of the specific value at step K, if specified, otherwise of the entire collection
+        #TODO: keep or discard?
+        """
+        if k:
+            assert type(k) == int, \
+                "Cannot retrieve elapsed time of {} at step K, since it has to be an integer".format(self._name)
 
-    @property
-    def t_series(self):
+            if len(self._t_series) > k:
+                return self._t_series[k]
+            else:
+                raise IndexError("Elapsed time of {} at step K not computed yet".format(self._name))
         return self._t_series
 
     def update_v(self, value:float):
         self._v_series.append(value)
 
-    def update_i(self, value:float):
-        self._i_series.append(value)
-
     def update_t(self, value:int):
         self._t_series.append(value)
+
+    def reset_data(self):
+        self._v_series = []
+        self._t_series = []
+
