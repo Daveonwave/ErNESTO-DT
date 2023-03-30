@@ -24,7 +24,7 @@ if __name__ == '__main__':
     project_dir = Path(__file__).resolve().parents[2]
 
     # find .env automagically by walking up directories until it's found, then
-    # load up the .env entries as environment variables
+    # load up the .env entries as environment variables.py
     load_dotenv(find_dotenv())
 
     main()

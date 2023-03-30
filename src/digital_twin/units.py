@@ -1,5 +1,9 @@
+import yaml
 from pint import UnitRegistry
 ureg = UnitRegistry()
+
+#with open("units.yaml", 'r') as fin:
+#    yaml_units = yaml.safe_load(fin)
 
 
 class Unit:
@@ -23,9 +27,5 @@ class Unit:
     # TODO: posso fare una classe che legge da yaml per decidere quali unita di misura utilizzare.
     #       In quel caso portei fare dei dizionari come attributi della classe
 
-    def __init__(self):
-        self.resistor = {
-            'resistance': self.OHM,
-            'current': self.AMPERE,
-            'potential': self.VOLT
-        }
+    def __init__(self, **kwargs):
+        self.resistance = kwargs['ohm']

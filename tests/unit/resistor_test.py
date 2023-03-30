@@ -47,13 +47,13 @@ class ResistorTest(unittest.TestCase):
         param = 5 * ureg.ohm
         resistor = Resistor('name', param)
         curr = 10 * ureg.ampere
-        self.assertEqual(resistor.compute_potential(curr), 50.0 * ureg.volt)
+        self.assertEqual(resistor.compute_v(curr), 50.0 * ureg.volt)
 
     def test_compute_current(self):
         param = 5 * ureg.ohm
         resistor = Resistor('name', param)
         voltage = 10 * ureg.volt
-        self.assertEqual(resistor.compute_current(voltage), 2.0 * ureg.ampere)
+        self.assertEqual(resistor.compute_i(voltage), 2.0 * ureg.ampere)
 
 if __name__ == '__main__':
     unittest.main()

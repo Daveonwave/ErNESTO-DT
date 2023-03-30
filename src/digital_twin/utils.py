@@ -7,12 +7,8 @@ def check_data_unit(param, unit: ureg.Unit):
     """
     #TODO: speed up if we need a magnitude and we don't want to convert it to Quantity
     """
-    # Param is float or int: convert it to float quantity
-    if isinstance(param, float) or isinstance(param, int):
-        return ureg.Quantity(float(param), unit)
-
     # Param is Quantity
-    elif isinstance(param, pint.Quantity):
+    if isinstance(param, pint.Quantity):
         new_magnitude = param.magnitude
 
         # Check the magnitude: it has to be a float value
@@ -30,9 +26,36 @@ def check_data_unit(param, unit: ureg.Unit):
                                 .format(param.units, unit))
         return new_magnitude * param.units
 
+    # Create the Quantity variable if the param is a int, float or numeric string
+    elif isinstance(param, float) or isinstance(param, int) or isinstance(param, str):
+        return craft_data_unit(param, unit)
+
     # Param is something else
     else:
         raise Exception(
-            "Provided data {} has a wrong format. You can pass 'int' or 'float' values or even".format(param) + \
+            "Provided data {} has a wrong format. You can pass ".format(param) + \
             "'Pint.Quantity' objects in accordance with the required unit measure"
         )
+
+def craft_data_unit(param, unit: ureg.Unit):
+    """
+
+    """
+    # Param is float or int: convert it to float quantity
+    if isinstance(param, float) or isinstance(param, int):
+        return ureg.Quantity(float(param), unit)
+
+    elif isinstance(param, str) and param.isnumeric():
+        return ureg.Quantity(float(param), unit)
+
+    elif isinstance(param, pint.Quantity):
+        return ureg.Quantity(float(param.magnitude), unit)
+
+    # Param is something else
+    else:
+        raise Exception(
+            "Provided data {} has a wrong format. You can pass 'int', 'float', 'pint.Quantity' or even 'str' "
+            "values".format(param)
+        )
+
+

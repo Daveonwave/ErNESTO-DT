@@ -1,5 +1,11 @@
-from src.digital_twin.battery_models.ecm_components.generic_component import ECMComponent
 import numpy as np
+from typing import Union
+import pint
+
+from src.digital_twin.battery_models.ecm_components.generic_component import ECMComponent
+from src.digital_twin.parameters.variables import Scalar, ParametricFunction, LookupTableFunction
+from src.digital_twin.units import Unit
+from src.digital_twin.utils import check_data_unit, craft_data_unit
 
 
 class OCVGenerator(ECMComponent):
@@ -10,21 +16,43 @@ class OCVGenerator(ECMComponent):
     ----------
 
     """
-    def __init__(self, name):
-        super().__init__(name)
-        self.soc = 0
+    def __init__(self,
+                 name,
+                 ocv_potential: Union[Scalar, ParametricFunction, LookupTableFunction],
+                 units_checker:bool
+                 ):
+        super().__init__(name, units_checker)
+        self._ocv_potential = ocv_potential
+        self._v_ocv_unit = Unit.VOLT
 
-    @property.setter
-    def soc(self, value:float):
-        if 0 <= value <= 1:
-            self.soc = value
+    @property
+    def ocv_potential(self):
+        input_vars = {}
+
+        if not isinstance(self._ocv_potential, Scalar):
+            try:
+                input_vars = {name: getattr(self, name) for name in self._ocv_potential.x_names}
+            except:
+                raise Exception(
+                    "Cannot retrieve required input variables to compute resistance for {}!".format(self.name))
+
+        return self._ocv_potential.get_value(input_vars=input_vars)
+
+    @ocv_potential.setter
+    def ocv_potential(self, value: Union[float, pint.Quantity]):
+        if self.units_checker:
+            self._ocv_potential = craft_data_unit(value, Unit.VOLT)
         else:
-            raise Exception("The value of the State of Charge (SoC) passed to {} is wrong. "
-                            "It has to be comprised between 0 and 1.".format(self.name))
+            self._ocv_potential = value
 
-    def compute_v(self, soc=None):
+    def compute_v(self):
         """
 
         """
-        v = 3.43 + 0.68 * self.soc - 0.68 * (self.soc ** 2) + 0.81 * (self.soc ** 3) - 0.31 * np.exp(-46 * self.soc)
-        return v
+        v_ocv = 3.43 + 0.68 * self._soc - 0.68 * (self._soc ** 2) + 0.81 * (self._soc ** 3) - 0.31 * np.exp(-46 * self._soc)
+
+        if self.units_checker:
+            v_ocv = craft_data_unit(v_ocv, Unit.VOLT)
+
+        return v_ocv
+
