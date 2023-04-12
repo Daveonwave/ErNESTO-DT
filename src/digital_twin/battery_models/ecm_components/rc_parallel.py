@@ -29,7 +29,7 @@ class ResistorCapacitorParallel(ECMComponent):
         self._resistance = resistance
         self._capacity = capacity
         self._tau = 0
-        # TODO: capire tau se trattarla o meno e come trattarla
+        # TODO: capire tau se trattarla o meno e come trattarla + cambiare unit
 
         self._r1_unit = Unit.OHM
         self._c_unit = Unit.FARADAY
@@ -47,6 +47,11 @@ class ResistorCapacitorParallel(ECMComponent):
 
     @property
     def resistance(self):
+        """
+        Getter of the R1 value. Depending on the x_names (inputs of the function), we retrieve components attribute
+        among {SoC, SoH, Temp}.
+        If R1 is a scalar, we don't need to provide any input.
+        """
         input_vars = {}
 
         if not isinstance(self._resistance, Scalar):
@@ -60,6 +65,11 @@ class ResistorCapacitorParallel(ECMComponent):
 
     @property
     def capacity(self):
+        """
+        Getter of the C value. Depending on the x_names (inputs of the function), we retrieve components attribute
+        among {SoC, SoH, Temp}.
+        If C is a scalar, we don't need to provide any input.
+        """
         input_vars = {}
 
         if not isinstance(self._capacity, Scalar):
@@ -71,6 +81,8 @@ class ResistorCapacitorParallel(ECMComponent):
 
         return self._capacity.get_value(input_vars=input_vars)
 
+    # TODO: change setter methods -> cannot be done like this with Variables class
+    """
     @resistance.setter
     def resistance(self, value: float):
         if self.units_checker:
@@ -84,6 +96,7 @@ class ResistorCapacitorParallel(ECMComponent):
             self._capacity = craft_data_unit(value, Unit.FARADAY)
         else:
             self._capacity = value
+    """
 
     def get_i_r1_series(self, k=None):
         """
@@ -200,10 +213,10 @@ class ResistorCapacitorParallel(ECMComponent):
         param i_r1:
         """
         if self.units_checker:
-            if dv_c:
+            if dv_c is not None:
                 dv_c = check_data_unit(dv_c, Unit.VOLT).magnitude
                 i_c = craft_data_unit(dv_c * self.capacity, Unit.AMPERE)
-            elif i and i_r1:
+            elif i is not None and i_r1 is not None:
                 i = check_data_unit(i, Unit.AMPERE).magnitude
                 i_r1 = check_data_unit(i_r1, Unit.AMPERE).magnitude
                 i_c = craft_data_unit(i - i_r1, Unit.AMPERE)
@@ -211,9 +224,9 @@ class ResistorCapacitorParallel(ECMComponent):
                 raise Exception("Not enough data to compute I_c for element {}".format(self.name))
 
         else:
-            if dv_c:
+            if dv_c is not None:
                 i_c = dv_c * self.capacity
-            elif i and i_r1:
+            elif i is not None and i_r1 is not None:
                 i_c = i - i_r1
             else:
                 raise Exception("Not enough data to compute I_c for element {}".format(self.name))

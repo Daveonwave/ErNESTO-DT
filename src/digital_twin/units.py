@@ -23,6 +23,9 @@ class Unit:
     # Second
     SECOND = ureg.second
 
+    # Celsius
+    CELSIUS = ureg.celsius
+
 
     # TODO: posso fare una classe che legge da yaml per decidere quali unita di misura utilizzare.
     #       In quel caso portei fare dei dizionari come attributi della classe

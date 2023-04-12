@@ -118,7 +118,6 @@ class LookupTableFunction(GenericVariable):
             raise Exception("Given inputs list has a wrong dimension for the computation of {}".format(self.name))
 
 
-
 def instantiate_variables(var_dict:dict):
     """
     # TODO: cambiare configurazione dati in ingresso (esempio: LookupTable passata con un csv)

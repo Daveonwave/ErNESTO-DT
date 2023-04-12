@@ -5,20 +5,16 @@ from src.digital_twin.battery_models.ecm_components.resistor import Resistor
 from src.digital_twin.battery_models.ecm_components.rc_parallel import ResistorCapacitorParallel
 from src.digital_twin.battery_models.ecm_components.ocv_generator import OCVGenerator
 from src.digital_twin.parameters.variables import instantiate_variables
-from typing import Union
-import pint
 
 
 class TheveninModel(ElectricalModel):
     """
     CLass
     """
-    R0 = 10
-    R1 = 5
-    C = 100
     def __init__(self,
-                 components=None,
-                 units_checker=True):
+                 components_settings:dict,
+                 units_checker=True
+                 ):
         """
         • 𝑁s𝑚: numero di celle in serie che compongono un singolo modulo;
         • 𝑁𝑝𝑚: numero di celle in parallelo che compongono un singolo modulo;
@@ -37,7 +33,7 @@ class TheveninModel(ElectricalModel):
         self.ns_cells_battery = 0
         self.np_cells_battery = 0
 
-        [r0, r1, c, v_ocv] = instantiate_variables(components)
+        [r0, r1, c, v_ocv] = instantiate_variables(components_settings)
 
         self.r0 = Resistor(name='R0', resistance=r0, units_checker=self.units_checker)
         self.rc = ResistorCapacitorParallel(name='RC', resistance=r1, capacity=c, units_checker=self.units_checker)
@@ -46,7 +42,7 @@ class TheveninModel(ElectricalModel):
     def reset_model(self):
         self._v_load_series = []
         self._i_load_series = []
-        self._times = []
+        # self._times = []
 
     def init_model(self):
         """
@@ -55,11 +51,11 @@ class TheveninModel(ElectricalModel):
         if self.units_checker:
             self.update_v_load(craft_data_unit(0, Unit.VOLT))
             self.update_i_load(craft_data_unit(0, Unit.AMPERE))
-            self.update_times(craft_data_unit(0, Unit.SECOND))
+            # self.update_times(craft_data_unit(0, Unit.SECOND))
         else:
             self.update_v_load(0)
             self.update_i_load(0)
-            self.update_times(0)
+            # self.update_times(0)
 
         self.r0.init_component()
         self.rc.init_component()
@@ -135,10 +131,10 @@ class TheveninModel(ElectricalModel):
         v_ocv = self.ocv_gen.ocv_potential
         v_ocv_ = self.ocv_gen.get_v_series(k=k-1)
 
-        print('r0: ', self.r0.resistance)
-        print('r1: ', self.rc.resistance)
-        print('c1: ', self.rc.capacity)
-        print('ocv: ', self.ocv_gen.ocv_potential)
+        #print('r0: ', self.r0.resistance)
+        #print('r1: ', self.rc.resistance)
+        #print('c1: ', self.rc.capacity)
+        #print('ocv: ', self.ocv_gen.ocv_potential)
 
         eq_factor = dt * c * r1 / (dt + c * r1)
         term_1 = 1/dt * self.get_v_load_series(k=k-1)
@@ -163,6 +159,17 @@ class TheveninModel(ElectricalModel):
         self.update_i_load(value=i_load)
 
         return v
+
+    def compute_generated_heat(self, k=-1):
+        """
+        Compute the generated heat that can be used to feed the thermal model (when required).
+        For Thevenin first order circuit it is: [P = V * I + V_rc * I_r1].
+
+        Inputs:
+        :param k: step for which compute the heat generation
+        """
+        return abs(self.r0.get_v_series(k=k) * self.get_i_load_series(k=k) + \
+                   self.rc.get_v_series(k=k) * self.rc.get_i_r1_series(k=k))
 
     def estimate_r0(self, delta_v0, delta_i):
         """

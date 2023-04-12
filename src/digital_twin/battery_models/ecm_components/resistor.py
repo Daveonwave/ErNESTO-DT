@@ -38,7 +38,9 @@ class Resistor(ECMComponent):
     @property
     def resistance(self):
         """
-
+        Getter of the R0 value. Depending on the x_names (inputs of the function), we retrieve components attribute
+        among {SoC, SoH, Temp}.
+        If R0 is a scalar, we don't need to provide any input.
         """
         input_vars = {}
 
@@ -50,13 +52,15 @@ class Resistor(ECMComponent):
 
         return self._resistance.get_value(input_vars=input_vars)
 
+    # TODO: setter method to be updated (do we have to set a lookup table or a function?)
+    """
     @resistance.setter
     def resistance(self, value: Union[float, pint.Quantity]):
-        # TODO: setter method to be updated (do we have to set a lookup table or a function?)
         if self.units_checker:
             self._resistance = craft_data_unit(value, Unit.OHM)
         else:
             self._resistance = value
+    """
 
     def get_r0_series(self, k=None):
         """
