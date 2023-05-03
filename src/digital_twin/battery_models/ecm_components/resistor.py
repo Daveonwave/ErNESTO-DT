@@ -1,8 +1,8 @@
 import pint
 from typing import Union
 
-from src.digital_twin.units import Unit
-from src.digital_twin.utils import craft_data_unit, check_data_unit
+from src.digital_twin.parameters.units import Unit
+from src.digital_twin.parameters.data_checker import craft_data_unit, check_data_unit
 from src.digital_twin.parameters.variables import Scalar, ParametricFunction, LookupTableFunction
 from src.digital_twin.battery_models.ecm_components.generic_component import ECMComponent
 
@@ -19,7 +19,6 @@ class Resistor(ECMComponent):
     :param resistance: value of the resistance (Ohm)
     :type resistance: float or int or pint.Quantity
 
-    # TODO: understand how resistance changes and other equations required to reproduce its behaviour
     """
     def __init__(self,
                  name:str,
@@ -62,6 +61,12 @@ class Resistor(ECMComponent):
             self._resistance = value
     """
 
+    def init_component(self, r0=0):
+        """
+        Initialize R0 component at t=0
+        """
+        super().init_component()
+        self._update_r0_series(r0)
     def get_r0_series(self, k=None):
         """
         Getter of the specific value at step K, if specified, otherwise of the entire collection
@@ -81,9 +86,9 @@ class Resistor(ECMComponent):
 
     def _update_r0_series(self, value: Union[float, pint.Quantity]):
         if self.units_checker:
-            self._v_series.append(check_data_unit(value, self._r0_unit))
+            self._r0_series.append(check_data_unit(value, self._r0_unit))
         else:
-            self._v_series.append(value)
+            self._r0_series.append(value)
 
     def compute_v(self, i):
         """
@@ -132,7 +137,7 @@ class Resistor(ECMComponent):
         """
         self._update_r0_series(r0)
         self.update_v(v_r0)
-        self.update_t(self.get_t_series(k=k - 1) + dt)
+        #self.update_t(self.get_t_series(k=k - 1) + dt)
 
     def compute_decay(self, temp, soc, soh):
         """

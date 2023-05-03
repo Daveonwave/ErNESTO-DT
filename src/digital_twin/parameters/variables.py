@@ -29,7 +29,7 @@ class Scalar(GenericVariable):
         super().__init__(name)
         self._value = value
 
-    def get_value(self, input_vars:dict):
+    def get_value(self, input_vars:dict=None):
         return self._value
 
 

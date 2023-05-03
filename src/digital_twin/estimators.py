@@ -2,17 +2,17 @@ class SOCEstimator:
     """
 
     """
-    def __init__(self, nominal_capacity, mode='cc', ):
-        self._mode = mode
+    def __init__(self, nominal_capacity, estimation_mode='CC'):
+        self._estimation_mode = estimation_mode
         self._q_n = nominal_capacity
         self._soc = 0
 
     def compute_soc(self, soc_, i, dt):
         """
-
+        CC = Coulomb Counting
         """
-        if self._mode == "cc":
-            self._soc = soc_ + i / self._q_n * dt
+        if self._estimation_mode == "CC":
+            self._soc = soc_ + i / (self._q_n * 3600) * dt
             self.crop_soc()
             return self._soc
         else:

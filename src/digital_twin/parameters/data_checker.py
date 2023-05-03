@@ -5,7 +5,7 @@ ureg = UnitRegistry()
 
 def check_data_unit(param, unit: ureg.Unit):
     """
-    #TODO: speed up if we need a magnitude and we don't want to convert it to Quantity
+
     """
     # Param is Quantity
     if isinstance(param, pint.Quantity):
@@ -26,7 +26,7 @@ def check_data_unit(param, unit: ureg.Unit):
                                 .format(param.units, unit))
         return new_magnitude * param.units
 
-    # Create the Quantity variable if the param is a int, float or numeric string
+    # Create the Quantity variable if the param is int, float or numeric string
     elif isinstance(param, float) or isinstance(param, int) or isinstance(param, str):
         return craft_data_unit(param, unit)
 

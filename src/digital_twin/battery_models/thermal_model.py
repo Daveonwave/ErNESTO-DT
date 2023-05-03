@@ -1,6 +1,6 @@
-from src.digital_twin.units import Unit
-from src.digital_twin.utils import craft_data_unit, check_data_unit
-from src.digital_twin.parameters.variables import Scalar, ParametricFunction, LookupTableFunction
+from src.digital_twin.parameters.units import Unit
+from src.digital_twin.parameters.data_checker import craft_data_unit
+from src.digital_twin.parameters.variables import Scalar
 from src.digital_twin.battery_models.generic_models import ThermalModel
 from src.digital_twin.parameters.variables import instantiate_variables
 
@@ -8,7 +8,6 @@ from src.digital_twin.parameters.variables import instantiate_variables
 class RCThermal(ThermalModel):
     """
     Pellegrino paper (@reference [paper link])
-    # TODO: per ora faccio un modello matematico senza oggetti (solo formule)
     """
     def __init__(self,
                  components_settings: dict,
@@ -18,7 +17,6 @@ class RCThermal(ThermalModel):
 
         # TODO: r_term e c_term per ora fisse
         self._thermal_resistance, self._thermal_capacity = instantiate_variables(components_settings)
-        print(self._thermal_resistance, self._thermal_capacity)
 
     @property
     def thermal_resistance(self):
@@ -49,13 +47,19 @@ class RCThermal(ThermalModel):
     def reset_model(self):
         self._temp_series = []
 
-    def init_model(self):
-#        """ Initialize the model at timestep t=0 with an initial temperature equal to 25°C (ambient temperature)
-#        """
+    def init_model(self, **kwargs):
+        # """
+        # Initialize the model at timestep t=0 with an initial temperature equal to 25°C (ambient temperature)
+        # """
+        temp = kwargs['temperature'] if kwargs['temperature'] else 25
+        heat = 0 # kwargs['dissipated_heat'] if kwargs['dissipated_heat'] else 0
+
         if self.units_checker:
-            self.update_temp(craft_data_unit(25, Unit.CELSIUS))
+            self.update_temp(craft_data_unit(temp, Unit.CELSIUS))
+            self.update_heat(craft_data_unit(heat, Unit.WATT))
         else:
-            self.update_temp(25)
+            self.update_temp(temp)
+            self.update_heat(heat)
 
     def compute_temp(self, q, env_temp, dt, k=-1):
         """
@@ -68,21 +72,38 @@ class RCThermal(ThermalModel):
         :param k: step
         """
         term_1 = q * self.thermal_resistance * dt
-        term_2 = self.get_temp_series(k=k) * self.thermal_resistance * self.thermal_capacity
+        term_2 = (self.get_temp_series(k=k)) * self.thermal_resistance * self.thermal_capacity
         term_3 = env_temp * dt
 
         return (term_1 + term_2 + term_3) / (self.thermal_resistance * self.thermal_capacity + dt)
 
 
+
 class R2CThermal(ThermalModel):
     """
     Scarpelli-Fioriti paper
+    TODO: implement this class (which could be too dependent on cell physical factors)
     """
-    def __init__(self, units_checher=True):
-        super().__init__(units_checker=units_checher)
+    def __init__(self,
+                 components_settings: dict,
+                 units_checker=True
+                 ):
+        super().__init__(units_checker=units_checker)
+
+        self._lambda = 0
+        self._length = 0
+        self._int_area = 0
+        self._surf_area = 0
+        self._h = 0
+        self._mass = 0
+        self._cp = 0
+
 
     def reset_model(self):
         pass
 
-    def init_model(self):
+    def init_model(self, **kwargs):
+        pass
+
+    def compute_temp(self, q, env_temp, dt, k=-1):
         pass

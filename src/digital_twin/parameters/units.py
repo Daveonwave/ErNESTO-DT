@@ -15,6 +15,8 @@ class Unit:
     VOLT = ureg.volt
     # Capacitor
     FARADAY = ureg.faraday
+    # Power
+    WATT = ureg.watt
 
     # Hour
     HOUR = ureg.hour
@@ -24,7 +26,10 @@ class Unit:
     SECOND = ureg.second
 
     # Celsius
-    CELSIUS = ureg.celsius
+    CELSIUS = ureg.degC
+
+    # Kelvin
+    KELVIN = ureg.kelvin
 
 
     # TODO: posso fare una classe che legge da yaml per decidere quali unita di misura utilizzare.

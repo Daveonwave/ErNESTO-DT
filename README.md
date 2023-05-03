@@ -31,12 +31,12 @@ Digital Twin of a Battery Energy Storage System
     ├── data
     │   ├── external       <- Data from third party sources.
     │   ├── interim        <- Intermediate data that has been transformed.
-    │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
+    │   ├── output      <- The final, canonical data sets for modeling.
+    │   └── load            <- The original, immutable data dump.
     │
     ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
     │
-    ├── models             <- Trained and serialized models, model predictions, or model summaries
+    ├── electrical             <- Trained and serialized electrical, model predictions, or model summaries
     │
     ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
     │                         the creator's initials, and a short `-` delimited description, e.g.
@@ -57,10 +57,10 @@ Digital Twin of a Battery Energy Storage System
     │   ├── data           <- Scripts to download or generate data
     │   │   └── make_dataset.py
     │   │
-    │   ├── features       <- Scripts to turn raw data into features for modeling
+    │   ├── features       <- Scripts to turn load data into features for modeling
     │   │   └── build_features.py
     │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
+    │   ├── electrical         <- Scripts to train electrical and then use trained electrical to make
     │   │   │                 predictions
     │   │   ├── predict_model.py
     │   │   └── train_model.py

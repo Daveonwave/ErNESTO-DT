@@ -1,8 +1,8 @@
 import pint
 from typing import Union
 
-from src.digital_twin.units import Unit
-from src.digital_twin.utils import craft_data_unit, check_data_unit
+from src.digital_twin.parameters.units import Unit
+from src.digital_twin.parameters.data_checker import craft_data_unit, check_data_unit
 from src.digital_twin.parameters.variables import Scalar, ParametricFunction, LookupTableFunction
 from src.digital_twin.battery_models.ecm_components.generic_component import ECMComponent
 
@@ -98,6 +98,50 @@ class ResistorCapacitorParallel(ECMComponent):
             self._capacity = value
     """
 
+    def init_component(self, r1=0, c=0, i_c=0, i_r1=0):
+        """
+        Initialize RC component at t=0
+        """
+        super().init_component()
+        self._update_r1_series(r1)
+        self._update_c_series(c)
+        self._update_i_c_series(i_c)
+        self._update_i_r1_series(i_r1)
+
+    def get_r1_series(self, k=None):
+        """
+        Getter of the specific value at step K, if specified, otherwise of the entire collection
+        """
+        if k is not None:
+            assert type(k) == int, \
+                "Cannot retrieve resistance R1 of {} at step K, since it has to be an integer".format(self._name)
+
+            if len(self._r1_series) > k:
+                if not self.units_checker:
+                    return self._r1_series[k]
+                else:
+                    return self._r1_series[k].magnitude
+            else:
+                raise IndexError("Resistance R1 of {} at step K not computed yet".format(self._name))
+        return self._r1_series
+
+    def get_c_series(self, k=None):
+        """
+        Getter of the specific value at step K, if specified, otherwise of the entire collection
+        """
+        if k is not None:
+            assert type(k) == int, \
+                "Cannot retrieve capacity C of {} at step K, since it has to be an integer".format(self._name)
+
+            if len(self._c_series) > k:
+                if not self.units_checker:
+                    return self._c_series[k]
+                else:
+                    return self._c_series[k].magnitude
+            else:
+                raise IndexError("Capacity C of {} at step K not computed yet".format(self._name))
+        return self._c_series
+
     def get_i_r1_series(self, k=None):
         """
         Getter of the specific value at step K, if specified, otherwise of the entire collection
@@ -132,6 +176,18 @@ class ResistorCapacitorParallel(ECMComponent):
                 raise IndexError("Current I_c of {} at step K not computed yet".format(self._name))
         return self._i_c_series
 
+    def _update_r1_series(self, value: Union[float, pint.Quantity]):
+        if self.units_checker:
+            self._r1_series.append(check_data_unit(value, Unit.OHM))
+        else:
+            self._r1_series.append(value)
+
+    def _update_c_series(self, value: Union[float, pint.Quantity]):
+        if self.units_checker:
+            self._c_series.append(check_data_unit(value, Unit.FARADAY))
+        else:
+            self._c_series.append(value)
+
     def _update_i_r1_series(self, value: Union[float, pint.Quantity]):
         if self.units_checker:
             self._i_r1_series.append(check_data_unit(value, Unit.AMPERE))
@@ -143,14 +199,6 @@ class ResistorCapacitorParallel(ECMComponent):
             self._i_c_series.append(check_data_unit(value, Unit.AMPERE))
         else:
             self._i_c_series.append(value)
-
-    def init_component(self):
-        """
-        Initialize RC component at t=0
-        """
-        super().init_component()
-        self._update_i_c_series(0)
-        self._update_i_r1_series(0)
 
     def compute_v(self, v_ocv, v_r0, v, i_r1=None):
         """
@@ -246,10 +294,10 @@ class ResistorCapacitorParallel(ECMComponent):
         """
         Aggiorno le liste delle variabili calcolate
         """
-        self._update_i_r1_series(r1)
-        self._update_i_c_series(c)
+        self._update_r1_series(r1)
+        self._update_c_series(c)
         self.update_v(v_rc)
         self._update_i_r1_series(i_r1)
         self._update_i_c_series(i_c)
-        self.update_t(self.get_t_series(k=k - 1) + dt)
+        #self.update_t(self.get_t_series(k=k - 1) + dt)
 

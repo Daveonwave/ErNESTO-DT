@@ -1,11 +1,12 @@
 import yaml
+import pandas as pd
 from tqdm import tqdm
 from time import sleep
 
 from src.data.preprocessing import retrieve_data_from_csv
 from src.digital_twin.battery_models.electrical_model import TheveninModel
 from src.digital_twin.battery_models.thermal_model import RCThermal
-from src.digital_twin.battery_state_manager import SOCEstimator, SOHEstimator
+from src.digital_twin.estimators import SOCEstimator, SOHEstimator
 from src.digital_twin.parameters.variables import LookupTableFunction
 
 
@@ -21,28 +22,31 @@ class BatteryEnergyStorageSystem:
                  load_options,
                  time_options,
                  battery_options,
+                 initial_conditions,
                  ground_file=None,
                  ground_options=None,
+                 sign_convention='active',
                  units_checker=True
                  ):
 
         self.models_settings = []
         self.units_checker = units_checker
+        self.sign_convention = sign_convention
 
         for file in models_config_files:
             with open(file, 'r') as fin:
                 self.models_settings.append(yaml.safe_load(fin))
 
         # Possible electrical to build
-        self.electrical_model = None
-        self.thermal_model = None
-        self.degradation_model = None
-        self.data_driven = None
+        self._electrical_model = None
+        self._thermal_model = None
+        self._degradation_model = None
+        self._data_driven = None
         self.models = []
 
-        self.build_models()
-
-        # Input and ground data preprocessed
+        # Input and ground data preprocessed (TODO: potentially I could want more than one output var (V and power))
+        self.load_var = load_options['var']
+        self.output_var = ground_options['var']
         self.load_data, self.load_times, _ = retrieve_data_from_csv(csv_file=load_file, var_label=load_options['label'])
         self.ground_data, self.ground_times, _ = retrieve_data_from_csv(csv_file=ground_file, var_label=ground_options['label'])
 
@@ -52,15 +56,23 @@ class BatteryEnergyStorageSystem:
         else:
             self.duration = self.load_times[-1] - self.load_times[0]
 
-        self.delta_times = [t - s for s, t in zip(self.load_times, self.load_times[1:])]
-        # TODO: understand how to handle sampling time
-        self.sampling_time = time_options['sampling_time']
+        # The first element of delta times needs to be added manually, but it must not be 0
+        self.delta_times = [1]
+        self.delta_times.extend([t - s for s, t in zip(self.load_times, self.load_times[1:])])
 
+        # TODO: understand how to handle sampling time if different from csv data sampling interval => interpolation
+        self.sampling_time = time_options['sampling_time']
+        self.done = False
+
+        # TODO: both BATTERY OPTIONS and INITIAL COND can depend by the experiment mode => put them in init method
         # Battery options passed by the simulator
         self.nominal_capacity = battery_options['nominal_capacity']
         self.v_max = battery_options['v_max']
         self.v_min = battery_options['v_min']
-        self.initial_soc = 0
+        self.temp_ambient = battery_options['temp_ambient']
+
+        # Initial battery conditions
+        self._initial_conditions = initial_conditions
 
         # Instantiation of battery state estimators
         self.soc_estimator = SOCEstimator(nominal_capacity=self.nominal_capacity)
@@ -71,15 +83,15 @@ class BatteryEnergyStorageSystem:
         self.soh_series = []
         # self.temp_series = []
         self.t_series = []
+        self.elapsed_time = 0
 
-    def reset_data(self):
-        """
+        # Results -> TODO: probably this is not needed
+        self.results = {
+            self.output_var: []
+        }
 
-        """
-        self.soc_series = []
-        self.soh_series = []
-        # self.temp_series = []
-        self.t_series = []
+        # Instantiate models
+        self.build_models()
 
     def build_models(self):
         """
@@ -90,98 +102,163 @@ class BatteryEnergyStorageSystem:
         """
         for model_config in self.models_settings:
             if model_config['type'] == 'electrical':
-                self.electrical_model = globals()[model_config['class_name']](units_checker=self.units_checker,
-                                                                              components_settings=model_config['components'])
-                self.models.append(self.electrical_model)
+                self._electrical_model = globals()[model_config['class_name']](units_checker=self.units_checker,
+                                                                               components_settings=model_config['components'],
+                                                                               sign_convention=self.sign_convention)
+                self.models.append(self._electrical_model)
 
             elif model_config['type'] == 'thermal':
-                self.thermal_model = globals()[model_config['class_name']](units_checker=self.units_checker,
-                                                                           components_settings=model_config['components'])
-                self.models.append(self.thermal_model)
+                self._thermal_model = globals()[model_config['class_name']](units_checker=self.units_checker,
+                                                                            components_settings=model_config['components'])
+                self.models.append(self._thermal_model)
 
             elif model_config['type'] == 'degradation':
-                self.degradation_model = globals()[model_config['class_name']](units_checker=self.units_checker)
-                self.electrical_model.build_components(model_config['components'])
-                self.models.append(self.degradation_model)
+                self._degradation_model = globals()[model_config['class_name']](units_checker=self.units_checker)
+                self.models.append(self._degradation_model)
 
             elif model_config['type'] == 'data_driven':
-                self.data_driven = globals()[model_config['class_name']]
-                self.electrical_model.build_components(model_config['components'])
-                self.models.append(self.data_driven)
+                self._data_driven = globals()[model_config['class_name']]
+                self.models.append(self._data_driven)
 
             else:
                 raise Exception("The 'type' of {} you are trying to instantiate is wrong!"\
                                 .format(model_config['class_name']))
 
+    def reset_data(self):
+        """
+
+        """
+        self.soc_series = []
+        self.soh_series = []
+        # self.temp_series = []
+        self.t_series = []
+        self.elapsed_time = 0
+        self.done = False
+
+    def build_results_table(self, **kwargs):
+        """
+
+        """
+        final_dict = {'Time': self.t_series, 'soc': self.soc_series, 'soh': self.soh_series}
+
+        for model in self.models:
+            final_dict.update(model.get_final_results())
+
+        for key in final_dict.keys():
+            print(key, len(final_dict[key]))
+
+        return pd.DataFrame(data=final_dict, columns=final_dict.keys())
+
+    def save_data(self, output_file, file_name, **kwargs):
+        """
+        TODO: maybe kwargs can be specific data that have to be specified inside the config file
+        """
+        try:
+            self.build_results_table().to_csv(output_file / file_name, index=False)
+        except:
+            raise IOError("It is not possible to write the file {}!".format(output_file / file_name))
+
+
+    """ 
+    ---------------------------------------------
+    # Mode: SIMULATION # 
+    ---------------------------------------------
+    """
     def _simulation_init(self):
         """
         Initialization of the battery simulation environment at t=0
+        TODO: maybe some assignements could be added here because they are related to the specific experiment mode
         """
-        # TODO: change this assignation
+        self.t_series.append(-1)
+        self.soc_series.append(self._initial_conditions['soc'])
+        self.soh_series.append(self._initial_conditions['soh'])
 
         for model in self.models:
-            model.init_model()
+            model.init_model(**self._initial_conditions)
+            model.load_battery_state(temp=self._initial_conditions['temperature'],
+                                     soc=self._initial_conditions['soc'],
+                                     soh=self._initial_conditions['soh'])
 
-        self.t_series.append(-1)
-        self.soc_series.append(self.initial_soc)
-
-    def _simualation_step(self, mode:str):
+    def _simulation_step(self, dt, k):
         """
 
         """
+        # TODO: calling directly the electrical model is wrong if we have another kind of model, like a data-driven one
+        if self.load_var == 'current':
+            voltage = self._electrical_model.step_current_driven(i_load=self.load_data[k-1], dt=dt, k=k)
 
-    def solve(self):
+            if voltage == self.v_max or voltage == self.v_min:
+                print("VMAX or VMIN REACHED: ", voltage)
+                exit()
+
+            i = self.load_data[k-1]
+            self.results['voltage'].append(voltage)
+
+        elif self.load_var =='voltage':
+            current = self._electrical_model.step_voltage_driven(v_load=self.load_data[k-1], dt=dt, k=k)
+            i = current
+            self.results['current'].append(current)
+
+        elif self.load_var == 'power':
+            voltage, current = self._electrical_model.step_power_driven(p_load=self.load_data[k - 1], dt=dt, k=k)
+            i = current
+            self.results['voltage'].append(voltage)
+            self.results['current'].append(current)
+
+        else:
+            raise Exception("The provided battery simulation mode {} doesn't exist or is just not implemented!"
+                            "Choose among the provided ones: Voltage, Current or Power.".format(self.load_var))
+
+        # Compute the SoC through the SoC estimator and update the state of the circuit
+        dissipated_heat = self._electrical_model.compute_generated_heat()
+        curr_temp = self._thermal_model.compute_temp(q=dissipated_heat, env_temp=self.temp_ambient, dt=dt)
+        curr_soc = self.soc_estimator.compute_soc(soc_=self.soc_series[-1], i=i, dt=dt)
+        curr_soh = None
+
+            # Forward SoC, SoH and temperature to models
+        for model in self.models:
+            model.load_battery_state(temp=curr_temp, soc=curr_soc, soh=curr_soh)
+
+        self._thermal_model.update_temp(value=curr_temp)
+        self._thermal_model.update_heat(value=dissipated_heat)
+        self.soc_series.append(curr_soc)
+        self.soh_series.append(curr_soh)
+
+    def run_simulation(self):
         """
+        Run a SIMULATION experiment.
 
         """
         self._simulation_init()
 
-        elapsed_time = 0
         k = 1
-        v_computed = []
-
         pbar = tqdm(total=self.duration, position=0, leave=True)
-        while elapsed_time < self.duration:
 
+        # Main loop of the simulation
+        while self.elapsed_time < self.duration:
+
+            # dt retrieved by load data
+            #print(self.load_times[k-1])
             dt = self.delta_times[k-1]
 
-            # If dt is equal to 0, we get some troubles in computation, so we need to pop those frames from load collections
+            # No progress in the simulation
             if dt == 0:
-                self.delta_times.pop(k-1)
-                self.load_data.pop(k-1)
-                self.load_times.pop(k-1)
+                self.delta_times.pop(k - 1)
+                self.load_data.pop(k - 1)
+                self.load_times.pop(k - 1)
 
             else:
-                # Compute the SoC through the SoC estimator and update the state of the circuit
-                current_soc = self.soc_estimator.compute_soc(soc_=self.soc_series[-1], i=self.load_data[k-1], dt=dt)
-                self.electrical_model.load_battery_state(soc=current_soc)
-
-                # Solve the circuit for the current step and save the output
-                voltage = self.electrical_model.solve_components_cc_mode(dt=dt, i_load=self.load_data[k-1], k=k)
-
-                temp = self.thermal_model.compute_temp(q=self.electrical_model.compute_generated_heat(k=k),
-                                                       env_temp=25.0,
-                                                       dt=dt)
-                print("TEMPERATURE: ", temp)
-                self.thermal_model.update_temp(value=temp)
-
-                v_computed.append(voltage)
-                self.t_series.append(elapsed_time)
-                self.soc_series.append(current_soc)
-
-                #print("I: ", [i for i in self.electrical_model.get_i_load_series()])
-                #print("V: ", [v for v in self.electrical_model.get_v_load_series()])
-                #print("TIME: ", self.t_series)
-                #print("time: ", elapsed_time)
-
-                elapsed_time += dt
+                self._simulation_step(dt=dt, k=k)
+                self.t_series.append(self.elapsed_time)
+                self.elapsed_time += dt
                 k += 1
 
-            #ssleep(0.01)
             pbar.update(dt)
 
         pbar.close()
-        return v_computed
+        self.done = True
+
+    # #################################################################
 
 
     """
@@ -203,9 +280,11 @@ class BatteryEnergyStorageSystem:
     def _whatif_init(self):
         pass
 
-    def whatif_step(self):
+    def _whatif_step(self):
         pass
 
     def whatif(self):
         pass
+
+
 
