@@ -29,7 +29,6 @@ class SOCEstimator:
             self._soc = 1
 
 
-
 class SOHEstimator:
     def __init__(self, mode=None):
         pass

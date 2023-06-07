@@ -6,6 +6,7 @@ from time import sleep
 from src.data.preprocessing import retrieve_data_from_csv
 from src.digital_twin.battery_models.electrical_model import TheveninModel
 from src.digital_twin.battery_models.thermal_model import RCThermal
+from src.digital_twin.battery_models.aging_model import BolunModel
 from src.digital_twin.estimators import SOCEstimator, SOHEstimator
 from src.digital_twin.parameters.variables import LookupTableFunction
 
@@ -40,15 +41,17 @@ class BatteryEnergyStorageSystem:
         # Possible electrical to build
         self._electrical_model = None
         self._thermal_model = None
-        self._degradation_model = None
+        self._aging_model = None
         self._data_driven = None
         self.models = []
 
         # Input and ground data preprocessed (TODO: potentially I could want more than one output var (V and power))
         self.load_var = load_options['var']
         self.output_var = ground_options['var']
-        self.load_data, self.load_times, _ = retrieve_data_from_csv(csv_file=load_file, var_label=load_options['label'])
-        self.ground_data, self.ground_times, _ = retrieve_data_from_csv(csv_file=ground_file, var_label=ground_options['label'])
+        self.load_data, self.load_times, _ = retrieve_data_from_csv(csv_file=load_file,
+                                                                    var_label=load_options['label'])
+        self.ground_data, self.ground_times, _ = retrieve_data_from_csv(csv_file=ground_file,
+                                                                        var_label=ground_options['label'])
 
         # Duration decided in the config file or based on load data timestamps
         if time_options['duration']:
@@ -112,9 +115,11 @@ class BatteryEnergyStorageSystem:
                                                                             components_settings=model_config['components'])
                 self.models.append(self._thermal_model)
 
-            elif model_config['type'] == 'degradation':
-                self._degradation_model = globals()[model_config['class_name']](units_checker=self.units_checker)
-                self.models.append(self._degradation_model)
+            elif model_config['type'] == 'aging':
+                self._aging_model = globals()[model_config['class_name']](units_checker=self.units_checker,
+                                                                          components_settings=model_config['components'],
+                                                                          stress_models=model_config['stress_models'])
+                self.models.append(self._aging_model)
 
             elif model_config['type'] == 'data_driven':
                 self._data_driven = globals()[model_config['class_name']]
@@ -213,9 +218,10 @@ class BatteryEnergyStorageSystem:
         dissipated_heat = self._electrical_model.compute_generated_heat()
         curr_temp = self._thermal_model.compute_temp(q=dissipated_heat, env_temp=self.temp_ambient, dt=dt)
         curr_soc = self.soc_estimator.compute_soc(soc_=self.soc_series[-1], i=i, dt=dt)
-        curr_soh = None
+        # TODO: from here
+        curr_soh = self._aging_model.aging_step()
 
-            # Forward SoC, SoH and temperature to models
+        # Forward SoC, SoH and temperature to models
         for model in self.models:
             model.load_battery_state(temp=curr_temp, soc=curr_soc, soh=curr_soh)
 
@@ -227,7 +233,6 @@ class BatteryEnergyStorageSystem:
     def run_simulation(self):
         """
         Run a SIMULATION experiment.
-
         """
         self._simulation_init()
 

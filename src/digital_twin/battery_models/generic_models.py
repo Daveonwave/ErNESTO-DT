@@ -223,10 +223,15 @@ class ThermalModel(GenericModel):
             self._heat_series.append(value)
 
 
-class DegradationModel(GenericModel):
+class AgingModel(GenericModel):
     """
 
     """
+    def __init__(self, units_checker):
+        self.units_checker = units_checker
+
+        self._degradation_series = []
+
     def reset_model(self):
         pass
 

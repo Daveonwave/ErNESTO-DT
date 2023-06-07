@@ -16,6 +16,7 @@ class DTManager:
     From here, all the kinds of data (input, output, configuration) are delivered to their consumer hubs, the
     environment is instantiated and the instructions related to the simulation mode chosen by the user are provided.
     """
+
     def __init__(self,
                  experiment_mode,
                  experiment_config,
@@ -62,9 +63,8 @@ class DTManager:
 
         self.save_results = save_results
         self.plot_results = plot_results
-        self.output_folder = self.output_data_path / self.experiment_config['experiment_folder'] /\
+        self.output_folder = self.output_data_path / self.experiment_config['experiment_folder'] / \
                              str(datetime.now().strftime('%Y-%m-%d_%H-%M'))
-
 
     def run(self):
         """
@@ -73,10 +73,10 @@ class DTManager:
         if self.experiment_mode == 'simulation':
             self.battery.run_simulation()
 
-            #for v_, ground in zip(v, self.battery.ground_data):
-                #print(v_, ground)
+            # for v_, ground in zip(v, self.battery.ground_data):
+            # print(v_, ground)
 
-            #print(self.battery.soc_series)
+            # print(self.battery.soc_series)
 
         self._output_results()
         self._show_results()
@@ -134,7 +134,7 @@ class DTManager:
             var_to_plot = ['Voltage [V]', 'Temperature [C]', 'Power [W]']
             self._fast_plot(var_to_plot=var_to_plot)
 
-    def _fast_plot(self, var_to_plot:list):
+    def _fast_plot(self, var_to_plot: list):
         """
         # TODO: clean up this method -> add save plot img option
         """
@@ -142,7 +142,8 @@ class DTManager:
         print(df['Power [W]'])
 
         df_ground = pd.read_csv(self.ground_data_path / self.experiment_config['ground_csv'], encoding='unicode_escape')
-        df_ground['Timestamp'] = pd.to_datetime(df_ground['Time'], format="%Y/%m/%d %H:%M:%S").values.astype(float) // 10 ** 9
+        df_ground['Timestamp'] = pd.to_datetime(df_ground['Time'], format="%Y/%m/%d %H:%M:%S").values.astype(
+            float) // 10 ** 9
         df_ground['Timestamp'] = df_ground['Timestamp'] - df_ground['Timestamp'][0]
 
         for var in var_to_plot:

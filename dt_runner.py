@@ -27,7 +27,7 @@ def get_args():
     parser.add_argument("--models",
                         nargs='*',
                         choices=models_choices,
-                        default=['thevenin', 'rc_thermal'],
+                        default=['thevenin', 'rc_thermal', 'bolun'],
                         help="Specifies which electrical should be run during the experiment."
                         )
 

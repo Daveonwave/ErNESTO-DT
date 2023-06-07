@@ -1,4 +1,3 @@
-import pint
 from typing import Union
 from scipy.interpolate import interp1d, interp2d
 
@@ -7,14 +6,15 @@ class GenericVariable:
     """
 
     """
-    def __init__(self, name:str):
+
+    def __init__(self, name: str):
         self._name = name
 
     @property
     def name(self):
         return self._name
 
-    def get_value(self, input_vars:dict):
+    def get_value(self, input_vars: dict):
         raise NotImplementedError
 
     def set_value(self, new_value):
@@ -25,11 +25,12 @@ class Scalar(GenericVariable):
     """
 
     """
+
     def __init__(self, name: str, value: Union[int, float]):
         super().__init__(name)
         self._value = value
 
-    def get_value(self, input_vars:dict=None):
+    def get_value(self, input_vars: dict = None):
         return self._value
 
 
@@ -45,6 +46,7 @@ class FunctionTerm:
     """
 
     """
+
     def __init__(self, variable, coefficient, operation, degree):
         self._variable = variable
         self._coefficient = coefficient
@@ -56,6 +58,7 @@ class ParametricFunction(GenericVariable):
     """
 
     """
+
     def __init__(self, name: str, function_terms: dict):
         super().__init__(name)
         self.function_terms = function_terms
@@ -76,7 +79,8 @@ class LookupTableFunction(GenericVariable):
     """
 
     """
-    def __init__(self, name:str, y_values:list, x_names:list, x_values:list):
+
+    def __init__(self, name: str, y_values: list, x_names: list, x_values: list):
         super().__init__(name)
 
         self.y_values = y_values
@@ -94,7 +98,7 @@ class LookupTableFunction(GenericVariable):
         else:
             raise Exception("Too many variables to interpolate, not implemented yet!")
 
-    def get_value(self, input_vars:dict):
+    def get_value(self, input_vars: dict):
         """
 
         """
@@ -118,7 +122,7 @@ class LookupTableFunction(GenericVariable):
             raise Exception("Given inputs list has a wrong dimension for the computation of {}".format(self.name))
 
 
-def instantiate_variables(var_dict:dict):
+def instantiate_variables(var_dict: dict):
     """
     # TODO: cambiare configurazione dati in ingresso (esempio: LookupTable passata con un csv)
     """
@@ -130,7 +134,7 @@ def instantiate_variables(var_dict:dict):
             instantiated_vars.append(Scalar(name=var, value=var_dict[var]['scalar']))
 
         elif var_dict[var]['type'] == "function":
-            instantiated_vars.append(Function()) #TODO: implement
+            instantiated_vars.append(Function())  # TODO: implement
 
         elif var_dict[var]['type'] == "lookup":
             instantiated_vars.append(
@@ -138,7 +142,8 @@ def instantiate_variables(var_dict:dict):
                     name=var,
                     y_values=var_dict[var]['lookup']['output'],
                     x_names=var_dict[var]['lookup']['inputs'].keys(),
-                    x_values=[var_dict[var]['lookup']['inputs'][key] for key in var_dict[var]['lookup']['inputs'].keys()]
+                    x_values=[var_dict[var]['lookup']['inputs'][key] for key in
+                              var_dict[var]['lookup']['inputs'].keys()]
                 ))
 
         else:

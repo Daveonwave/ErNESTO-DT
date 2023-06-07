@@ -78,7 +78,6 @@ class RCThermal(ThermalModel):
         return (term_1 + term_2 + term_3) / (self.thermal_resistance * self.thermal_capacity + dt)
 
 
-
 class R2CThermal(ThermalModel):
     """
     Scarpelli-Fioriti paper
@@ -97,7 +96,6 @@ class R2CThermal(ThermalModel):
         self._h = 0
         self._mass = 0
         self._cp = 0
-
 
     def reset_model(self):
         pass

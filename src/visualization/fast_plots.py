@@ -10,7 +10,7 @@ def plot_compared_data(dfs, variables, labels, x_axes, title, colors=None):
     if not colors:
         colors = ['violet', 'cyan', 'purple', 'magenta']
 
-    plt.figure(figsize=(15 ,5))
+    plt.figure(figsize=(15,5))
 
     # Command for the grid
     plt.grid(visible=True, which='major', color='gray', alpha=0.25, linestyle='dashdot', lw=1.5)
