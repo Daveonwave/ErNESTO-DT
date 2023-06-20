@@ -1,7 +1,6 @@
 import argparse
 import os
 from pathlib import Path
-from dotenv import load_dotenv
 from src.digital_twin.dt_manager import DTManager
 
 
@@ -27,7 +26,7 @@ def get_args():
     parser.add_argument("--models",
                         nargs='*',
                         choices=models_choices,
-                        default=['thevenin', 'rc_thermal', 'bolun'],
+                        default=['thevenin', 'rc_thermal'],
                         help="Specifies which electrical should be run during the experiment."
                         )
 
@@ -46,7 +45,8 @@ def get_args():
     parser.add_argument("--plot",
                         action="store_true",
                         default=False,
-                        help="Specifies if it is necessary to immediately plot computed data at the end of the experiment."
+                        help="Specifies if it is necessary to immediately plot computed data at the end of the "
+                             "experiment."
                         )
 
     input_args = vars(parser.parse_args())
@@ -64,10 +64,10 @@ if __name__ == '__main__':
     plot_flag = args['plot']
 
     data_folders_dict = dict(
-        config_data = 'configuration',
-        load_data = 'load',
-        output_data = 'output',
-        ground_data = 'ground'
+        config_data="configuration",
+        load_data="load",
+        output_data="output",
+        ground_data="ground"
     )
 
     data_folder_paths = {}

@@ -1,0 +1,55 @@
+# ############################################################################
+# Configuration yaml file of the Thevenin Equivalent Circuit used to model the
+# behaviour of the battery dynamic.
+# ----------------------------------------------------------------------------
+# How is it made up of?
+#   -
+#   - R0 Resistor
+#   - RC Parallel
+# ############################################################################
+
+type: aging
+class_name: BolunModel
+
+# ----------------------------------------------------------------------------
+# Components can be instantiated in 3 different ways:
+#   1. Constant: the component is conceived as a scalar float value
+#   2. Function: the component is conceived as a parametric function
+#   3. Lookup: the component is derived from a lookup table with an
+#              interpolation between the table variables
+# ----------------------------------------------------------------------------
+components:
+    SEI:
+        alpha_sei: 0
+        beta_sei: 0
+
+    stress_factor:
+        calendar:
+            - time
+            - soc
+            - temperature
+        cyclic:
+            - soc
+            - temperature
+            - dod_bolun
+
+stress_models:
+    time:
+        k_t: 0
+
+    soc:
+        k_soc: 0
+        soc_ref: 0
+
+    temperature:
+        k_temp: 0
+        temp_ref: 0
+
+    dod_bolun:
+        k_delta1: 0
+        k_delta2: 0
+        k_delta3: 0
+
+    dod_quadratic: 0
+    dod_exponential: 0
+

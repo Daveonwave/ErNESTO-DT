@@ -1,0 +1,97 @@
+# ################## #
+# Experiment Options #
+# ################## #
+experiment_folder: "enrica_current_load"
+
+# Options for summary
+experiment_name: "Enrica I load"
+description: "Experiment based on Enrica's data to check if the 
+    simulation works as expected."
+goal: "Grasp why the behaviour of voltage has a different trend 
+    wrt ground data => check correctness of formulae."
+
+# Load Data (input data) and Ground Data (validation data)
+# --------------------------------------------------------------------
+#   1. specify the .csv file from which we have to read data
+
+load_csv: 'input_data.csv'
+ground_csv: 'ground_data.csv'
+
+#   2. 'var' has to be a variable among [current, voltage, power]
+#   3. 'label' is the column name of the variable inside the csv file
+#       Example: {'Voltage [V]', 'Current [A]', 'Power [W]'}
+#       NOTE: there must be always a 'Time' column
+
+load:
+    var: 'current'
+    label: 'Current [A]'
+ground:
+    var: 'voltage'
+    label: 'Voltage [V]'
+#ground:
+#    - var: 'voltage'
+#      label: 'Voltage [V]'
+#    - var: 'power'
+#      label: 'Power [W]'
+
+# --------------------------------------------------------------------
+
+# Sign convention determines the direction of the current inside the circuit.
+# We can have two options:
+#       - active: (power sources) p<0 and current exiting
+#               => i>0 during discharge (default for Thevenin)
+#       - passive: (loads) with p>0 and current entering
+#               => i<0 during discharge
+sign_convention: 'passive'
+
+# Data options
+use_data_units: False
+
+# Time optionspower
+time:
+    duration:
+    sampling_time: 1
+
+# Battery options
+battery:
+    nominal_capacity: 20
+    v_max: 4.15
+    v_min: 3
+    temp_ambient: 20
+
+# Initial conditions
+initial_conditions:
+    voltage: null
+    current: null
+    temperature: 23
+    soc: 1
+    soh: 1
+
+# List of all the possible electrical that can be initialized for the simulation
+# ---------------------------------------------------------------------------------------
+# How to use it?
+#   1. Here will be stored all the configured electrical (even useless ones)
+#   2. Change the yaml file name/path of electrical you want to use
+#       NOTE: files are stored in the same folder split in different folder by 'category'
+# ---------------------------------------------------------------------------------------
+models:
+    thevenin:
+        category: electrical
+        file: thevenin.yaml
+    rc_thermal:
+        category: thermal
+        file: rc_thermal.yaml
+    r2c_thermal:
+        category: thermal
+        file: null
+    bolun:
+        category: aging
+        file: bolun.yaml
+    data_driven:
+        category: null
+        file: null
+
+
+
+
+

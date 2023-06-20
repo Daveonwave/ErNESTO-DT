@@ -26,7 +26,7 @@ class BolunModel(AgingModel):
         print(self.cyclic_factors)
         self._compute_calendar_aging()
 
-        exit()
+        #exit()
 
     def init_model(self, **kwargs):
         pass

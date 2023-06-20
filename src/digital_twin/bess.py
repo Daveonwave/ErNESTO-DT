@@ -163,8 +163,7 @@ class BatteryEnergyStorageSystem:
         except:
             raise IOError("It is not possible to write the file {}!".format(output_file / file_name))
 
-
-    """ 
+    """
     ---------------------------------------------
     # Mode: SIMULATION # 
     ---------------------------------------------
@@ -218,8 +217,12 @@ class BatteryEnergyStorageSystem:
         dissipated_heat = self._electrical_model.compute_generated_heat()
         curr_temp = self._thermal_model.compute_temp(q=dissipated_heat, env_temp=self.temp_ambient, dt=dt)
         curr_soc = self.soc_estimator.compute_soc(soc_=self.soc_series[-1], i=i, dt=dt)
-        # TODO: from here
-        curr_soh = self._aging_model.aging_step()
+
+        # Compute SoH of the system if a model has been selected, SoH=constant otherwise
+        if self._aging_model is not None:
+            curr_soh = self._aging_model.aging_step()
+        else:
+            curr_soh = 1
 
         # Forward SoC, SoH and temperature to models
         for model in self.models:
