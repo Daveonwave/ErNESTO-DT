@@ -144,7 +144,7 @@ class BatteryEnergyStorageSystem:
         """
 
         """
-        final_dict = {'Time': self.t_series, 'soc': self.soc_series, 'soh': self.soh_series}
+        final_dict = {'time': self.t_series, 'soc': self.soc_series, 'soh': self.soh_series}
 
         for model in self.models:
             final_dict.update(model.get_final_results())
@@ -165,7 +165,7 @@ class BatteryEnergyStorageSystem:
 
     """
     ---------------------------------------------
-    # Mode: SIMULATION # 
+    # Mode: SIMULATION 
     ---------------------------------------------
     """
     def _simulation_init(self):
@@ -198,7 +198,7 @@ class BatteryEnergyStorageSystem:
             i = self.load_data[k-1]
             self.results['voltage'].append(voltage)
 
-        elif self.load_var =='voltage':
+        elif self.load_var == 'voltage':
             current = self._electrical_model.step_voltage_driven(v_load=self.load_data[k-1], dt=dt, k=k)
             i = current
             self.results['current'].append(current)

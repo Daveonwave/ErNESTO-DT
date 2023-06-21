@@ -52,9 +52,15 @@ def dod_bolun_stress(dod, k_delta1, k_delta2, k_delta3):
 
 
 def dod_exponential_stress():
+    """
+    Stress function caused by DoD (Depth of Discharge) in alternative to Bolun's DoD stess.
+    """
     pass
 
 
 def dod_quadratic_stress():
+    """
+    Stress function caused by DoD (Depth of Discharge) in alternative to Bolun's DoD stess.
+    """
     pass
 

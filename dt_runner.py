@@ -8,7 +8,7 @@ def get_args():
     parser = argparse.ArgumentParser(description="Digital Twin of a Battery Energy Storage System (RSE)",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("-d", "--data-folder",
+    parser.add_argument("--data-folder",
                         action="store",
                         default="./data",
                         type=str,
@@ -26,17 +26,17 @@ def get_args():
     parser.add_argument("--models",
                         nargs='*',
                         choices=models_choices,
-                        default=['thevenin', 'rc_thermal', 'bolun'],
+                        default=['thevenin', 'rc_thermal'],
                         help="Specifies which electrical should be run during the experiment."
                         )
 
     mode_choices = ['simulation', 'what-if', 'learning', 'optimization']
-    parser.add_argument("-m", "--mode",
+    parser.add_argument("--mode",
                         choices=mode_choices,
                         default=['simulation'],
                         help="Specifies the working mode of the Digital Twin.")
 
-    parser.add_argument("-s", "--save-results",
+    parser.add_argument("--save-results",
                         action="store_true",
                         default=False,
                         help="Specifies if it is necessary to save computed data at the end of the experiment."
