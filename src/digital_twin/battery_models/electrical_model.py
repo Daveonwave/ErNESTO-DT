@@ -89,10 +89,10 @@ class TheveninModel(ElectricalModel):
 
         eq_factor = (dt * c * r1) / (r0 * c * r1 + dt * (r1 + r0))
         term_1 = - (1/dt + 1/(c * r1)) * v_load
-        term_2 = 1/dt * self.get_v_load_series(k-1)
+        term_2 = 1/dt * self.get_v_load_series(k=-1)
         term_3 = (1/dt + 1/(c * r1)) * v_ocv
         term_4 = - 1/dt * v_ocv_
-        term_5 = r0 / dt * self.get_i_load_series(k=k-1)
+        term_5 = r0 / dt * self.get_i_load_series(k=-1)
         i = eq_factor * (term_1 + term_2 + term_3 + term_4 + term_5)
 
         # Compute V_r0
@@ -105,12 +105,18 @@ class TheveninModel(ElectricalModel):
         i_r1 = self.rc.compute_i_r1(v_rc=v_rc)
         i_c = self.rc.compute_i_c(i=i, i_r1=i_r1)
 
+        # Compute power
+        power = v_load * i
+        if self.sign_convention == 'passive':
+            power = -power
+
         # Update the collections of variables of ECM components
         self.r0.update_step_variables(r0=r0, v_r0=v_r0, dt=dt, k=k)
         self.rc.update_step_variables(r1=r1, c=c, v_rc=v_rc, i_r1=i_r1, i_c=i_c, dt=dt, k=k)
         self.ocv_gen.update_v(value=v_ocv)
         self.update_i_load(value=i)
         self.update_v_load(value=v_load)
+        self.update_power(value=power)
 
         return i
 

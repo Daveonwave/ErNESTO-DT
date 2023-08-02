@@ -27,7 +27,6 @@ goal: "Grasp why the behaviour of voltage has a different trend
 ground_data:
     file: 'ground_data.csv'
     load: 'current'
-    output: 'voltage'
     vars:
     - var: 'current'
       label: 'Current [A]'
@@ -39,7 +38,7 @@ ground_data:
       label: 'Temperature [degC]'
       unit: 'degC'
     - var: 'power'
-      label: 'power [W]'
+      label: 'Power [W]'
       unit: 'W'
 
 

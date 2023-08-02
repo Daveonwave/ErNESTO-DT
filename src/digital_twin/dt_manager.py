@@ -87,13 +87,11 @@ class SimulationManager(GeneralPurposeManager):
         logger.info("Instantiated {} class as experiment orchestrator".format(self.__class__.__name__))
 
         # Prepare ground data for input and validation
+        self.input_var = self.experiment_config['ground_data']['load']
         self.ground_data, self.ground_times = load_data_from_csv(
             csv_file=self.ground_data_path / self.experiment_config['ground_data']['file'],
             vars_to_retrieve=self.experiment_config['ground_data']['vars'],
             iterations=self._iterations)
-
-        self.input_var = self.experiment_config['ground_data']['load']
-        self.output_var = self.experiment_config['ground_data']['output']
 
         # Time options
         self._duration = self.ground_times[-1] - self.ground_times[0]
@@ -114,7 +112,6 @@ class SimulationManager(GeneralPurposeManager):
             models_config_files=models_config_files,
             battery_options=validate_parameters_unit(self.experiment_config['battery']),
             input_var=self.input_var,
-            output_var=self.output_var,
             sign_convention=self.experiment_config['sign_convention']
         )
 
@@ -186,9 +183,10 @@ class SimulationManager(GeneralPurposeManager):
         TODO: update when will be added new features
         """
         summary = {'experiment': self.experiment_config['experiment_name'],
-                   'description': self.experiment_config['description'], 'goal': self.experiment_config['goal'],
-                   'load': self.experiment_config['ground_data']['load'], 'output': self.experiment_config['ground_data']['output'],
-                   'time': self.experiment_config['time'],
+                   'description': self.experiment_config['description'],
+                   'goal': self.experiment_config['goal'],
+                   'load': self.experiment_config['ground_data']['load'],
+                   'time': self._iterations * self._timestep,
                    'battery': self.experiment_config['battery'],
                    'initial_conditions': self.experiment_config['initial_conditions'],
                    'models': [model.__class__.__name__ for model in self._battery.models],
