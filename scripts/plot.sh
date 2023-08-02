@@ -1,1 +1,1 @@
-python dt_runner.py --plot
+python ernesto.py --models thevenin rc_thermal bolun --iterations 3600 --timestep 1 --plot

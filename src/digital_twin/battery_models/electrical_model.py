@@ -12,9 +12,8 @@ class TheveninModel(ElectricalModel):
     CLass
     """
     def __init__(self,
-                 components_settings:dict,
-                 sign_convention='active',
-                 units_checker=True
+                 components_settings: dict,
+                 sign_convention='active'
                  ):
         """
         • 𝑁s𝑚: numero di celle in serie che compongono un singolo modulo;
@@ -24,9 +23,8 @@ class TheveninModel(ElectricalModel):
         • 𝑁s =𝑁s𝑚 x 𝑁 𝑏 : numero di celle totali connesse in serie che compongono il pacco batteria;
         • 𝑁𝑝=𝑁𝑝𝑚 x 𝑁𝑝𝑏 : numero di celle totali connesse in parallelo che compongono il pacco batteria;
         """
-        super().__init__(units_checker=units_checker)
+        super().__init__()
         self.sign_convention = sign_convention
-        self.units_checker = units_checker
 
         self.ns_cells_module = 0
         self.np_cells_module = 0
@@ -37,9 +35,9 @@ class TheveninModel(ElectricalModel):
 
         [r0, r1, c, v_ocv] = instantiate_variables(components_settings)
 
-        self.r0 = Resistor(name='R0', resistance=r0, units_checker=self.units_checker)
-        self.rc = ResistorCapacitorParallel(name='RC', resistance=r1, capacity=c, units_checker=self.units_checker)
-        self.ocv_gen = OCVGenerator(name='OCV', ocv_potential=v_ocv, units_checker=self.units_checker)
+        self.r0 = Resistor(name='R0', resistance=r0)
+        self.rc = ResistorCapacitorParallel(name='RC', resistance=r1, capacity=c)
+        self.ocv_gen = OCVGenerator(name='OCV', ocv_potential=v_ocv)
 
     def reset_model(self):
         self._v_load_series = []
@@ -54,16 +52,10 @@ class TheveninModel(ElectricalModel):
         i = kwargs['current'] if kwargs['current'] else 0
         p = v * i
 
-        if self.units_checker:
-            self.update_v_load(craft_data_unit(v, Unit.VOLT))
-            self.update_i_load(craft_data_unit(i, Unit.AMPERE))
-            self.update_power(craft_data_unit(p, Unit.WATT))
-            # self.update_times(craft_data_unit(0, Unit.SECOND))
-        else:
-            self.update_v_load(v)
-            self.update_i_load(i)
-            self.update_power(p)
-            # self.update_times(0)
+        self.update_v_load(v)
+        self.update_i_load(i)
+        self.update_power(p)
+        # self.update_times(0)
 
         self.r0.init_component()
         self.rc.init_component()
@@ -187,8 +179,7 @@ class TheveninModel(ElectricalModel):
         """
 
         """
-        pass
-
+        raise NotImplementedError()
 
     def compute_generated_heat(self, k=-1):
         """
@@ -198,7 +189,7 @@ class TheveninModel(ElectricalModel):
         Inputs:
         :param k: step for which compute the heat generation
         """
-        #return self.r0.get_r0_series(k=k) * self.get_i_load_series(k=k)**2 + \
+        # return self.r0.get_r0_series(k=k) * self.get_i_load_series(k=k)**2 + \
         #           self.rc.get_r1_series(k=k) * self.rc.get_i_r1_series(k=k)**2
         return self.r0.get_r0_series(k=k) * self.get_i_load_series(k=k) ** 2
 
@@ -214,33 +205,3 @@ class TheveninModel(ElectricalModel):
                 'R0': self.r0.get_r0_series(),
                 'R1': self.rc.get_r1_series(),
                 'C': self.rc.get_c_series()}
-
-    # def estimate_r0(self, delta_v0, delta_i):
-    #     """
-    #     Estimation of resistance R0 is conducted with a current pulse test.
-    #
-    #     :param delta_v0: instantaneous voltage change after the current pulse
-    #     :param delta_i: variation of current in input
-    #     """
-    #     r0 = check_data_unit(delta_v0, Unit.VOLT).magnitude / check_data_unit(delta_i, Unit.AMPERE).magnitude
-    #     return check_data_unit(r0, Unit.OHM)
-    #
-    # def estimate_r1(self, delta_v1, delta_i):
-    #     """
-    #     Estimation of resistance R1 is conducted with a current pulse test.
-    #
-    #     :param delta_v1: instantaneous voltage change after the current pulse
-    #     :param delta_i: variation of current in input
-    #     """
-    #     r1 = check_data_unit(delta_v1, Unit.VOLT).magnitude / check_data_unit(delta_i, Unit.AMPERE).magnitude
-    #     return check_data_unit(r1, Unit.OHM)
-    #
-    # def estimate_c(self, r1, delta_t):
-    #     """
-    #     Estimation of capacity C1 is conducted with a current pulse test.
-    #
-    #     :param r1: resistance in parallel with the capacitor
-    #     :param delta_t: time to steady-state which is about 5τ, where τ=R1*C1
-    #     """
-    #     c1 = check_data_unit(delta_t, Unit.SECOND).magnitude / (5 * check_data_unit(r1, Unit.OHM).magnitude)
-    #     return check_data_unit(c1, Unit.FARADAY)

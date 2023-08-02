@@ -11,7 +11,7 @@ def temperature_stress(k_temp, mean_temp, temp_ref):
     :param mean_temp: current battery temperature
     :param temp_ref: ambient temperature
     """
-    return np.exp(k_temp * (mean_temp - temp_ref) * (temp_ref / mean_temp))
+    return np.exp(np.float32(k_temp) * (mean_temp - temp_ref) * (temp_ref / mean_temp))
 
 
 def soc_stress(k_soc, soc, soc_ref):
@@ -34,7 +34,7 @@ def time_stress(k_t, t):
     :param k_t: time stress coefficient
     :param t: current battery age
     """
-    return k_t * t
+    return np.float32(k_t) * t
 
 
 def dod_bolun_stress(dod, k_delta1, k_delta2, k_delta3):
@@ -48,7 +48,7 @@ def dod_bolun_stress(dod, k_delta1, k_delta2, k_delta3):
     :param k_delta2: second dod stress coefficient
     :param k_delta3: third dod stress coefficient
     """
-    return (k_delta1 * dod ** k_delta2 + k_delta3) ** (-1)
+    return (np.float32(k_delta1) * dod ** np.float32(k_delta2) + np.float32(k_delta3)) ** (-1)
 
 
 def dod_exponential_stress():

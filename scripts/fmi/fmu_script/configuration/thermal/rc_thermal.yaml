@@ -1,0 +1,60 @@
+# ############################################################################
+# Configuration yaml file of the thermal model used to describe the
+# behaviour of the battery temperature.
+# ----------------------------------------------------------------------------
+# How is it made up of?
+#   - r_term Resistor
+#   - c_term Capacitor
+# ############################################################################
+
+type: thermal
+class_name: RCThermal
+
+# ----------------------------------------------------------------------------
+# Components can be instantiated in 3 different ways:
+#   1. Constant: the component is conceived as a scalar float value
+#   2. Function: the component is conceived as a parametric function
+#   3. Lookup: the component is derived from a lookup table with an
+#              interpolation between the table variables
+# ----------------------------------------------------------------------------
+components:
+    r_term:
+        type: scalar
+        scalar: 0.37
+#        function:
+#            coefficients:
+#                - 1
+#                - 2
+#                - 3
+#            inputs:
+#                - temp
+#                - soc
+#                - soh
+#        lookup:
+#            inputs:
+#                soc:
+#                    - 0.9
+#                    - 0.8
+#                    - 0.7
+#                    - 0.6
+#                    - 0.5
+#                    - 0.4
+#                    - 0.3
+#                    - 0.2
+#                    - 0.1
+#                    - 0
+#            output:
+#                - 0.003750375
+#                - 0.003750375
+#                - 0.003750188
+#                - 0.00380057
+#                - 0.003900585
+#                - 0.003950593
+#                - 0.004050203
+#                - 0.004050405
+#                - 0.004150208
+#                - 0.004250213
+
+    c_term:
+        type: scalar
+        scalar: 1700

@@ -37,6 +37,7 @@ def check_data_unit(param, unit: ureg.Unit):
             "'Pint.Quantity' objects in accordance with the required unit measure"
         )
 
+
 def craft_data_unit(param, unit: ureg.Unit):
     """
 

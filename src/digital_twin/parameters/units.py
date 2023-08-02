@@ -1,4 +1,3 @@
-import yaml
 from pint import UnitRegistry
 ureg = UnitRegistry()
 

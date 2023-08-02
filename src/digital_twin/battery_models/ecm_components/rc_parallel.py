@@ -1,8 +1,4 @@
-import pint
 from typing import Union
-
-from src.digital_twin.parameters.units import Unit
-from src.digital_twin.parameters.data_checker import craft_data_unit, check_data_unit
 from src.digital_twin.parameters.variables import Scalar, ParametricFunction, LookupTableFunction
 from src.digital_twin.battery_models.ecm_components.generic_component import ECMComponent
 
@@ -23,17 +19,12 @@ class ResistorCapacitorParallel(ECMComponent):
                  name,
                  resistance: Union[Scalar, ParametricFunction, LookupTableFunction],
                  capacity: Union[Scalar, ParametricFunction, LookupTableFunction],
-                 units_checker:bool
                  ):
-        super().__init__(name, units_checker)
+        super().__init__(name)
         self._resistance = resistance
         self._capacity = capacity
         self._tau = 0
         # TODO: capire tau se trattarla o meno e come trattarla + cambiare unit
-
-        self._r1_unit = Unit.OHM
-        self._c_unit = Unit.FARADAY
-        self._tau_unit = Unit.SECOND
 
         # self.n_r = n_r
         # self.n_c = n_c
@@ -85,28 +76,12 @@ class ResistorCapacitorParallel(ECMComponent):
     """
     @resistance.setter
     def resistance(self, value: float):
-        if self.units_checker:
-            self._resistance = craft_data_unit(value, Unit.OHM)
-        else:
-            self._resistance = value
+       self._resistance = value
 
     @capacity.setter
     def capacity(self, value: float):
-        if self.units_checker:
-            self._capacity = craft_data_unit(value, Unit.FARADAY)
-        else:
-            self._capacity = value
+        self._capacity = value
     """
-
-    def init_component(self, r1=0, c=0, i_c=0, i_r1=0):
-        """
-        Initialize RC component at t=0
-        """
-        super().init_component()
-        self._update_r1_series(r1)
-        self._update_c_series(c)
-        self._update_i_c_series(i_c)
-        self._update_i_r1_series(i_r1)
 
     def get_r1_series(self, k=None):
         """
@@ -117,10 +92,7 @@ class ResistorCapacitorParallel(ECMComponent):
                 "Cannot retrieve resistance R1 of {} at step K, since it has to be an integer".format(self._name)
 
             if len(self._r1_series) > k:
-                if not self.units_checker:
-                    return self._r1_series[k]
-                else:
-                    return self._r1_series[k].magnitude
+                return self._r1_series[k]
             else:
                 raise IndexError("Resistance R1 of {} at step K not computed yet".format(self._name))
         return self._r1_series
@@ -134,10 +106,7 @@ class ResistorCapacitorParallel(ECMComponent):
                 "Cannot retrieve capacity C of {} at step K, since it has to be an integer".format(self._name)
 
             if len(self._c_series) > k:
-                if not self.units_checker:
-                    return self._c_series[k]
-                else:
-                    return self._c_series[k].magnitude
+                return self._c_series[k]
             else:
                 raise IndexError("Capacity C of {} at step K not computed yet".format(self._name))
         return self._c_series
@@ -151,10 +120,7 @@ class ResistorCapacitorParallel(ECMComponent):
                 "Cannot retrieve current of {} at step K, since it has to be an integer".format(self._name)
 
             if len(self._i_r1_series) > k:
-                if not self.units_checker:
-                    return self._i_r1_series[k]
-                else:
-                    return self._i_r1_series[k].magnitude
+                return self._i_r1_series[k]
             else:
                 raise IndexError("Current I_r1 of {} at step K not computed yet".format(self._name))
         return self._i_r1_series
@@ -168,37 +134,32 @@ class ResistorCapacitorParallel(ECMComponent):
                 "Cannot retrieve current of {} at step K, since it has to be an integer".format(self._name)
 
             if len(self._i_c_series) > k:
-                if not self.units_checker:
-                    return self._i_c_series[k]
-                else:
-                    return self._i_c_series[k].magnitude
+                return self._i_c_series[k]
             else:
                 raise IndexError("Current I_c of {} at step K not computed yet".format(self._name))
         return self._i_c_series
 
-    def _update_r1_series(self, value: Union[float, pint.Quantity]):
-        if self.units_checker:
-            self._r1_series.append(check_data_unit(value, Unit.OHM))
-        else:
-            self._r1_series.append(value)
+    def _update_r1_series(self, value: float):
+        self._r1_series.append(value)
 
-    def _update_c_series(self, value: Union[float, pint.Quantity]):
-        if self.units_checker:
-            self._c_series.append(check_data_unit(value, Unit.FARADAY))
-        else:
-            self._c_series.append(value)
+    def _update_c_series(self, value: float):
+        self._c_series.append(value)
 
-    def _update_i_r1_series(self, value: Union[float, pint.Quantity]):
-        if self.units_checker:
-            self._i_r1_series.append(check_data_unit(value, Unit.AMPERE))
-        else:
-            self._i_r1_series.append(value)
+    def _update_i_r1_series(self, value: float):
+        self._i_r1_series.append(value)
 
-    def _update_i_c_series(self, value: Union[float, pint.Quantity]):
-        if self.units_checker:
-            self._i_c_series.append(check_data_unit(value, Unit.AMPERE))
-        else:
-            self._i_c_series.append(value)
+    def _update_i_c_series(self, value: float):
+        self._i_c_series.append(value)
+
+    def init_component(self, r1=0, c=0, i_c=0, i_r1=0):
+        """
+        Initialize RC component at t=0
+        """
+        super().init_component()
+        self._update_r1_series(r1)
+        self._update_c_series(c)
+        self._update_i_c_series(i_c)
+        self._update_i_r1_series(i_r1)
 
     def compute_v(self, v_ocv, v_r0, v, i_r1=None):
         """
@@ -211,22 +172,10 @@ class ResistorCapacitorParallel(ECMComponent):
         :param v: driving potential v(t) in input to the circuit
         :param i_r1: current I_r1 flowing through the resistor
         """
-        if self.units_checker:
-            if None not in (v_ocv, v_r0, v):
-                v_ocv = check_data_unit(v_ocv, Unit.VOLT).magnitude
-                v_r0 = check_data_unit(v_r0, Unit.VOLT).magnitude
-                v = check_data_unit(v, Unit.VOLT).magnitude
-                v_rc = craft_data_unit(v_ocv - v_r0 - v, Unit.VOLT)
-            else:
-                i_r1 = check_data_unit(i_r1, Unit.AMPERE).magnitude
-                v_rc = craft_data_unit(i_r1 * self.resistance, Unit.VOLT)
-
+        if None not in (v_ocv, v_r0, v):
+            v_rc = v_ocv - v_r0 - v
         else:
-            if None not in (v_ocv, v_r0, v):
-                v_rc = v_ocv - v_r0 - v
-            else:
-                v_rc = i_r1 * self.resistance
-
+            v_rc = i_r1 * self.resistance
         return v_rc
 
     def compute_i_r1(self, v_rc):
@@ -240,11 +189,7 @@ class ResistorCapacitorParallel(ECMComponent):
         ------
         :param v_rc : voltage of resistor R1
         """
-        if self.units_checker:
-            v_rc = check_data_unit(v_rc, Unit.VOLT).magnitude
-            i_r1 = craft_data_unit(v_rc / self.resistance, Unit.AMPERE)
-        else:
-            i_r1 = v_rc / self.resistance
+        i_r1 = v_rc / self.resistance
         return i_r1
 
     def compute_i_c(self, dv_c=None, i=None, i_r1=None):
@@ -260,24 +205,12 @@ class ResistorCapacitorParallel(ECMComponent):
         param i:
         param i_r1:
         """
-        if self.units_checker:
-            if dv_c is not None:
-                dv_c = check_data_unit(dv_c, Unit.VOLT).magnitude
-                i_c = craft_data_unit(dv_c * self.capacity, Unit.AMPERE)
-            elif i is not None and i_r1 is not None:
-                i = check_data_unit(i, Unit.AMPERE).magnitude
-                i_r1 = check_data_unit(i_r1, Unit.AMPERE).magnitude
-                i_c = craft_data_unit(i - i_r1, Unit.AMPERE)
-            else:
-                raise Exception("Not enough data to compute I_c for element {}".format(self.name))
-
+        if dv_c is not None:
+            i_c = dv_c * self.capacity
+        elif i is not None and i_r1 is not None:
+            i_c = i - i_r1
         else:
-            if dv_c is not None:
-                i_c = dv_c * self.capacity
-            elif i is not None and i_r1 is not None:
-                i_c = i - i_r1
-            else:
-                raise Exception("Not enough data to compute I_c for element {}".format(self.name))
+            raise Exception("Not enough data to compute I_c for element {}".format(self.name))
 
         return i_c
 
@@ -286,8 +219,6 @@ class ResistorCapacitorParallel(ECMComponent):
         Compute the
         """
         tau = self.resistance * self.capacity
-        if self.units_checker:
-            tau = craft_data_unit(tau, Unit.SECOND)
         return tau
 
     def update_step_variables(self, r1, c, v_rc, i_r1, i_c, dt:float, k:int):

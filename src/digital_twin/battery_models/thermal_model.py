@@ -1,5 +1,3 @@
-from src.digital_twin.parameters.units import Unit
-from src.digital_twin.parameters.data_checker import craft_data_unit
 from src.digital_twin.parameters.variables import Scalar
 from src.digital_twin.battery_models.generic_models import ThermalModel
 from src.digital_twin.parameters.variables import instantiate_variables
@@ -9,11 +7,8 @@ class RCThermal(ThermalModel):
     """
     Pellegrino paper (@reference [paper link])
     """
-    def __init__(self,
-                 components_settings: dict,
-                 units_checker=True
-                 ):
-        super().__init__(units_checker=units_checker)
+    def __init__(self, components_settings: dict):
+        super().__init__()
 
         # TODO: r_term e c_term per ora fisse
         self._thermal_resistance, self._thermal_capacity = instantiate_variables(components_settings)
@@ -54,19 +49,15 @@ class RCThermal(ThermalModel):
         temp = kwargs['temperature'] if kwargs['temperature'] else 25
         heat = 0 # kwargs['dissipated_heat'] if kwargs['dissipated_heat'] else 0
 
-        if self.units_checker:
-            self.update_temp(craft_data_unit(temp, Unit.CELSIUS))
-            self.update_heat(craft_data_unit(heat, Unit.WATT))
-        else:
-            self.update_temp(temp)
-            self.update_heat(heat)
+        self.update_temp(temp)
+        self.update_heat(heat)
 
     def compute_temp(self, q, env_temp, dt, k=-1):
         """
         Compute the current temperature with equation described in the aforementioned paper
 
         Inputs:
-        :param q: power dissipated adopted as a heat source
+        :param q: power dissipated adopted as a heat fmu_script
         :param env_temp: ambient temperature
         :param dt: delta of time from last update
         :param k: step
@@ -85,9 +76,8 @@ class R2CThermal(ThermalModel):
     """
     def __init__(self,
                  components_settings: dict,
-                 units_checker=True
                  ):
-        super().__init__(units_checker=units_checker)
+        super().__init__()
 
         self._lambda = 0
         self._length = 0

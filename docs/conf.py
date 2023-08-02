@@ -31,10 +31,10 @@ extensions = []
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
-# The suffix of source filenames.
+# The suffix of fmu_script filenames.
 source_suffix = '.rst'
 
-# The encoding of source files.
+# The encoding of fmu_script files.
 # source_encoding = 'utf-8-sig'
 
 # The master toctree document.
@@ -62,8 +62,8 @@ release = '0.1'
 # Else, today_fmt is used as the format for a strftime call.
 # today_fmt = '%B %d, %Y'
 
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
+# List of patterns, relative to fmu_script directory, that match files and
+# directories to ignore when looking for fmu_script files.
 exclude_patterns = ['_build']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
@@ -181,7 +181,7 @@ latex_elements = {
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title, author, documentclass [howto/manual]).
+# (fmu_script start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
     ('index',
      'DT-rse.tex',
@@ -213,7 +213,7 @@ latex_documents = [
 # -- Options for manual page output --------------------------------------------
 
 # One entry per manual page. List of tuples
-# (source start file, name, description, authors, manual section).
+# (fmu_script start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'DT-rse', u'BESS_DigitalTwin Documentation',
      [u"Davide Salaorni"], 1)
@@ -226,7 +226,7 @@ man_pages = [
 # -- Options for Texinfo output ------------------------------------------------
 
 # Grouping the document tree into Texinfo files. List of tuples
-# (source start file, target name, title, author,
+# (fmu_script start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
     ('index', 'DT-rse', u'BESS_DigitalTwin Documentation',
