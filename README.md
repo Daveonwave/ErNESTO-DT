@@ -1,4 +1,4 @@
-BESS_DigitalTwin
+ErneStoDT
 ==============================
 
 Digital Twin of a Battery Energy Storage System
