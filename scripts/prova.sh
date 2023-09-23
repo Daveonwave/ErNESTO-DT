@@ -1,0 +1,1 @@
+python ernesto.py --models thevenin rc_thermal bolun

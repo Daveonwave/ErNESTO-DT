@@ -210,7 +210,7 @@ class ResistorCapacitorParallel(ECMComponent):
         elif i is not None and i_r1 is not None:
             i_c = i - i_r1
         else:
-            raise Exception("Not enough data to compute I_c for element {}".format(self.name))
+            raise Exception("Not enough preprocessing to compute I_c for element {}".format(self.name))
 
         return i_c
 

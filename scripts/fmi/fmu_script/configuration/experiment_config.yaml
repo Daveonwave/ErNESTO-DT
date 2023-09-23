@@ -5,14 +5,14 @@ experiment_folder: "enrica_current_load"
 
 # Options for summary
 experiment_name: "Enrica I load"
-description: "Experiment based on Enrica's data to check if the 
+description: "Experiment based on Enrica's preprocessing to check if the 
     simulation works as expected."
 goal: "Grasp why the behaviour of voltage has a different trend 
-    wrt ground data => check correctness of formulae."
+    wrt ground preprocessing => check correctness of formulae."
 
-# Load Data (input data) and Ground Data (validation data)
+# Load Data (input preprocessing) and Ground Data (validation preprocessing)
 # --------------------------------------------------------------------
-#   1. specify the .csv file from which we have to read data
+#   1. specify the .csv file from which we have to read preprocessing
 
 load_csv: 'input_data.csv'
 ground_csv: 'ground_data.csv'

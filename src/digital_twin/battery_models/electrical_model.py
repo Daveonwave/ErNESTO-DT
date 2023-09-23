@@ -1,9 +1,9 @@
-from src.digital_twin.battery_models.generic_models import ElectricalModel
+from src.digital_twin.battery_models import ElectricalModel
 from src.digital_twin.parameters.data_checker import craft_data_unit
 from src.digital_twin.parameters.units import Unit
-from src.digital_twin.battery_models.ecm_components.resistor import Resistor
-from src.digital_twin.battery_models.ecm_components.rc_parallel import ResistorCapacitorParallel
-from src.digital_twin.battery_models.ecm_components.ocv_generator import OCVGenerator
+from src.digital_twin.battery_models.ecm_components import Resistor
+from src.digital_twin.battery_models.ecm_components import ResistorCapacitorParallel
+from src.digital_twin.battery_models.ecm_components import OCVGenerator
 from src.digital_twin.parameters.variables import instantiate_variables
 
 
