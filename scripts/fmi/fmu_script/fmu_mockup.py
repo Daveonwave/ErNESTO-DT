@@ -19,14 +19,14 @@ class DTMockup(Fmi2Slave):
         super().__init__(**kwargs)
 
         models = ['thevenin', 'rc_thermal']
-        config_data_path = "./fmu_script/configuration"
-        experiment_config = "experiment_config.yaml"
+        config_data_path = "./fmu_script/config"
+        experiment_config = "env_config.yaml"
 
         try:
             with open(config_data_path / Path(experiment_config), 'r') as fin:
                 self.experiment_config = yaml.safe_load(fin)
         except Exception:
-            raise FileExistsError("Selected configuration file doesn't exist.")
+            raise FileExistsError("Selected config file doesn't exist.")
 
         models_config_files = []
         for model in models:
@@ -66,7 +66,7 @@ class DTMockup(Fmi2Slave):
                                     initial=Fmi2Initial.exact)
                                )
 
-    def do_step(self, current_time: float, step_size: float):
+    def do_step(self, current_time, step_size):
         """
 
         """
