@@ -1,5 +1,5 @@
 from src.digital_twin.parameters.variables import Scalar
-from src.digital_twin.battery_models import ThermalModel
+from src.digital_twin.battery_models.generic_models import ThermalModel
 from src.digital_twin.parameters.variables import instantiate_variables
 
 

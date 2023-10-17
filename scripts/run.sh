@@ -1,6 +1,6 @@
 python ernesto.py \
     --data-folder data \
-    --config_file experiment_config.yaml \
+    --configs experiment_config.yaml \
     --models thevenin rc_thermal bolun \
     --mode simulation \
     --iterations 3600 \

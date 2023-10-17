@@ -21,16 +21,16 @@ class_name: TheveninModel
 components:
     r0:
         type: lookup
-        scalar: 10.
-#        function:
-#            coefficients:
-#                - 1
-#                - 2
-#                - 3
-#            inputs:
-#                - temp
-#                - soc
-#                - soh
+        scalar: 10
+        function:
+            coefficients:
+                - 1
+                - 2
+                - 3
+            inputs:
+                - temp
+                - soc
+                - soh
         lookup:
             inputs:
                 soc:
@@ -43,7 +43,7 @@ components:
                     - 0.3
                     - 0.2
                     - 0.1
-                    - 0.
+                    - 0
             output:
                 - 0.003750375
                 - 0.003750375
@@ -60,15 +60,15 @@ components:
     r1:
         type: lookup
         scalar: 10
-#        function:
-#            coefficients:
-#                - 1
-#                - 2
-#                - 3
-#            inputs:
-#                - temp
-#                - soc
-#                - soh
+        function:
+            coefficients:
+                - 1
+                - 2
+                - 3
+            inputs:
+                - temp
+                - soc
+                - soh
         lookup:
             inputs:
                 soc:
@@ -98,15 +98,15 @@ components:
     c:
         type: lookup
         scalar: 10
-#        function:
-#            coefficients:
-#                - 1
-#                - 2
-#                - 3
-#            inputs:
-#                - temp
-#                - soc
-#                - soh
+        function:
+            coefficients:
+                - 1
+                - 2
+                - 3
+            inputs:
+                - temp
+                - soc
+                - soh
         lookup:
             inputs:
                 soc:
@@ -136,15 +136,15 @@ components:
     v_ocv:
         type: lookup
         scalar: 10
-#        function:
-#            coefficients:
-#                - 1
-#                - 2
-#                - 3
-#            inputs:
-#                - temp
-#                - soc
-#                - soh
+        function:
+            coefficients:
+                - 1
+                - 2
+                - 3
+            inputs:
+                - temp
+                - soc
+                - soh
         lookup:
             inputs:
                 soc:
