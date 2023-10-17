@@ -22,7 +22,7 @@ def check_data_unit(param, unit: ureg.Unit):
                 return (new_magnitude * param.units).to(unit)
             # Different dimensionality
             else:
-                raise Exception("Provided preprocessing {} has a different unit measure from required one ({})"
+                raise Exception("Provided data {} has a different unit measure from required one ({})"
                                 .format(param.units, unit))
         return new_magnitude * param.units
 
@@ -33,7 +33,7 @@ def check_data_unit(param, unit: ureg.Unit):
     # Param is something else
     else:
         raise Exception(
-            "Provided preprocessing {} has a wrong format. You can pass ".format(param) + \
+            "Provided data {} has a wrong format. You can pass ".format(param) + \
             "'Pint.Quantity' objects in accordance with the required unit measure"
         )
 
@@ -55,7 +55,7 @@ def craft_data_unit(param, unit: ureg.Unit):
     # Param is something else
     else:
         raise Exception(
-            "Provided preprocessing {} has a wrong format. You can pass 'int', 'float', 'pint.Quantity' or even 'str' "
+            "Provided data {} has a wrong format. You can pass 'int', 'float', 'pint.Quantity' or even 'str' "
             "values".format(param)
         )
 

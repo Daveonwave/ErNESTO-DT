@@ -26,13 +26,13 @@ Digital Twin of a Battery Energy Storage System
 # Project Organization
 ------------
     ├── LICENSE
-    ├── Makefile           <- Makefile with commands like `make preprocessing` or `make train`
+    ├── Makefile           <- Makefile with commands like `make data` or `make train`
     ├── README.md          <- The top-level README for developers using this project.
-    ├── preprocessing
+    ├── data
     │   ├── external       <- Data from third party sources.
-    │   ├── interim        <- Intermediate preprocessing that has been transformed.
-    │   ├── output      <- The final, canonical preprocessing sets for modeling.
-    │   └── load            <- The original, immutable preprocessing dump.
+    │   ├── interim        <- Intermediate data that has been transformed.
+    │   ├── output      <- The final, canonical data sets for modeling.
+    │   └── load            <- The original, immutable data dump.
     │
     ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
     │
@@ -40,7 +40,7 @@ Digital Twin of a Battery Energy Storage System
     │
     ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
     │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-preprocessing-exploration`.
+    │                         `1.0-jqp-initial-data-exploration`.
     │
     ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
     │
@@ -54,10 +54,10 @@ Digital Twin of a Battery Energy Storage System
     ├── src                <- Source code for use in this project.
     │   ├── __init__.py    <- Makes src a Python module
     │   │
-    │   ├── preprocessing           <- Scripts to download or generate preprocessing
+    │   ├── data           <- Scripts to download or generate data
     │   │   └── make_dataset.py
     │   │
-    │   ├── features       <- Scripts to turn load preprocessing into features for modeling
+    │   ├── features       <- Scripts to turn load data into features for modeling
     │   │   └── build_features.py
     │   │
     │   ├── electrical         <- Scripts to train electrical and then use trained electrical to make

@@ -10,31 +10,37 @@ description: "Experiment based on Enrica's data to check if the
 goal: "Grasp why the behaviour of voltage has a different trend 
     wrt ground data => check correctness of formulae."
 
-# Load Data (input data) and Ground Data (validation data)
+
+# Ground Data (input and validation data)
 # --------------------------------------------------------------------
+# How to use it?
 #   1. specify the .csv file from which we have to read data
-
-load_csv: 'input_data.csv'
-ground_csv: 'ground_data.csv'
-
-#   2. 'var' has to be a variable among [current, voltage, power]
-#   3. 'label' is the column name of the variable inside the csv file
-#       Example: {'Voltage [V]', 'Current [A]', 'Power [W]'}
-#       NOTE: there must be always a 'Time' column
-
-load:
-    var: 'current'
-    label: 'Current [A]'
-ground:
-    var: 'voltage'
-    label: 'Voltage [V]'
-#ground:
-#    - var: 'voltage'
-#      label: 'Voltage [V]'
-#    - var: 'power'
-#      label: 'Power [W]'
-
+#   2. specify data used as input and output (for validation)
+#   3. specify for all the variables:
+#        - 'var' has to be a variable among [current, voltage, power]
+#        - 'label' is the column name of the variable inside the csv file
+#           Example: {'Voltage [V]', 'Current [A]', 'Power [W]'}
+#           NOTE: there must be always a 'Time' column
+#        - 'unit' specifies the unit of input and output data that will be
+#           transformed to the Digital Twin internal default units
 # --------------------------------------------------------------------
+ground_data:
+    file: 'ground_data.csv'
+    load: 'current'
+    vars:
+    - var: 'current'
+      label: 'Current [A]'
+      unit: 'A'
+    - var: 'voltage'
+      label: 'Voltage [V]'
+      unit: 'V'
+    - var: 'temperature'
+      label: 'Temperature [degC]'
+      unit: 'degC'
+    - var: 'power'
+      label: 'Power [W]'
+      unit: 'W'
+
 
 # Sign convention determines the direction of the current inside the circuit.
 # We can have two options:
@@ -44,21 +50,6 @@ ground:
 #               => i<0 during discharge
 sign_convention: 'passive'
 
-# Data options
-use_data_units: False
-
-# Time optionspower
-time:
-    duration:
-    sampling_time: 1
-
-# Battery options
-battery:
-    nominal_capacity: 20
-    v_max: 4.15
-    v_min: 3
-    temp_ambient: 20
-
 # Initial conditions
 initial_conditions:
     voltage: null
@@ -67,11 +58,30 @@ initial_conditions:
     soc: 1
     soh: 1
 
-# List of all the possible electrical that can be initialized for the simulation
+# Battery options
+battery:
+    nominal_capacity:
+        var: 'capacity'
+        value: 20
+        unit: 'F'
+    v_max:
+        var: 'voltage'
+        value: 4.15
+        unit: 'V'
+    v_min:
+        var: 'voltage'
+        value: 3
+        unit: 'V'
+    temp_ambient:
+        var: 'temperature'
+        value: 25
+        unit: 'degC'
+
+# List of all the possible models that can be initialized for the simulation
 # ---------------------------------------------------------------------------------------
 # How to use it?
-#   1. Here will be stored all the configured electrical (even useless ones)
-#   2. Change the yaml file name/path of electrical you want to use
+#   1. Here will be stored all the compatible models (even useless ones)
+#   2. Change the yaml file name/path of the model you want to import
 #       NOTE: files are stored in the same folder split in different folder by 'category'
 # ---------------------------------------------------------------------------------------
 models:
