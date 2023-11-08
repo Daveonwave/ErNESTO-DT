@@ -204,9 +204,9 @@ class TheveninModel(ElectricalModel):
         Returns a dictionary with all final results
         TODO: selection of results by label from config file?
         """
-        return {'Voltage [V]': self._v_load_series,
-                'Current [A]': self._i_load_series,
-                'Power [W]': self._power_series,
+        return {'voltage': self._v_load_series,
+                'current': self._i_load_series,
+                'power': self._power_series,
                 'Vocv': self.ocv_gen.get_v_series(),
                 'R0': self.r0.get_r0_series(),
                 'R1': self.rc.get_r1_series(),

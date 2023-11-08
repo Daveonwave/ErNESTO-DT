@@ -29,7 +29,7 @@ def load_data_from_csv(csv_file: Path, vars_to_retrieve: [dict], **kwargs):
     """
     Function to preprocess preprocessing that need to be read from a csv table.
 
-    Inputs:
+    Args:
     :param csv_file: file path of the csv which we want to retrieve preprocessing from
     :param vars_to_retrieve: variables to retrieve from csv file
     """
@@ -63,7 +63,7 @@ def _validate_data_unit(data_list, var_name, unit):
     """
     Function to validate and adapt preprocessing unit to internal simulator units.
 
-    Inputs:
+    Args:
     :param data_list: list with values of a preprocessing stream
     :param var_name: name of the variable
     :param unit: unit of the variable
@@ -88,7 +88,7 @@ def validate_parameters_unit(param_dict):
     """
     Function to validate and adapt units of provided parameters to internal simulator units.
 
-    Inputs:
+    Args:
     :param param_dict: dictionary of parameters (read by for example yaml config file)
     """
     transformed_dict = {}

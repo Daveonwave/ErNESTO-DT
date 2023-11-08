@@ -1,16 +1,34 @@
 import matplotlib.pyplot as plt
+from pathlib import Path
+
+import pandas as pd
+
+
 #import seaborn as sns
 
 
-def plot_compared_data(dfs, variables, labels, x_axes, title, colors=None):
+def plot_compared_data(dest: Path,
+                       dfs: list,
+                       variables: list,
+                       labels: list,
+                       x_axes: list,
+                       title: str,
+                       colors: list = None):
     """
 
+    Args:
+        dest (Path): destination folder (usually within output folder of current experiment)
+        dfs (list): simulated and ground data
+        variables (list):
+        labels (list):
+        x_axes (list):
+        title (str):
+        colors (list):
     """
-
     if not colors:
         colors = ['violet', 'cyan', 'purple', 'magenta']
 
-    plt.figure(figsize=(15,5))
+    plt.figure(figsize=(15, 5))
 
     # Command for the grid
     plt.grid(visible=True, which='major', color='gray', alpha=0.25, linestyle='dashdot', lw=1.5)
@@ -23,12 +41,26 @@ def plot_compared_data(dfs, variables, labels, x_axes, title, colors=None):
 
     plt.title(title)
     plt.legend()
-    plt.show()
+
+    file_path = dest / title
+    plt.savefig(file_path)
 
 
-def plot_separate_vars(df, variables, x_var, title, colors=None):
+def plot_separate_vars(dest: Path,
+                       df: pd.DataFrame,
+                       variables: list,
+                       x_ax: list,
+                       title: str,
+                       colors: list = None):
     """
 
+    Args:
+        dest (Path):
+        df (pd.DataFrame):
+        variables (list):
+        x_ax (list):
+        title (str):
+        colors (list):
     """
     if not colors:
         colors = ['cyan', 'violet', 'purple', 'magenta']
@@ -49,8 +81,9 @@ def plot_separate_vars(df, variables, x_var, title, colors=None):
         ax.minorticks_on()
         ax.grid(b=True, which='minor', color='beige', alpha=0.5, ls='-', lw=1)
 
-        ax.plot(df[x_var], df[var], label=var, color=colors[i])
+        ax.plot(df[x_ax], df[var], label=var, color=colors[i])
         ax.set_title(title + var)
         ax.legend()
 
-    plt.show()
+    file_path = dest / title
+    plt.savefig(file_path)

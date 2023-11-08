@@ -7,6 +7,7 @@ import pandas as pd
 from rich.pretty import pretty_repr
 
 from src.preprocessing.schema import read_yaml
+from src.visualization.plotter import plot_compared_data, plot_separate_vars
 
 logger = logging.getLogger('DT_logger')
 
@@ -39,7 +40,7 @@ class GeneralPurposeManager:
                  assets_file: str,
                  models: list,
                  save_results: bool,
-                 plot_results: bool,
+                 make_plots: bool,
                  ):
         """
         Args:
@@ -50,7 +51,7 @@ class GeneralPurposeManager:
             assets_file (str):
             models (list): models to instantiate for the current experiment, given in input by the user
             save_results (bool):
-            plot_results (bool):
+            make_plots (bool):
         """
         # Store paths for all different kind of preprocessing
         self._config_folder = Path(config_folder)
@@ -67,7 +68,10 @@ class GeneralPurposeManager:
 
         # Output results and visualization
         self._save_results = save_results
-        self._plot_results = plot_results
+        self._make_plots = make_plots
+
+        # List of dictionaries with plot information
+        self._plot_info = []
 
     def run(self):
         raise NotImplementedError
@@ -76,15 +80,37 @@ class GeneralPurposeManager:
         raise NotImplementedError
 
     def _save_plots(self):
-        pass
+        """
+        Save plots in png format inside the output folder in directory img.
+        Depending on the required plot, set in the configuration file, it calls the suitable plotter.
+
+        _plot_info structure:
+            - compared: {type, dfs, variables, x_axes, labels, title, colors=None}
+            - single: {type, df, variables, x_var, title, colors=None}
+        """
+        plot_folder = Path(self._output_folder / 'img')
+        try:
+            os.makedirs(plot_folder, exist_ok=True)
+        except NotADirectoryError as e:
+            logger.error("It's not possible to create directory {}: {}".format(self._output_folder, e.args))
+
+        for info in self._plot_info:
+            if info['type'] == "compared":
+                info.pop('type')
+                plot_compared_data(dest=plot_folder, **info)
+
+            elif info['type'] == "single":
+                info.pop('type')
+                plot_separate_vars(dest=plot_folder, **info)
+
+            else:
+                raise NotImplementedError("Plot type not implemented yet!")
 
     def _output_results(self, results: pd.DataFrame, summary: dict):
         """
 
-
         Args:
             summary ():
-
         """
         if self._save_results:
             try:

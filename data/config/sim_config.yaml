@@ -79,4 +79,16 @@ battery:
         soc: 1.
         soh: 1.
 
-
+# Plot options: how to use it?
+# --------------------------------------------------------------------------------
+#
+# Among 'vars' are enlisted the variables that the user desires to plot:
+#   - 'var' has to be a string among [current, voltage, power, temperature]
+# --------------------------------------------------------------------------------
+#plot_options:
+#    plots:
+#        - type: 'compared'
+#          vars:
+#            - 'voltage'
+#            - 'temperature'
+#            - 'power'

@@ -151,8 +151,8 @@ class ThermalModel(GenericModel):
         """
         Returns a dictionary with all final results
         """
-        return {'Temperature [degC]': self._temp_series,
-                'Dissipated Heat [W]': self._heat_series}
+        return {'temperature': self._temp_series,
+                'heat': self._heat_series}
 
     def get_temp_series(self, k=None):
         """
