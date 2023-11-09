@@ -3,4 +3,4 @@ python ernesto.py \
   --thermal_model rc_thermal \
   --aging_model bolun \
   --plot \
-  simulation
+  simulation --config fjskdgj
