@@ -39,7 +39,6 @@ def loss_function(x, u, dt, lookup, scale_factors):
     soc = np.concatenate((soc,lookup[:,1]))
     vocv = soctovocv(soc)
 
-    print("-")
     v_est = estimate_v( u[1:,1], vocv[1:], u[0,1], u[0,0], vocv[0], dt, x[0],
                         x[1], x[2], scale_factors[0], scale_factors[1], scale_factors[2])
 

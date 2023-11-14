@@ -61,6 +61,8 @@ lookup = np.zeros((len(i),2))
 lookup[:,0] = np.array(i)
 lookup[:,1] = np.array(v)
 
+soc_vdbse = np.zeros(len(i))
+
 for k in i:
 
     for err_i in range(2):
@@ -71,20 +73,17 @@ for k in i:
        soc_cc = cc_soc(i,0.55, dt , battery_capacity)
        #print(' & {:.4f}'.format(np.mean(np.abs(soc_cc[0:len(i)] - soc[0:len(i)]))))
 
+       #da togliere!!!!!
        experiment = SOCEstimator(i, v, lookup, battery_capacity, [1e-3,1e-3,1e3], 'VDBSE',dt, 0.4
                                  , 1, 0.2, 1)
-       print("len of i and len of v", len(i), len(v))
        soc_vdbse = experiment.compute_soc()
-       """
-       The following piece of code must be fixed, since it is incomplete: SEE AGAIN THE MATLAB COUNTERPART
-       """
 
-       time = len(i)
-       err_soc_vdbse = abs(soc_vdbse[-100:] - soc[0:100])
-       err_soc_cc = abs(soc_cc[-100:] - soc[0:100])
+time = len(i)
+err_soc_vdbse = abs(soc_vdbse[-100:] - soc[0:100])
+err_soc_cc = abs(soc_cc[-100:] - soc[0:100])
 
-       print("the err_soc_vdbse: ", err_soc_vdbse)
-       print("the err_soc_cc: ", err_soc_cc)
+print("the err_soc_vdbse: ", err_soc_vdbse)
+print("the err_soc_cc: ", err_soc_cc)
 
 
 

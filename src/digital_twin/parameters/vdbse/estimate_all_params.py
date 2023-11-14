@@ -71,7 +71,7 @@ def estimate_all_params(i_batch, v_batch, dt, algorithm, number_restarts, lookup
         #   continue
 
     x = results.x
-    print("this is the theta: ", x)
+    #print("this is the theta: ", x)
     # Select the best estimation among the restarts
     #best_result = min(results, key=lambda result: result.fun)
     #best_x = best_result.x

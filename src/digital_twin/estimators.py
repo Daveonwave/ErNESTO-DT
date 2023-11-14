@@ -24,10 +24,11 @@ class SOCEstimator:
         self._lookup = lookup
         self._scale_factors = scale_factor
 
+        #self.vdbse = VDBSE(kwargs)
 
 
 
-    def compute_soc(self):
+    def compute_soc(self, **kwargs):
         """
         CC = Coulomb Counting
         """
@@ -42,7 +43,7 @@ class SOCEstimator:
             if self._estimation_mode == "VDBSE":
                self._soc = estimate_soc_vdbse(self._i, self._v, self._q_n, self._dt,
                                               self._soctimewindow, self._moving_step, self._restarts , self._lookup, self._scale_factors , self._verbose)
-
+            print("vdbse estimstor: ", self._soc)
             return self._soc
              #raise Exception("Required mode for SoC estimation not existing or not implemented yet.")
 
