@@ -110,7 +110,7 @@ class GeneralPurposeManager:
         """
 
         Args:
-            summary ():
+            summary (dict):
         """
         if self._save_results:
             try:

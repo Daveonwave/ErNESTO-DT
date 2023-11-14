@@ -67,10 +67,10 @@ class BolunModel(AgingModel):
 
     def init_model(self, **kwargs):
         pass
-    
+
     def load_battery_state(self, **kwargs):
-        pass    
-    
+        pass
+
     def get_final_results(self, **kwargs):
         return {}
 
@@ -184,6 +184,13 @@ class BolunModel(AgingModel):
     def _aging_period(self, soc_history, temp_history, elapsed_time):
         """
         Compute the battery aging due a longer usage period with Rainflow algorithm.
+
+        Args:
+            soc_history (list):
+            temp_history (list):
+            elapsed_time ():
+
+        Returns: the sum of both cyclic and calendar aging  for the given period
         """
         # Compute the calendar aging
         f_cal = self._compute_calendar_aging(curr_time=elapsed_time,

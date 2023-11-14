@@ -16,7 +16,12 @@ logger = logging.getLogger('DT_logger')
 
 class WhatIfManager(GeneralPurposeManager):
     """
+    Handler of the What-if experiment.
+    -----------------------------------------
+    The simulator is conceived to be the orchestrator and the brain of the specified experiment.
 
+    From here, all the kinds of data (input, output, config) are delivered to their consumer hubs, the
+    environment is instantiated and the instructions related to the simulation mode chosen by the user are provided.
     """
     def __init__(self,
                  models,
@@ -25,6 +30,14 @@ class WhatIfManager(GeneralPurposeManager):
                  make_plots=False,
                  **data_folders
                  ):
+        """
+        Args:
+            models ():
+            experiment_config ():
+            save_results ():
+            make_plots ():
+            **data_folders ():
+        """
         super().__init__(experiment_config, save_results, make_plots, **data_folders)
 
         self._mode = "whatif"
