@@ -1,4 +1,4 @@
-from src.digital_twin.parameters.vdbse.estimate_soc_vdbse import estimate_soc_vdbse
+from src.digital_twin.battery_models.vdbse.estimate_soc_vdbse import estimate_soc_vdbse
 import numpy as np
 
 

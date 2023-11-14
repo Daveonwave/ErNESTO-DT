@@ -1,5 +1,5 @@
 import numpy as np
-from src.digital_twin.parameters.vdbse.loss_function import loss_function
+from src.digital_twin.battery_models.vdbse.loss_function import loss_function
 from scipy.optimize import minimize
 
 
@@ -25,7 +25,7 @@ def estimate_all_params(i_batch, v_batch, dt, algorithm, number_restarts, lookup
 
     time = np.size(i_batch)
     init_time = 0
-    input = np.zeros((np.size(i_batch),3))
+    input = np.zeros((np.size(i_batch), 3))
     input[:,0] = v_batch
     input[:,1] = i_batch
     input[:,2] = -np.cumsum(i_batch)

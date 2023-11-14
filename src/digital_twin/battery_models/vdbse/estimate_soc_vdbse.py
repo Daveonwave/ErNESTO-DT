@@ -1,7 +1,7 @@
 import numpy
 import numpy as np
-from src.digital_twin.parameters.vdbse.estimate_all_params import estimate_all_params
-from src.digital_twin.parameters.vdbse.estimate_vocv import estimate_vocv
+from src.digital_twin.battery_models.vdbse.estimate_all_params import estimate_all_params
+from src.digital_twin.battery_models.vdbse.estimate_vocv import estimate_vocv
 
 def get_vocv(soc, lookup_table):
     """
@@ -60,7 +60,7 @@ def estimate_soc_vdbse(i, v, battery_capacity, dt, soctimewindow, moving_step, r
     vocv_est = numpy.zeros(len(i))
 
     # First estimation phase
-    theta = estimate_all_params( i[iter_init:iter_end+1], v[iter_init:iter_end+1], dt, 'interior point',
+    theta = estimate_all_params(i[iter_init:iter_end+1], v[iter_init:iter_end+1], dt, 'interior point',
                                  restarts, lookup, scale_factors, verbose )
 
 

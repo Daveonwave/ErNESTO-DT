@@ -1,5 +1,5 @@
 import numpy as np
-from src.digital_twin.parameters.vdbse.estimate_v import estimate_v
+from src.digital_twin.battery_models.vdbse.estimate_v import estimate_v
 
 """
 module to define the loss_function
