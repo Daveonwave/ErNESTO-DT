@@ -74,8 +74,7 @@ for k in i:
        #print(' & {:.4f}'.format(np.mean(np.abs(soc_cc[0:len(i)] - soc[0:len(i)]))))
 
        #da togliere!!!!!
-       experiment = SOCEstimator(i, v, lookup, battery_capacity, [1e-3,1e-3,1e3], 'VDBSE',dt, 0.4
-                                 , 1, 0.2, 1)
+       experiment = SOCEstimator()
        soc_vdbse = experiment.compute_soc()
 
 time = len(i)

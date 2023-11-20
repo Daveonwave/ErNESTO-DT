@@ -1,8 +1,8 @@
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from src.digital_twin.estimators import SOCEstimator
+from src.digital_twin.battery_models.vdbse.vdbse import *
 
+"""
 def cc_soc(i_batch,init_soc,dt,q):
     soc_array = np.zeros(len(i_batch))
     t = init_soc
@@ -10,6 +10,7 @@ def cc_soc(i_batch,init_soc,dt,q):
         t = t - (1 / q) * i_batch[ii] * dt
         soc_array[ii] = t
     return soc_array
+"""
 
 lookup_data = pd.read_csv('../vdbseTest/lookup_fieldexperiments.csv')
 data = pd.read_csv('../vdbseTest/data_fieldexperiments.csv')
@@ -17,14 +18,37 @@ data = pd.read_csv('../vdbseTest/data_fieldexperiments.csv')
 lookup = lookup_data.to_numpy()
 
 dt = 1
-#time = 9599
-timewindow = 0.4
-moving_step = 0.2
+time = 9599
+timewindow = 0.50
+moving_step = 0.35 #0.2
 number_restart = 1 #10
 battery_capacity = 53.4 * 3600  # Convert to Coulombs
 # battery_capacity = 50 * 3600
-scale_factors = [0.1, 0.1, 10]
+scale_factors =  {'r0':0.10, 'r1': 0.10, 'c1':10}
+i = list(-data['I'])
+v = list(data['V'])
 
+
+# TODO: Estimate soc with vdbse
+
+vdbse = VDBSE(battery_capacity, timewindow, moving_step, number_restart, lookup, scale_factors)
+soc_vdbse = []
+
+#print("in order to do computation by hand:")
+#print("v[0]:", v[0])
+#print("i[0]:", i[0])
+for j in range(2000):
+    soc_vdbse.append(vdbse.estimate_soc(i[j],v[j], dt))
+    print("______________________________________________________________________________________________this is the iteration number:", j)
+
+print("soc_vdbse: ",soc_vdbse)
+
+# TODO: Estimate soc with CC
+
+
+# TODO: Compare the two estimation and the plot the figures
+
+"""
 I = -data['I'].to_numpy()  # Assuming 'I' is a column in the CSV file
 V = data['V'].to_numpy()
 SoC = data['SoC'].to_numpy()
@@ -71,3 +95,4 @@ ax_err.legend(['Error'])
 #print(err)
 
 plt.show()
+"""
