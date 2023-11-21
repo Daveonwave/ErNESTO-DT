@@ -35,12 +35,12 @@ class GeneralPurposeManager:
     def __init__(self,
                  config_folder: str,
                  output_folder: str,
-                 ground_folder: str,
                  exp_id_folder: str,
                  assets_file: str,
                  models: list,
-                 save_results: bool,
-                 make_plots: bool,
+                 ground_folder: str = None,
+                 save_results: bool = None,
+                 make_plots: bool = None,
                  ):
         """
         Args:

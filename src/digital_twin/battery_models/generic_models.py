@@ -56,7 +56,7 @@ class ElectricalModel(GenericModel):
     def init_model(self, **kwargs):
         pass
 
-    def load_battery_state(self, temp:float, soc:float, soh:float):
+    def load_battery_state(self, temp: float, soc: float, soh: float):
         pass
 
     def build_components(self, components:dict):
@@ -224,5 +224,8 @@ class AgingModel(GenericModel):
             else:
                 raise IndexError("Degradation of aging model at step K not computed yet")
         return self._deg_series
+
+    def update_deg(self, value: float):
+        self._deg_series.append(value)
 
 

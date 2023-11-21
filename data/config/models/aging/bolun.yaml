@@ -36,7 +36,7 @@ components:
             #- dod_exponential
 
     # Choose between rainflow, streamflow or fastflow
-    cycle_counting_mode: rainflow
+    cycle_counting_mode: streamflow
 
 stress_models:
     time:

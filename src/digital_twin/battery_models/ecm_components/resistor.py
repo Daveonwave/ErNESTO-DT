@@ -63,6 +63,7 @@ class Resistor(ECMComponent):
         """
         super().init_component()
         self._update_r0_series(r0)
+
     def get_r0_series(self, k=None):
         """
         Getter of the specific value at step K, if specified, otherwise of the entire collection
