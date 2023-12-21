@@ -22,6 +22,8 @@ def get_args():
         """
         Parser of arguments for WHAT-IF mode
         """
+        whatif_parser.add_argument("--config", action="store", default="./data/config/whatif_config.yaml",
+                                   type=str, help="Specifies the file containing parameters for what-if mode.")
         whatif_parser.add_argument("--iterations", default=500, type=int,
                                    help="Specifies the number of iterations of the entire experiment.")
         whatif_parser.add_argument("--timestep", default=1., type=float,

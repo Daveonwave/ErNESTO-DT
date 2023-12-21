@@ -77,6 +77,7 @@ def _validate_data_unit(data_list, var_name, unit):
         transformed_data = tmp_data.to(internal_units[var_name][2])
         logger.info("Ground variable '{}' has been converted from [{}] to [{}]"
                     .format(var_name, unit, internal_units[var_name][1]))
+
     except pint.PintError as e:
         logger.error("UnitError on '{}': ".format(var_name), e)
         exit(1)
@@ -103,11 +104,14 @@ def validate_parameters_unit(param_dict):
                 try:
                     tmp_param = param['value'] * ureg.parse_units(param['unit'])
                     transformed_dict[key] = tmp_param.to(internal_units[param['var']][2]).magnitude
+
                 except pint.PintError as e:
                     logger.error("UnitError on '{}': ".format(param['var']), e)
                     exit(1)
+
             else:
                 transformed_dict[key] = param['value']
+
         else:
             transformed_dict[key] = param_dict[key]
 

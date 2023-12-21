@@ -43,11 +43,11 @@ class RCThermal(ThermalModel):
         self._temp_series = []
 
     def init_model(self, **kwargs):
-        # """
-        # Initialize the model at timestep t=0 with an initial temperature equal to 25°C (ambient temperature)
-        # """
+        """
+        Initialize the model at timestep t=0 with an initial temperature equal to 2 degC (ambient temperature)
+        """
         temp = kwargs['temperature'] if kwargs['temperature'] else 25
-        heat = 0 # kwargs['dissipated_heat'] if kwargs['dissipated_heat'] else 0
+        heat = 0  # kwargs['dissipated_heat'] if kwargs['dissipated_heat'] else 0
 
         self.update_temp(temp)
         self.update_heat(heat)
@@ -79,19 +79,24 @@ class R2CThermal(ThermalModel):
                  ):
         super().__init__()
 
-        self._lambda = 0
-        self._length = 0
-        self._int_area = 0
-        self._surf_area = 0
-        self._h = 0
-        self._mass = 0
-        self._cp = 0
+        self._lambda, self._l, self._a_int, self._a_surf, self._h, self._m, self._cp = (
+            instantiate_variables(components_settings))
+
+        self._r_cond = self.l / (self._lambda * self._a_int)
+        self._r_conv = 1 / (self._a_int * self._h)
 
     def reset_model(self):
-        pass
+        self._temp_series = []
 
     def init_model(self, **kwargs):
-        pass
+        """
+        Initialize the model at timestep t=0 with an initial temperature equal to 25 degC (ambient temperature)
+        """
+        temp = kwargs['temperature'] if kwargs['temperature'] else 25
+        heat = 0  # kwargs['dissipated_heat'] if kwargs['dissipated_heat'] else 0
+
+        self.update_temp(temp)
+        self.update_heat(heat)
 
     def compute_temp(self, q, env_temp, dt, k=-1):
         pass

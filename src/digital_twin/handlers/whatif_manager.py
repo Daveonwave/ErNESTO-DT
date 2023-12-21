@@ -1,3 +1,4 @@
+import operator
 import os
 import pandas as pd
 import logging
@@ -11,6 +12,7 @@ from src.digital_twin.bess import BatteryEnergyStorageSystem
 from src.visualization.plotter import plot_compared_data
 from src.preprocessing.data_preparation import load_data_from_csv, validate_parameters_unit
 from src.preprocessing.schema import read_yaml
+from src.preprocessing.schedule.schedule import Schedule
 
 logger = logging.getLogger('DT_logger')
 
@@ -39,12 +41,9 @@ class WhatIfManager(GeneralPurposeManager):
                          make_plots=kwargs['plot'],
                          )
 
-        # Prepare ground preprocessing for input and validation
-        self._input_var = None
-
-
-
-        self._schedule = self._parse_schedule()
+        self._events = []
+        self._timestep = 1
+        self._elapsed_time = 0
 
         # TODO: understand if DONE mi serve
         self.done = False
@@ -56,16 +55,127 @@ class WhatIfManager(GeneralPurposeManager):
         self._battery = BatteryEnergyStorageSystem(
             models_config_files=self._models_configs,
             battery_options=self._settings['battery'],
-            input_var=self._input_var
+            input_var='current'
         )
 
-    def _parse_schedule(self):
-        pass
+        self._schedule = Schedule(instructions=self._settings['schedule'],
+                                  c_value=self._settings['battery']['params']['nominal_capacity'])
 
     def run(self):
         """
+
+        """
+        logger.info("'What-If Simulation' started...")
+        self._battery.reset_data()
+        self._battery.simulation_init()
+
+        pbar = tqdm(total=len(self._settings['schedule']), position=0, leave=True)
+        while not self._schedule.is_empty():
+            cmd = self._schedule.get_cmd()
+            event_start = self._elapsed_time
+            logger.info("Starting command: " + cmd['sentence'])
+
+            if 'duration' in cmd and 'until_cond' not in cmd:
+                self._run_for_time(load=list(cmd['load'].keys())[0],
+                                   value=list(cmd['load'].values())[0],
+                                   time=cmd['duration']
+                                   )
+
+            elif 'until_cond' in cmd and 'duration' not in cmd:
+                self._run_until_cond(load=list(cmd['load'].keys())[0],
+                                     value=list(cmd['load'].values())[0],
+                                     cond_var=list(cmd['until_cond'].keys())[0],
+                                     cond_value=list(cmd['until_cond'].values())[0],
+                                     action=cmd['action']
+                                     )
+
+            elif 'until_cond' in cmd and 'duration' in cmd:
+                self._run_for_time_or_cond(load=list(cmd['load'].keys())[0],
+                                           value=list(cmd['load'].values())[0],
+                                           cond_var=list(cmd['until_cond'].keys())[0],
+                                           cond_value=list(cmd['until_cond'].values())[0],
+                                           time=cmd['duration'],
+                                           action=cmd['action']
+                                           )
+
+            else:
+                logging.error("The experiment configuration is not feasible or not implemented yet")
+                exit(1)
+
+            pbar.update(1)
+            logger.info("Command executed!")
+            self._schedule.next_cmd()
+            self._events.append([event_start, self._elapsed_time])
+
+        logger.info("'What-If Simulation' ended without errors!")
+        pbar.close()
+
+        self.done = True
+        self._output_results(results=self._battery.build_results_table(), summary=self._get_summary())
+        if self._make_plots:
+            self._prepare_plots()
+
+    def _run_for_time(self, load: str, value: float, time: float):
         """
 
+        Args:
+            load ():
+            value ():
+            time ():
+        """
+        duration = self._elapsed_time + time
+        self._battery.load_var = load
+        k = len(self._battery.t_series)
+
+        while self._elapsed_time < duration:
+            self._battery.simulation_step(load=value, dt=self._timestep, k=k)
+            self._elapsed_time += self._timestep
+            self._battery.t_series.append(self._elapsed_time)
+            k += 1
+
+    def _run_until_cond(self, load: str, value: float, cond_var: str, cond_value: float, action: str):
+        """
+
+        Args:
+            load ():
+            value ():
+            cond_var ():
+            cond_value ():
+        """
+        self._battery.load_var = load
+        k = len(self._battery.t_series)
+
+        curr_value = self._battery.get_i if cond_var == 'current' else self._battery.get_v
+        op = operator.lt if action == 'charge' else operator.gt
+
+        while op(curr_value(), cond_value):
+            self._battery.simulation_step(load=value, dt=self._timestep, k=k)
+            self._elapsed_time += self._timestep
+            self._battery.t_series.append(self._elapsed_time)
+            k += 1
+
+    def _run_for_time_or_cond(self, load: str, value: float, cond_var: str, cond_value: float, time: float, action: str):
+        """
+
+        Args:
+            load ():
+            value ():
+            cond_var ():
+            cond_value ():
+            time ():
+        """
+        duration = self._elapsed_time + time
+        self._battery.load_var = load
+        k = len(self._battery.t_series)
+
+        curr_value = self._battery.get_i if cond_var == 'current' else self._battery.get_v
+        op = operator.lt if action == 'charge' else operator.gt
+
+        while op(curr_value(), cond_value) and self._elapsed_time < duration:
+            self._battery.simulation_step(load=value, dt=self._timestep, k=k)
+            self._elapsed_time += self._timestep
+            self._battery.t_series.append(self._elapsed_time)
+            k += 1
 
     def _get_summary(self):
         """
@@ -75,7 +185,6 @@ class WhatIfManager(GeneralPurposeManager):
         return {'experiment': self._settings['experiment_name'],
                 'description': self._settings['description'],
                 'goal': self._settings['goal'],
-                'load': self._settings['ground_data']['load'],
                 'time': self._elapsed_time,
                 'battery': self._settings['battery']['params'],
                 'initial_conditions': self._settings['battery']['init'],
@@ -83,4 +192,22 @@ class WhatIfManager(GeneralPurposeManager):
                 }
 
     def _prepare_plots(self):
-        pass
+        """
+
+        """
+        var_to_plot = ['voltage', 'temperature', 'power', 'current']
+
+        df = self._battery.build_results_table()
+
+        # Save information for each different kind of plot
+        plot_dict = {
+            'type': "single",
+            'df': df.iloc[1:],
+            'variables': var_to_plot,
+            'x_ax': 'Time',
+            'title': "What-If",
+            'events': self._events
+        }
+        self._plot_info.append(plot_dict)
+        self._save_plots()
+

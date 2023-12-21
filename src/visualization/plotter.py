@@ -4,9 +4,6 @@ from pathlib import Path
 import pandas as pd
 
 
-#import seaborn as sns
-
-
 def plot_compared_data(dest: Path,
                        dfs: list,
                        variables: list,
@@ -51,7 +48,9 @@ def plot_separate_vars(dest: Path,
                        variables: list,
                        x_ax: list,
                        title: str,
-                       colors: list = None):
+                       colors: list = None,
+                       events: list = None
+                       ):
     """
 
     Args:
@@ -61,6 +60,7 @@ def plot_separate_vars(dest: Path,
         x_ax (list):
         title (str):
         colors (list):
+        events (list)
     """
     if not colors:
         colors = ['cyan', 'violet', 'purple', 'magenta']
@@ -71,19 +71,23 @@ def plot_separate_vars(dest: Path,
     for i, var in enumerate(variables):
 
         # We need this assignement in the case of a single variable
-        if len(variables) == 1:
-            ax = axes
-        else:
-            ax = axes[i]
+        ax = axes if len(variables) == 1 else axes[i]
 
         # Command for the grid
-        ax.grid(b=True, which='major', color='gray', alpha=0.25, linestyle='dashdot', lw=1.5)
+        ax.grid(visible=True, which='major', color='gray', alpha=0.25, linestyle='dashdot', lw=1.5)
         ax.minorticks_on()
-        ax.grid(b=True, which='minor', color='beige', alpha=0.5, ls='-', lw=1)
+        ax.grid(visible=True, which='minor', color='beige', alpha=0.5, ls='-', lw=1)
 
         ax.plot(df[x_ax], df[var], label=var, color=colors[i])
-        ax.set_title(title + var)
+        ax.set_title(title + ': ' + var)
         ax.legend()
 
+        if events:
+            for j, event in enumerate(events):
+                facecolor = 'lightgray' if j % 2 == 0 else 'gray'
+                ax.axvspan(event[0], event[1], facecolor=facecolor, alpha=0.3)
+                ax.axvline(x=event[1], color='black', alpha=0.2)
+
     file_path = dest / title
-    plt.savefig(file_path)
+    fig.savefig(file_path)
+

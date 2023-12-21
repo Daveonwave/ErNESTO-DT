@@ -77,13 +77,19 @@ class BolunModel(AgingModel):
         self._f_cyc_series.append(value)
 
     def init_model(self, **kwargs):
-        pass
-
-    def load_battery_state(self, **kwargs):
-        pass
+        self.update_deg(0)
+        self._update_f_cyc_series(0)
+        self._update_f_cal_series(0)
 
     def get_final_results(self, **kwargs):
-        return {}
+        """
+        Returns a dictionary with all final results
+        TODO: selection of results by label from config file?
+        """
+        return {'cyclicAging': self._f_cyc_series,
+                'calendarAging': self._f_cal_series,
+                'degradation': self.get_deg_series()
+                }
 
     def compute_degradation(self, soc_history, temp_history, elapsed_time):
         """

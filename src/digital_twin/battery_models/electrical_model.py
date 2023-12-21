@@ -1,3 +1,5 @@
+import logging
+
 from src.digital_twin.battery_models import ElectricalModel
 from src.digital_twin.parameters.data_checker import craft_data_unit
 from src.digital_twin.parameters.units import Unit
@@ -26,6 +28,7 @@ class TheveninModel(ElectricalModel):
         super().__init__()
         self.sign_convention = sign_convention
 
+        # TODO: to approximate multiple RC modules in series
         self.ns_cells_module = 0
         self.np_cells_module = 0
         self.ns_modules = 0
@@ -89,10 +92,10 @@ class TheveninModel(ElectricalModel):
 
         eq_factor = (dt * c * r1) / (r0 * c * r1 + dt * (r1 + r0))
         term_1 = - (1/dt + 1/(c * r1)) * v_load
-        term_2 = 1/dt * self.get_v_load_series(k=-1)
+        term_2 = 1/dt * self.get_v_series(k=-1)
         term_3 = (1/dt + 1/(c * r1)) * v_ocv
         term_4 = - 1/dt * v_ocv_
-        term_5 = r0 / dt * self.get_i_load_series(k=-1)
+        term_5 = r0 / dt * self.get_i_series(k=-1)
         i = eq_factor * (term_1 + term_2 + term_3 + term_4 + term_5)
 
         # Compute V_r0
@@ -106,9 +109,10 @@ class TheveninModel(ElectricalModel):
         i_c = self.rc.compute_i_c(i=i, i_r1=i_r1)
 
         # Compute power
-        power = v_load * i
         if self.sign_convention == 'passive':
-            power = -power
+            i *= -1
+
+        power = v_load * i
 
         # Update the collections of variables of ECM components
         self.r0.update_step_variables(r0=r0, v_r0=v_r0, dt=dt, k=k)
@@ -153,11 +157,11 @@ class TheveninModel(ElectricalModel):
 
         """
         eq_factor = dt * c * r1 / (dt + c * r1)
-        term_1 = 1/dt * self.get_v_load_series(k=-1)
+        term_1 = 1/dt * self.get_v_series(k=-1)
         term_2 = (1/dt + 1/(c * r1)) * v_ocv
         term_3 = -1/dt * v_ocv_
         term_4 = - (r0 / (c * r1) + r0 / dt + 1 / c) * i_load
-        term_5 = r0 / dt * self.get_i_load_series(k=-1)
+        term_5 = r0 / dt * self.get_i_series(k=-1)
         v = eq_factor * (term_1 + term_2 + term_3 + term_4 + term_5)
 
         # Compute V_rc
@@ -185,7 +189,7 @@ class TheveninModel(ElectricalModel):
         """
 
         """
-        raise NotImplementedError()
+        logging.error("Power load execution not implemented yet!")
 
     def compute_generated_heat(self, k=-1):
         """
@@ -197,7 +201,7 @@ class TheveninModel(ElectricalModel):
         """
         # return self.r0.get_r0_series(k=k) * self.get_i_load_series(k=k)**2 + \
         #           self.rc.get_r1_series(k=k) * self.rc.get_i_r1_series(k=k)**2
-        return self.r0.get_r0_series(k=k) * self.get_i_load_series(k=k) ** 2
+        return self.r0.get_r0_series(k=k) * self.get_i_series(k=k) ** 2
 
     def get_final_results(self, **kwargs):
         """
@@ -205,7 +209,8 @@ class TheveninModel(ElectricalModel):
         TODO: selection of results by label from config file?
         """
         return {'voltage': self._v_load_series,
-                'current': self._i_load_series,
+                'current': self._i_load_series if self.sign_convention == 'active' else
+                [elem * -1 for elem in self._i_load_series],
                 'power': self._power_series,
                 'Vocv': self.ocv_gen.get_v_series(),
                 'R0': self.r0.get_r0_series(),

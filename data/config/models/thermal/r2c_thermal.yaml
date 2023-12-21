@@ -18,43 +18,31 @@ class_name: R2CThermal
 #              interpolation between the table variables
 # ----------------------------------------------------------------------------
 components:
-    # Thermal conductivity coefficient [W/m * K]
-    lambda:
+
+    lambda: # thermal conductivity coefficient [W/m * K]
         type: scalar
         scalar: 0.37
-#        function:
-#            coefficients:
-#                - 1
-#                - 2
-#                - 3
-#            inputs:
-#                - temp
-#                - soc
-#                - soh
-#        lookup:
-#            inputs:
-#                soc:
-#            output:
-    length:
+
+    l: # distance center-surface [m]
         type: scalar
         scalar: 1700
 
-    area_int:
+    a_int: # transverse section [m^2]
         type: scalar
         scalar: 170
 
-    area_surf:
+    a_surf: # external surface [m^2]
         type: scalar
         scalar: 1700
 
-    h:
+    h: # coefficient of convective exchange [W/m^2 * K]
         type: scalar
         scalar: 170
 
-    mass:
+    m: # mass [kg]
         type: scalar
         scalar: 170
 
-    cp:
+    cp: # specific heat [J/kg * K]
         type: scalar
-        scalar: 1700
+        scalar: 1000

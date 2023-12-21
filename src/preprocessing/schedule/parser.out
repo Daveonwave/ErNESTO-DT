@@ -1,0 +1,392 @@
+Created by PLY version 3.11 (http://www.dabeaz.com/ply)
+
+Grammar
+
+Rule 0     S' -> command
+Rule 1     command -> DISCHARGE what
+Rule 2     command -> CHARGE what
+Rule 3     command -> REST time
+Rule 4     command -> HOLD what
+Rule 5     what -> AT rate time
+Rule 6     rate -> CRATE RATIO NUMBER
+Rule 7     rate -> NUMBER CRATE
+Rule 8     rate -> NUMBER UNIT
+Rule 9     until_rate -> UNTIL CRATE RATIO NUMBER
+Rule 10    until_rate -> UNTIL NUMBER CRATE
+Rule 11    until_rate -> UNTIL NUMBER UNIT
+Rule 12    time -> duration
+Rule 13    time -> until_rate
+Rule 14    time -> duration OR until_rate
+Rule 15    time -> until_rate OR duration
+Rule 16    duration -> FOR NUMBER HOURS
+Rule 17    duration -> FOR NUMBER MINUTES
+Rule 18    duration -> FOR NUMBER SECONDS
+
+Terminals, with rules where they appear
+
+AT                   : 5
+CHARGE               : 2
+CRATE                : 6 7 9 10
+DISCHARGE            : 1
+FOR                  : 16 17 18
+HOLD                 : 4
+HOURS                : 16
+MINUTES              : 17
+NUMBER               : 6 7 8 9 10 11 16 17 18
+OR                   : 14 15
+RATIO                : 6 9
+REST                 : 3
+SECONDS              : 18
+UNIT                 : 8 11
+UNTIL                : 9 10 11
+error                : 
+
+Nonterminals, with rules where they appear
+
+command              : 0
+duration             : 12 14 15
+rate                 : 5
+time                 : 3 5
+until_rate           : 13 14 15
+what                 : 1 2 4
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . command
+    (1) command -> . DISCHARGE what
+    (2) command -> . CHARGE what
+    (3) command -> . REST time
+    (4) command -> . HOLD what
+
+    DISCHARGE       shift and go to state 2
+    CHARGE          shift and go to state 3
+    REST            shift and go to state 4
+    HOLD            shift and go to state 5
+
+    command                        shift and go to state 1
+
+state 1
+
+    (0) S' -> command .
+
+
+
+state 2
+
+    (1) command -> DISCHARGE . what
+    (5) what -> . AT rate time
+
+    AT              shift and go to state 7
+
+    what                           shift and go to state 6
+
+state 3
+
+    (2) command -> CHARGE . what
+    (5) what -> . AT rate time
+
+    AT              shift and go to state 7
+
+    what                           shift and go to state 8
+
+state 4
+
+    (3) command -> REST . time
+    (12) time -> . duration
+    (13) time -> . until_rate
+    (14) time -> . duration OR until_rate
+    (15) time -> . until_rate OR duration
+    (16) duration -> . FOR NUMBER HOURS
+    (17) duration -> . FOR NUMBER MINUTES
+    (18) duration -> . FOR NUMBER SECONDS
+    (9) until_rate -> . UNTIL CRATE RATIO NUMBER
+    (10) until_rate -> . UNTIL NUMBER CRATE
+    (11) until_rate -> . UNTIL NUMBER UNIT
+
+    FOR             shift and go to state 12
+    UNTIL           shift and go to state 13
+
+    time                           shift and go to state 9
+    duration                       shift and go to state 10
+    until_rate                     shift and go to state 11
+
+state 5
+
+    (4) command -> HOLD . what
+    (5) what -> . AT rate time
+
+    AT              shift and go to state 7
+
+    what                           shift and go to state 14
+
+state 6
+
+    (1) command -> DISCHARGE what .
+
+    $end            reduce using rule 1 (command -> DISCHARGE what .)
+
+
+state 7
+
+    (5) what -> AT . rate time
+    (6) rate -> . CRATE RATIO NUMBER
+    (7) rate -> . NUMBER CRATE
+    (8) rate -> . NUMBER UNIT
+
+    CRATE           shift and go to state 16
+    NUMBER          shift and go to state 17
+
+    rate                           shift and go to state 15
+
+state 8
+
+    (2) command -> CHARGE what .
+
+    $end            reduce using rule 2 (command -> CHARGE what .)
+
+
+state 9
+
+    (3) command -> REST time .
+
+    $end            reduce using rule 3 (command -> REST time .)
+
+
+state 10
+
+    (12) time -> duration .
+    (14) time -> duration . OR until_rate
+
+    $end            reduce using rule 12 (time -> duration .)
+    OR              shift and go to state 18
+
+
+state 11
+
+    (13) time -> until_rate .
+    (15) time -> until_rate . OR duration
+
+    $end            reduce using rule 13 (time -> until_rate .)
+    OR              shift and go to state 19
+
+
+state 12
+
+    (16) duration -> FOR . NUMBER HOURS
+    (17) duration -> FOR . NUMBER MINUTES
+    (18) duration -> FOR . NUMBER SECONDS
+
+    NUMBER          shift and go to state 20
+
+
+state 13
+
+    (9) until_rate -> UNTIL . CRATE RATIO NUMBER
+    (10) until_rate -> UNTIL . NUMBER CRATE
+    (11) until_rate -> UNTIL . NUMBER UNIT
+
+    CRATE           shift and go to state 21
+    NUMBER          shift and go to state 22
+
+
+state 14
+
+    (4) command -> HOLD what .
+
+    $end            reduce using rule 4 (command -> HOLD what .)
+
+
+state 15
+
+    (5) what -> AT rate . time
+    (12) time -> . duration
+    (13) time -> . until_rate
+    (14) time -> . duration OR until_rate
+    (15) time -> . until_rate OR duration
+    (16) duration -> . FOR NUMBER HOURS
+    (17) duration -> . FOR NUMBER MINUTES
+    (18) duration -> . FOR NUMBER SECONDS
+    (9) until_rate -> . UNTIL CRATE RATIO NUMBER
+    (10) until_rate -> . UNTIL NUMBER CRATE
+    (11) until_rate -> . UNTIL NUMBER UNIT
+
+    FOR             shift and go to state 12
+    UNTIL           shift and go to state 13
+
+    time                           shift and go to state 23
+    duration                       shift and go to state 10
+    until_rate                     shift and go to state 11
+
+state 16
+
+    (6) rate -> CRATE . RATIO NUMBER
+
+    RATIO           shift and go to state 24
+
+
+state 17
+
+    (7) rate -> NUMBER . CRATE
+    (8) rate -> NUMBER . UNIT
+
+    CRATE           shift and go to state 25
+    UNIT            shift and go to state 26
+
+
+state 18
+
+    (14) time -> duration OR . until_rate
+    (9) until_rate -> . UNTIL CRATE RATIO NUMBER
+    (10) until_rate -> . UNTIL NUMBER CRATE
+    (11) until_rate -> . UNTIL NUMBER UNIT
+
+    UNTIL           shift and go to state 13
+
+    until_rate                     shift and go to state 27
+
+state 19
+
+    (15) time -> until_rate OR . duration
+    (16) duration -> . FOR NUMBER HOURS
+    (17) duration -> . FOR NUMBER MINUTES
+    (18) duration -> . FOR NUMBER SECONDS
+
+    FOR             shift and go to state 12
+
+    duration                       shift and go to state 28
+
+state 20
+
+    (16) duration -> FOR NUMBER . HOURS
+    (17) duration -> FOR NUMBER . MINUTES
+    (18) duration -> FOR NUMBER . SECONDS
+
+    HOURS           shift and go to state 29
+    MINUTES         shift and go to state 30
+    SECONDS         shift and go to state 31
+
+
+state 21
+
+    (9) until_rate -> UNTIL CRATE . RATIO NUMBER
+
+    RATIO           shift and go to state 32
+
+
+state 22
+
+    (10) until_rate -> UNTIL NUMBER . CRATE
+    (11) until_rate -> UNTIL NUMBER . UNIT
+
+    CRATE           shift and go to state 33
+    UNIT            shift and go to state 34
+
+
+state 23
+
+    (5) what -> AT rate time .
+
+    $end            reduce using rule 5 (what -> AT rate time .)
+
+
+state 24
+
+    (6) rate -> CRATE RATIO . NUMBER
+
+    NUMBER          shift and go to state 35
+
+
+state 25
+
+    (7) rate -> NUMBER CRATE .
+
+    FOR             reduce using rule 7 (rate -> NUMBER CRATE .)
+    UNTIL           reduce using rule 7 (rate -> NUMBER CRATE .)
+
+
+state 26
+
+    (8) rate -> NUMBER UNIT .
+
+    FOR             reduce using rule 8 (rate -> NUMBER UNIT .)
+    UNTIL           reduce using rule 8 (rate -> NUMBER UNIT .)
+
+
+state 27
+
+    (14) time -> duration OR until_rate .
+
+    $end            reduce using rule 14 (time -> duration OR until_rate .)
+
+
+state 28
+
+    (15) time -> until_rate OR duration .
+
+    $end            reduce using rule 15 (time -> until_rate OR duration .)
+
+
+state 29
+
+    (16) duration -> FOR NUMBER HOURS .
+
+    OR              reduce using rule 16 (duration -> FOR NUMBER HOURS .)
+    $end            reduce using rule 16 (duration -> FOR NUMBER HOURS .)
+
+
+state 30
+
+    (17) duration -> FOR NUMBER MINUTES .
+
+    OR              reduce using rule 17 (duration -> FOR NUMBER MINUTES .)
+    $end            reduce using rule 17 (duration -> FOR NUMBER MINUTES .)
+
+
+state 31
+
+    (18) duration -> FOR NUMBER SECONDS .
+
+    OR              reduce using rule 18 (duration -> FOR NUMBER SECONDS .)
+    $end            reduce using rule 18 (duration -> FOR NUMBER SECONDS .)
+
+
+state 32
+
+    (9) until_rate -> UNTIL CRATE RATIO . NUMBER
+
+    NUMBER          shift and go to state 36
+
+
+state 33
+
+    (10) until_rate -> UNTIL NUMBER CRATE .
+
+    OR              reduce using rule 10 (until_rate -> UNTIL NUMBER CRATE .)
+    $end            reduce using rule 10 (until_rate -> UNTIL NUMBER CRATE .)
+
+
+state 34
+
+    (11) until_rate -> UNTIL NUMBER UNIT .
+
+    OR              reduce using rule 11 (until_rate -> UNTIL NUMBER UNIT .)
+    $end            reduce using rule 11 (until_rate -> UNTIL NUMBER UNIT .)
+
+
+state 35
+
+    (6) rate -> CRATE RATIO NUMBER .
+
+    FOR             reduce using rule 6 (rate -> CRATE RATIO NUMBER .)
+    UNTIL           reduce using rule 6 (rate -> CRATE RATIO NUMBER .)
+
+
+state 36
+
+    (9) until_rate -> UNTIL CRATE RATIO NUMBER .
+
+    OR              reduce using rule 9 (until_rate -> UNTIL CRATE RATIO NUMBER .)
+    $end            reduce using rule 9 (until_rate -> UNTIL CRATE RATIO NUMBER .)
+

@@ -1,17 +1,17 @@
 # ------------------------------------------------------------------------------- #
-# MODE: Simulation
+# MODE: Compared Simulation
 # ------------------------------------------------------------------------------- #
-# The purpose of simulation experiment is to compare the behavior of the DT with
+# The purpose of the experiment is to compare the behavior of the DT with
 # real-world (ground) data and evaluate the accuracy of the system.
 # ------------------------------------------------------------------------------- #
 
 # Summary of the experiment
-experiment_name: "Prova "
-description: "Description "
+experiment_name: "Compared Simulation"
+description: "Experiment for paper"
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "sim_prova"
+destination_folder: "paper"
 
 # Ground Data (input and validation): How to use it?
 # ------------------------------------------------------------------------------- #

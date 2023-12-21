@@ -68,7 +68,7 @@ class ElectricalModel(GenericModel):
     def get_final_results(self, **kwargs):
         pass
 
-    def get_v_load_series(self, k=None):
+    def get_v_series(self, k=None):
         """
         Getter of the specific value at step K, if specified, otherwise of the entire collection
         """
@@ -82,7 +82,7 @@ class ElectricalModel(GenericModel):
                 raise IndexError("Load Voltage V of the electrical model at step K not computed yet")
         return self._v_load_series
 
-    def get_i_load_series(self, k=None):
+    def get_i_series(self, k=None):
         """
         Getter of the specific value at step K, if specified, otherwise of the entire collection
         """

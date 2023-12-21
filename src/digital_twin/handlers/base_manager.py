@@ -55,9 +55,10 @@ class GeneralPurposeManager:
         """
         # Store paths for all different kind of preprocessing
         self._config_folder = Path(config_folder)
-        self._ground_folder = Path(ground_folder)
         self._assets = read_yaml(yaml_file=assets_file, yaml_type="assets")
         self._output_folder = Path(output_folder) / exp_id_folder / str(datetime.now().strftime('%Y_%m_%d-%H_%M'))
+        if ground_folder:
+            self._ground_folder = Path(ground_folder)
 
         # Get models config files
         self._models_configs = []
@@ -87,6 +88,7 @@ class GeneralPurposeManager:
         _plot_info structure:
             - compared: {type, dfs, variables, x_axes, labels, title, colors=None}
             - single: {type, df, variables, x_var, title, colors=None}
+            - whatif: {type, df, variables, events, x_var, title, colors=None}
         """
         plot_folder = Path(self._output_folder / 'img')
         try:
@@ -125,10 +127,14 @@ class GeneralPurposeManager:
 
             # Save experiment results
             results.to_csv(self._output_folder / 'dataset.csv', index=False)
-        else:
-            # Print on the console the summary and results
+
+        # Print on the console the summary and results
+        if logger.level == logging.INFO:
+            print('\n')
+            logger.info("SUMMARY")
             print(pretty_repr(summary))
-            print('\n' + str(results))
+            logger.info("RESULTS")
+            print(str(results))
 
 
 
