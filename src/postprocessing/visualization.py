@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 
+pic_format = 'png'  # pdf / svg
 
 def plot_compared_data(dest: Path,
                        dfs: list,
@@ -34,13 +35,13 @@ def plot_compared_data(dest: Path,
 
     # Plot iteratively all the variables
     for i, df in enumerate(dfs):
-        plt.plot(df[x_axes[i]], df[variables[i]], label=labels[i], color=colors[i])
+        plt.scatter(df[x_axes[i]], df[variables[i]], label=labels[i], color=colors[i], s=0.1)
 
     plt.title(title)
     plt.legend()
 
     file_path = dest / title
-    plt.savefig(file_path)
+    plt.savefig(file_path, format=pic_format)
 
 
 def plot_separate_vars(dest: Path,
@@ -89,5 +90,5 @@ def plot_separate_vars(dest: Path,
                 ax.axvline(x=event[1], color='black', alpha=0.2)
 
     file_path = dest / title
-    fig.savefig(file_path)
+    fig.savefig(file_path, format=pic_format)
 

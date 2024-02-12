@@ -78,6 +78,7 @@ target/
 # exclude preprocessing from fmu_script control by default
 /data/output
 /data/external
+/data/ground
 
 # Mac OS-specific storage files
 .DS_Store
