@@ -1,0 +1,21 @@
+# ############################################################################
+# Configuration yaml file of the thermal model used to describe the
+# behaviour of the battery temperature.
+# ----------------------------------------------------------------------------
+# How is it made up of?
+#   - r_term Resistor
+#   - c_term Capacitor
+# ############################################################################
+
+type: thermal
+class_name: ThermalMLP
+
+components:
+    input_size: 4
+    hidden_size: 16
+    output_size: 1
+
+    model_state: './data/config/models/data_driven/thermal_mlp/state_checkup_rolling25.pth'
+    scaler: './data/config/models/data_driven/thermal_mlp/scaler_checkup_rolling25.pth'
+
+    cuda: False

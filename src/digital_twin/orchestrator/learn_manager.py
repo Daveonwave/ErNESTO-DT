@@ -6,13 +6,13 @@ from pathlib import Path
 from tqdm import tqdm
 from rich.pretty import pretty_repr
 
-from src.digital_twin.handlers.base_manager import GeneralPurposeManager
+from src.digital_twin.orchestrator.base_manager import GeneralPurposeManager
 from src.digital_twin.bess import BatteryEnergyStorageSystem
-from src.visualization.plotter import plot_compared_data
+from src.postprocessing.visualization import plot_compared_data
 from src.preprocessing.data_preparation import load_data_from_csv, validate_parameters_unit
 from src.preprocessing.schema import read_yaml
 
-logger = logging.getLogger('DT_logger')
+logger = logging.getLogger('DT_ernesto')
 
 
 class LearningManager(GeneralPurposeManager):

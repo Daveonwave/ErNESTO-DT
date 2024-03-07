@@ -1,8 +1,8 @@
 import argparse
-import os
 import logging
-from pathlib import Path
-from src.digital_twin.handlers import GeneralPurposeManager
+from joblib import Parallel, delayed
+from src.utils.logger import CustomFormatter
+from src.digital_twin.orchestrator import GeneralPurposeManager
 
 
 def get_args():
@@ -13,10 +13,8 @@ def get_args():
         """
         Parser of arguments for SIMULATION mode
         """
-        sim_parser.add_argument("--config", action="store", default="./data/config/sim_config.yaml",
-                                type=str, help="Specifies the file containing parameters for simulation mode.")
-        sim_parser.add_argument("--iterations", required=False, type=int,
-                                help="Specifies the number of iterations of the simulation experiment.")
+        sim_parser.add_argument("--config_files", nargs='*', default=["./data/config/sim_config_example.yaml"],
+                                help="Specifies the list of files containing parameters for each parallel experiment.")
 
     def get_whatif_args():
         """
@@ -67,8 +65,8 @@ def get_args():
         main_parser.add_argument("--battery_model", nargs=1, choices=electrical_choices, default=['thevenin'],
                                  help="Specifies the name of the core model of the battery, electrical or data driven.")
 
-        thermal_choices = ['rc_thermal', 'r2c_thermal']
-        main_parser.add_argument("--thermal_model", nargs=1, choices=thermal_choices, default=['rc_thermal'],
+        thermal_choices = ['rc_thermal', 'r2c_thermal', 'dummy_thermal', 'mlp_thermal']
+        main_parser.add_argument("--thermal_model", nargs=1, choices=thermal_choices, default=['dummy_thermal'],
                                  help="Specifies the name of the thermal model that has to be used.")
 
         aging_choices = ['bolun']
@@ -78,8 +76,15 @@ def get_args():
         main_parser.add_argument("--save_results", action="store_true",
                                  help="Specifies if save computed results at the end of the experiment.")
 
+        main_parser.add_argument("--save_metrics", action="store_true",
+                                 help="Specifies if save computed metrics at the end of the experiment.")
+
         main_parser.add_argument("--plot", action="store_true",
                                  help="Specifies if plot computed results at the end of the experiment.")
+
+        main_parser.add_argument("--n_cores", action="store", default=-1, type=int,
+                                 help="Specifies the number of cores to use for parallel simulations. If save_results "
+                                      "is set, cores will be override to 1 to limit RAM consumption.")
 
         main_parser.add_argument("--verbose", action="store_true",
                                  help="Increases logged information, but slows down the computation.")
@@ -112,10 +117,16 @@ if __name__ == '__main__':
     args = get_args()
 
     # Setup logger
-    logging.basicConfig(format='%(asctime)s | %(name)s-%(levelname)s: %(message)s')
-    logger = logging.getLogger(name="DT_logger")
+    #logging.basicConfig(format='%(asctime)s | %(name)s-%(levelname)s: %(message)s')
+    logger = logging.getLogger(name="DT_ernesto")
+    ch = logging.StreamHandler()
+
     if args['verbose']:
-        logger.setLevel(logging.INFO)
+        logger.setLevel(logging.DEBUG)
+        ch.setLevel(logging.DEBUG)
+
+    ch.setFormatter(CustomFormatter())
+    logger.addHandler(ch)
 
     # Parsing of models employed in the current experiment
     args['models'] = []
@@ -132,5 +143,21 @@ if __name__ == '__main__':
         del args['aging_model']
 
     dt_manager = GeneralPurposeManager.get_instance(args['mode'])
-    handler = dt_manager(**args)
-    handler.run()
+
+    def run_experiment(args, config_file):
+        args['config'] = config_file
+        orchestrator = dt_manager(**args)
+        orchestrator.run()
+        orchestrator.evaluate()
+
+    parallel_exp_config = args['config_files']
+    del args['config_files']
+
+    n_cores = args['n_cores']
+    del args['n_cores']
+
+    if n_cores == 1:
+        run_experiment(args, parallel_exp_config[0])
+    else:
+        Parallel(n_jobs=n_cores)(delayed(run_experiment)(args, config) for config in parallel_exp_config)
+

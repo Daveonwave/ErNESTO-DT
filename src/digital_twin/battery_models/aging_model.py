@@ -25,6 +25,7 @@ class BolunModel(AgingModel):
 
         self._f_cyc_series = []
         self._f_cal_series = []
+        self._k_iters = []
 
         self._alpha_sei = components_settings['SEI']['alpha_sei']
         self._beta_sei = components_settings['SEI']['beta_sei']
@@ -80,18 +81,9 @@ class BolunModel(AgingModel):
         self.update_deg(0)
         self._update_f_cyc_series(0)
         self._update_f_cal_series(0)
+        self._k_iters.append(0)
 
-    def get_final_results(self, **kwargs):
-        """
-        Returns a dictionary with all final results
-        TODO: selection of results by label from config file?
-        """
-        return {'cyclicAging': self._f_cyc_series,
-                'calendarAging': self._f_cal_series,
-                'degradation': self.get_deg_series()
-                }
-
-    def compute_degradation(self, soc_history, temp_history, elapsed_time):
+    def compute_degradation(self, soc_history, temp_history, elapsed_time, k):
         """
         Compute the aging of the battery
 
@@ -105,8 +97,10 @@ class BolunModel(AgingModel):
 
         elif self._cycle_counting_mode == 'streamflow':
             f_d = self._aging_step(soc_history=soc_history, temp_history=temp_history, t=elapsed_time)
+
         elif self._cycle_counting_mode == 'fastflow':
             ...
+
         else:
             raise ValueError("The provided cycle counting method {} is not implemented or not existent"
                              .format(self._cycle_counting_mode))
@@ -115,6 +109,7 @@ class BolunModel(AgingModel):
         deg = np.clip(1 - self._alpha_sei * np.exp(-self._beta_sei * f_d) - (1 - self._alpha_sei) * np.exp(-f_d),
                       a_min=0., a_max=1.)
         self.update_deg(deg)
+        self._k_iters.append(k)
         return deg
 
     def _compute_calendar_aging(self, curr_time, avg_temp, avg_soc):
@@ -285,6 +280,17 @@ class BolunModel(AgingModel):
 
         return cyclic_aging
 
+    def get_final_results(self, **kwargs):
+        """
+        Returns a dictionary with all final results
+        TODO: selection of results by label from config file?
+        """
+        return {'iteration': self._k_iters,
+                'cyclic_aging': self._f_cyc_series,
+                'calendar_aging': self._f_cal_series,
+                'degradation': self.get_deg_series()
+                }
+
     class Streamflow:
         """
         Implementation of our cycle counting algorithm, that is able to perform in an online manner without considering
@@ -327,7 +333,7 @@ class BolunModel(AgingModel):
             self._start_cycles = np.zeros(expected_cycle_num, dtype=int)
             self._end_cycles = np.zeros(expected_cycle_num, dtype=int)
             # TODO: find the right value
-            self._reset_every = 500000
+            self._reset_every = 50000
 
             # Cycles that are waiting to be completed
             self._is_valid = np.zeros(expected_cycle_num, dtype=bool)
@@ -439,8 +445,8 @@ class BolunModel(AgingModel):
                 second_signal_value ():
             """
             # Get indices of cycles used, valid and with the same direction of current cycle
-            valid_used_correct_direction = self._is_used & self._is_valid \
-                                           & (self._directions == self._directions[self._cycle_k])
+            valid_used_correct_direction = (self._is_used and self._is_valid and
+                                            (self._directions == self._directions[self._cycle_k]))
 
             is_direction_up = self._directions[self._cycle_k] == 1
             min_max_index = 1 if is_direction_up else 0
@@ -519,11 +525,11 @@ class BolunModel(AgingModel):
             Returns: indices of desired subset of cycles
             """
             if direction == 1:
-                indices = ((self._min_max_vals[indices_range][:, 1] > self._last_value) and
-                           (self._min_max_vals[indices_range][:, 1] < value))
+                indices = np.logical_and(self._min_max_vals[indices_range][:, 1] > self._last_value,
+                                         self._min_max_vals[indices_range][:, 1] < value)
             elif direction == 2:
-                indices = ((self._min_max_vals[indices_range][:, 0] < self._last_value)
-                           & (self._min_max_vals[indices_range][:, 0] > value))
+                indices = np.logical_and(self._min_max_vals[indices_range][:, 0] < self._last_value,
+                                         self._min_max_vals[indices_range][:, 0] > value)
             else:
                 raise ValueError("The specified direction does not exist!")
 

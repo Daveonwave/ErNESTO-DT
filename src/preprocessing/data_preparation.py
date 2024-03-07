@@ -8,9 +8,10 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime, timezone
 from pint import UnitRegistry
+from scipy.interpolate import interp1d
 
-ureg = UnitRegistry()
-logger = logging.getLogger('DT_logger')
+ureg = UnitRegistry(autoconvert_offset_to_baseunit = True)
+logger = logging.getLogger('DT_ernesto')
 
 
 # Dictionary of units internally used inside the simulator
@@ -20,8 +21,10 @@ internal_units = dict(
     power=['watt', 'W', ureg.watt],
     resistance=['ohm', '\u03A9', ureg.ohm],
     capacity=['faraday', 'F', ureg.faraday],
-    temperature=['celsius', 'degC', ureg.degC],
-    time=['seconds', 's', ureg.s]
+    temperature=['kelvin', 'K', ureg.kelvin],
+    time=['seconds', 's', ureg.s],
+    soc=[None, None, None],
+    soh=[None, None, None]
 )
 
 
@@ -30,8 +33,8 @@ def load_data_from_csv(csv_file: Path, vars_to_retrieve: [dict], **kwargs):
     Function to preprocess preprocessing that need to be read from a csv table.
 
     Args:
-    :param csv_file: file path of the csv which we want to retrieve preprocessing from
-    :param vars_to_retrieve: variables to retrieve from csv file
+        csv_file (pathlib.Path): file path of the csv which we want to retrieve preprocessing from
+        vars_to_retrieve (list(dict)): variables to retrieve from csv file
     """
     # Check file existence
     if not os.path.isfile(csv_file):
@@ -40,13 +43,17 @@ def load_data_from_csv(csv_file: Path, vars_to_retrieve: [dict], **kwargs):
     df = None
     try:
         df = pd.read_csv(csv_file, encoding='unicode_escape')
+
         if kwargs['iterations']:
             df = df.iloc[:kwargs['iterations']]
     except IOError:
         logger.error("The specified file '{}' cannot be imported as a Pandas Dataframe.".format(csv_file))
 
     # Retrieve and convert timestamps to list of seconds (format: YYYY/MM/DD hh:mm:ss)
-    timestamps = pd.to_datetime(df['Time'], format="%Y/%m/%d %H:%M:%S").values.astype(float) // 10 ** 9
+    if kwargs['time_format'] == 'seconds':
+        timestamps = df['Time']
+    else:
+        timestamps = pd.to_datetime(df['Time'], format="%Y/%m/%d %H:%M:%S").values.astype(float) // 10 ** 9
     vars_data = {}
 
     # We first check if the variable column label exists
@@ -56,7 +63,65 @@ def load_data_from_csv(csv_file: Path, vars_to_retrieve: [dict], **kwargs):
         else:
             vars_data[var['var']] = _validate_data_unit(df[var['label']].values.tolist(), var['var'], var['unit'])
 
-    return vars_data, timestamps.tolist()
+    return timestamps.tolist(), vars_data
+
+
+def sync_data_with_step(times: list, data: dict, sim_step: float, interp: bool = False):
+    """
+    Augmentation or reduction of the ground dataset in order to adapt it to the specified simulator timestep.
+    If the simulator timestamp is smaller than the time delta, we need to replicate the previous values or interpolate
+    data to coherently extend the dataset.
+    If the simulator timestamp is bigger, instead, we need to skip some input data and/or interpolate if necessary.
+
+    Args:
+        times ():
+        data ():
+        sim_step ():
+        interp ():
+    """
+    if interp:
+        logger.error("Interpolation of ground data has not been implemented yet! "
+                     "The values will be just replicated by existing data!")
+        # Todo: allow interpolation
+        interp = False
+
+    sync_times = [times[0]]
+    sync_data = {key: [data[key][0]] for key in data.keys()}
+
+    i = 1
+    while i < len(times):
+        dt = times[i] - times[i - 1]
+
+        # If sim_step is smaller than dt, we perform data augmentation by duplicating data in between
+        if sim_step < dt:
+            # Compute the floor of the integer division and extend the new times list
+            floor = int(dt // sim_step)
+            sync_times.extend([times[i - 1] + j * sim_step for j in range(1, floor)])
+
+            if not interp:
+                aug_data = {key: [data[key][i - 1]] * (floor - 1) for key in sync_data.keys()}
+            else:
+                raise NotImplementedError()
+
+            # Extend the new data dictionary with repeated data
+            [sync_data[key].extend(aug_data[key]) for key in sync_data.keys()]
+
+            sync_times.append(times[i])
+            [sync_data[key].append(data[key][i]) for key in sync_data.keys()]
+            i += 1
+
+        elif sim_step == dt:
+            sync_times.append(times[i])
+            [sync_data[key].append(data[key][i]) for key in sync_data.keys()]
+            i += 1
+
+        # If sim_step is greater than dt, we perform data reduction by deleting data in between
+        else:
+            # Deleting all the skipped data
+            [data[key].pop(i) for key in sync_data.keys()]
+            times.pop(i)
+
+    return sync_times, sync_data
 
 
 def _validate_data_unit(data_list, var_name, unit):
@@ -64,9 +129,9 @@ def _validate_data_unit(data_list, var_name, unit):
     Function to validate and adapt preprocessing unit to internal simulator units.
 
     Args:
-    :param data_list: list with values of a preprocessing stream
-    :param var_name: name of the variable
-    :param unit: unit of the variable
+        data_list (list): list with values of a preprocessing stream
+        var_name (str): name of the variable
+        unit (str): unit of the variable
     """
     # Unit employed is already compliant with internal simulator units
     if unit == internal_units[var_name][1]:
@@ -90,7 +155,7 @@ def validate_parameters_unit(param_dict):
     Function to validate and adapt units of provided parameters to internal simulator units.
 
     Args:
-    :param param_dict: dictionary of parameters (read by for example yaml config file)
+        param_dict (dict): dictionary of parameters (read by for example yaml config file)
     """
     transformed_dict = {}
 

@@ -7,14 +7,14 @@ from pathlib import Path
 from tqdm import tqdm
 from rich.pretty import pretty_repr
 
-from src.digital_twin.handlers.base_manager import GeneralPurposeManager
+from src.digital_twin.orchestrator.base_manager import GeneralPurposeManager
 from src.digital_twin.bess import BatteryEnergyStorageSystem
-from src.visualization.plotter import plot_compared_data
+from src.postprocessing.visualization import plot_compared_data
 from src.preprocessing.data_preparation import load_data_from_csv, validate_parameters_unit
 from src.preprocessing.schema import read_yaml
 from src.preprocessing.schedule.schedule import Schedule
 
-logger = logging.getLogger('DT_logger')
+logger = logging.getLogger('DT_ernesto')
 
 
 class WhatIfManager(GeneralPurposeManager):
@@ -38,15 +38,20 @@ class WhatIfManager(GeneralPurposeManager):
                          assets_file=kwargs['assets'],
                          models=kwargs['models'],
                          save_results=kwargs['save_results'],
+                         save_metrics=kwargs['save_metrics'],
                          make_plots=kwargs['plot'],
                          )
 
-        self._events = []
-        self._timestep = 1
+        self._stepsize = self._settings['timestep'] if 'timestep' in self._settings else 1
         self._elapsed_time = 0
-
-        # TODO: understand if DONE mi serve
         self.done = False
+
+        self._instructions = []
+        self._events = {
+            'overvoltage': [],
+            'undervoltage': [],
+            'overheat': []
+        }
 
         # Validate battery parameters unit
         self._settings['battery']['params'] = validate_parameters_unit(self._settings['battery']['params'])
@@ -70,6 +75,8 @@ class WhatIfManager(GeneralPurposeManager):
         self._battery.simulation_init()
 
         pbar = tqdm(total=len(self._settings['schedule']), position=0, leave=True)
+
+        # Main loop of the simulation
         while not self._schedule.is_empty():
             cmd = self._schedule.get_cmd()
             event_start = self._elapsed_time
@@ -102,16 +109,18 @@ class WhatIfManager(GeneralPurposeManager):
                 logging.error("The experiment configuration is not feasible or not implemented yet")
                 exit(1)
 
-            pbar.update(1)
+            pbar.update(self._stepsize)
             logger.info("Command executed!")
             self._schedule.next_cmd()
-            self._events.append([event_start, self._elapsed_time])
+            self._instructions.append([event_start, self._elapsed_time])
 
         logger.info("'What-If Simulation' ended without errors!")
         pbar.close()
 
         self.done = True
-        self._output_results(results=self._battery.build_results_table(), summary=self._get_summary())
+        self._results = self._battery.build_results_table()
+
+        self._output_results(results=self._results, summary=self._get_summary())
         if self._make_plots:
             self._prepare_plots()
 
@@ -128,9 +137,9 @@ class WhatIfManager(GeneralPurposeManager):
         k = len(self._battery.t_series)
 
         while self._elapsed_time < duration:
-            self._battery.simulation_step(load=value, dt=self._timestep, k=k)
-            self._elapsed_time += self._timestep
+            self._battery.simulation_step(load=value, dt=self._stepsize, k=k)
             self._battery.t_series.append(self._elapsed_time)
+            self._elapsed_time += self._stepsize
             k += 1
 
     def _run_until_cond(self, load: str, value: float, cond_var: str, cond_value: float, action: str):
@@ -149,9 +158,9 @@ class WhatIfManager(GeneralPurposeManager):
         op = operator.lt if action == 'charge' else operator.gt
 
         while op(curr_value(), cond_value):
-            self._battery.simulation_step(load=value, dt=self._timestep, k=k)
-            self._elapsed_time += self._timestep
+            self._battery.simulation_step(load=value, dt=self._stepsize, k=k)
             self._battery.t_series.append(self._elapsed_time)
+            self._elapsed_time += self._stepsize
             k += 1
 
     def _run_for_time_or_cond(self, load: str, value: float, cond_var: str, cond_value: float, time: float, action: str):
@@ -172,9 +181,9 @@ class WhatIfManager(GeneralPurposeManager):
         op = operator.lt if action == 'charge' else operator.gt
 
         while op(curr_value(), cond_value) and self._elapsed_time < duration:
-            self._battery.simulation_step(load=value, dt=self._timestep, k=k)
-            self._elapsed_time += self._timestep
+            self._battery.simulation_step(load=value, dt=self._stepsize, k=k)
             self._battery.t_series.append(self._elapsed_time)
+            self._elapsed_time += self._stepsize
             k += 1
 
     def _get_summary(self):
@@ -197,7 +206,7 @@ class WhatIfManager(GeneralPurposeManager):
         """
         var_to_plot = ['voltage', 'temperature', 'power', 'current']
 
-        df = self._battery.build_results_table()
+        df = pd.DataFrame(data=self._results['operations'], columns=self._results['operations'].keys())
 
         # Save information for each different kind of plot
         plot_dict = {
@@ -206,7 +215,7 @@ class WhatIfManager(GeneralPurposeManager):
             'variables': var_to_plot,
             'x_ax': 'Time',
             'title': "What-If",
-            'events': self._events
+            'events': self._instructions
         }
         self._plot_info.append(plot_dict)
         self._save_plots()

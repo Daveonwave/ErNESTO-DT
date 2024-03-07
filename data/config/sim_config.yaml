@@ -13,7 +13,7 @@ goal: "GOAL"
 # Folder where the results will be saved
 destination_folder: "paper"
 
-# Ground Data (input and validation): How to use it?
+# Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
 # 1. specify the .csv file from which we have to read real-world data
 # 2. specify variables used as input and output (for validation)
@@ -26,29 +26,39 @@ destination_folder: "paper"
 #       transformed to Digital Twin internal default units.
 # # ------------------------------------------------------------------------------- #
 ground_data:
-    file: 'ground_data.csv'
+    file: 'ground_silvia_20C.csv'
     load: 'current'
     vars:
     - var: 'current'
-      label: 'Current [A]'
+      label: 'Current(A)'
       unit: 'A'
     - var: 'voltage'
-      label: 'Voltage [V]'
+      label: 'Voltage(V)'
       unit: 'V'
     - var: 'temperature'
-      label: 'Temperature [degC]'
+      label: 'Temperature'
       unit: 'degC'
     - var: 'power'
-      label: 'Power [W]'
+      label: 'Power(W)'
       unit: 'W'
 
-# Battery options: : How to use it?
+# Simulation Options
+# ------------------------------------------------------------------------------- #
+# iterations:
+#   the number of iterations of the simulated experiment (null -> full experiment).
+# timestep:
+#   the timestep of the simulator in seconds.
+# ------------------------------------------------------------------------------- #
+iterations: null
+timestep: 1
+
+# Battery options
 # ------------------------------------------------------------------------------- #
 # sign_convention:
 #   - active: (power sources) p<0 and current exiting => i>0 during discharge (default for Thevenin)
 #   - passive: (loads) with p>0 and current entering => i<0 during discharge
 # other params:
-#   - 'var' has to be a variable among of the parameter. TODO: capire a cosa serve nel codice
+#   - 'var' has to be a variable among of the parameter.
 #   - 'value' is the float value of the parameter.
 #   - 'unit' specifies the unit of the parameter that will be transformed to
 #      Digital Twin internal default units.
@@ -70,12 +80,12 @@ battery:
             unit: 'V'
         temp_ambient:
             var: 'temperature'
-            value: 25.
-            unit: 'degC'
+            value: 296.15
+            unit: 'K'
     init:
-        voltage: 0.
+        voltage: 4.15
         current: 0.
-        temperature: 23.
+        temperature: 296.15 # 23 degC
         soc: 1.
         soh: 1.
 

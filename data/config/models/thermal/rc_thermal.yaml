@@ -19,42 +19,14 @@ class_name: RCThermal
 # ----------------------------------------------------------------------------
 components:
     r_term:
-        type: scalar
+        selected_type: scalar
         scalar: 0.37
-#        function:
-#            coefficients:
-#                - 1
-#                - 2
-#                - 3
-#            inputs:
-#                - temp
-#                - soc
-#                - soh
-#        lookup:
-#            inputs:
-#                soc:
-#                    - 0.9
-#                    - 0.8
-#                    - 0.7
-#                    - 0.6
-#                    - 0.5
-#                    - 0.4
-#                    - 0.3
-#                    - 0.2
-#                    - 0.1
-#                    - 0
-#            output:
-#                - 0.003750375
-#                - 0.003750375
-#                - 0.003750188
-#                - 0.00380057
-#                - 0.003900585
-#                - 0.003950593
-#                - 0.004050203
-#                - 0.004050405
-#                - 0.004150208
-#                - 0.004250213
+        # function
+        # lookup
 
     c_term:
-        type: scalar
+        selected_type: scalar
         scalar: 1700
+        # function
+        # lookup
+

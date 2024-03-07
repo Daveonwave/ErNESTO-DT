@@ -1,5 +1,11 @@
 from typing import Union
-from scipy.interpolate import interp1d, interp2d
+
+import numpy as np
+from scipy.interpolate import interp1d, LinearNDInterpolator, NearestNDInterpolator
+from src.preprocessing.data_preparation import _validate_data_unit
+import pandas as pd
+
+params_csv_folder = 'data/config/params/'
 
 
 class GenericVariable:
@@ -82,18 +88,20 @@ class LookupTableFunction(GenericVariable):
 
     def __init__(self, name: str, y_values: list, x_names: list, x_values: list):
         super().__init__(name)
-
         self.y_values = y_values
         self.x_names = x_names
         self.x_values = x_values
 
-        self.function = None
+        self._function = None
+        self._backup_function = None
 
         if len(x_names) == 1:
-            self.function = interp1d(x_values[0], y_values, fill_value='extrapolate')
+            self._function = interp1d(x_values[0], y_values, fill_value='extrapolate')
 
-        elif len(x_names) == 2:
-            self.function = interp2d(x_values[0], x_values[1], y_values)
+        elif len(x_names) > 1:
+            x_points = [[l[i] for l in self.x_values] for i in range(len(self.x_values[0]))]
+            self._function = LinearNDInterpolator(points=np.array(x_points), values=np.array(self.y_values))
+            self._backup_function = NearestNDInterpolator(x=np.array(x_points), y=np.array(self.y_values))
 
         else:
             raise Exception("Too many variables to interpolate, not implemented yet!")
@@ -112,17 +120,28 @@ class LookupTableFunction(GenericVariable):
 
             input_values.append(input_vars[given_input])
 
-        if isinstance(self.function, interp1d):
-            return float(self.function(*[input_val for input_val in input_values]))
+        if isinstance(self._function, interp1d):
+            return float(self._function(*[input_val for input_val in input_values]))
 
-        elif isinstance(self.function, interp2d):
-            return float(self.function(*[input_val for input_val in input_values]))
+        elif isinstance(self._function, LinearNDInterpolator):
+            res = float(self._function(*[input_val for input_val in input_values]))
+            if np.isnan(res):
+                res = float(self._backup_function(*[input_val for input_val in input_values]))
+            return res
 
         else:
             raise Exception("Given inputs list has a wrong dimension for the computation of {}".format(self.name))
 
+    def render(self):
+        data_list = self.x_values.copy()
+        names_list = self.x_names.copy()
+        data_list.append(self.y_values)
+        names_list.append(self.name)
+        table = pd.DataFrame(data={name: values for name, values in zip(names_list, data_list)})
+        print(table)
 
-def instantiate_variables(var_dict: dict):
+
+def instantiate_variables(var_dict: dict, ):
     """
     # TODO: cambiare configurazione dati in ingresso (esempio: LookupTable passata con un csv)
     """
@@ -130,21 +149,40 @@ def instantiate_variables(var_dict: dict):
 
     for var in var_dict.keys():
 
-        if var_dict[var]['type'] == "scalar":
+        if var_dict[var]['selected_type'] == "scalar":
             instantiated_vars.append(Scalar(name=var, value=var_dict[var]['scalar']))
 
-        elif var_dict[var]['type'] == "function":
+        elif var_dict[var]['selected_type'] == "function":
             instantiated_vars.append(Function())  # TODO: implement
 
-        elif var_dict[var]['type'] == "lookup":
-            instantiated_vars.append(
-                LookupTableFunction(
-                    name=var,
-                    y_values=var_dict[var]['lookup']['output'],
-                    x_names=var_dict[var]['lookup']['inputs'].keys(),
-                    x_values=[var_dict[var]['lookup']['inputs'][key] for key in
-                              var_dict[var]['lookup']['inputs'].keys()]
-                ))
+        elif var_dict[var]['selected_type'] == "lookup":
+            # Hardcoded lookup table
+            if 'table' not in var_dict[var]['lookup'].keys():
+                instantiated_vars.append(
+                    LookupTableFunction(
+                        name=var,
+                        y_values=var_dict[var]['lookup']['output'],
+                        x_names=var_dict[var]['lookup']['inputs'].keys(),
+                        x_values=[var_dict[var]['lookup']['inputs'][key] for key in
+                                  var_dict[var]['lookup']['inputs'].keys()]
+                    ))
+            # Csv lookup table
+            else:
+                table = pd.read_csv(params_csv_folder + var_dict[var]['lookup']['table'])
+                instantiated_vars.append(
+                    LookupTableFunction(
+                        name=var_dict[var]['lookup']['output']['label'],
+                        y_values=_validate_data_unit(data_list=table[var_dict[var]['lookup']['output']['label']].tolist(),
+                                                     var_name=var_dict[var]['lookup']['output']['var'],
+                                                     unit=var_dict[var]['lookup']['output']['unit']),
+                        x_names=[var['label'] for var in var_dict[var]['lookup']['inputs']],
+                        x_values=[_validate_data_unit(data_list=table[var['label']].tolist(),
+                                                      var_name=var['var'],
+                                                      unit=var['unit'])
+                                  for var in var_dict[var]['lookup']['inputs']]
+                    )
+                )
+
 
         else:
             raise Exception("The chosen 'type' for the variable '{}' is wrong or nonexistent! Try to select another"

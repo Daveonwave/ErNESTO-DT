@@ -2,11 +2,11 @@ import pybamm
 
 class Battery:
     def __init__(self):
+        pass
 
 
 
-
-class ThermalSubmodel(pybamm.BaseSubModel)
+class ThermalSubmodel(pybamm.BaseSubModel):
     def __init__(self, param, domain, options=None):
 
         super().__init__(param, domain, options=options)
@@ -30,7 +30,7 @@ class ThermalSubmodel(pybamm.BaseSubModel)
 
         res = ...
 
-        self.rhs = {T_cell: }
+        self.rhs = {T_cell:""}
 
     def set_boundary_conditions(self, variables):
         pass

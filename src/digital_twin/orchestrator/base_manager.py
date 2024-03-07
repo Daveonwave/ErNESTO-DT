@@ -7,9 +7,9 @@ import pandas as pd
 from rich.pretty import pretty_repr
 
 from src.preprocessing.schema import read_yaml
-from src.visualization.plotter import plot_compared_data, plot_separate_vars
+from src.postprocessing.visualization import plot_compared_data, plot_separate_vars
 
-logger = logging.getLogger('DT_logger')
+logger = logging.getLogger('DT_ernesto')
 
 
 class GeneralPurposeManager:
@@ -40,6 +40,7 @@ class GeneralPurposeManager:
                  models: list,
                  ground_folder: str = None,
                  save_results: bool = None,
+                 save_metrics: bool = None,
                  make_plots: bool = None,
                  ):
         """
@@ -50,13 +51,14 @@ class GeneralPurposeManager:
             exp_id_folder (str):
             assets_file (str):
             models (list): models to instantiate for the current experiment, given in input by the user
+            save_metrics (bool):
             save_results (bool):
             make_plots (bool):
         """
         # Store paths for all different kind of preprocessing
         self._config_folder = Path(config_folder)
         self._assets = read_yaml(yaml_file=assets_file, yaml_type="assets")
-        self._output_folder = Path(output_folder) / exp_id_folder / str(datetime.now().strftime('%Y_%m_%d-%H_%M'))
+        self._output_folder = Path(output_folder) / exp_id_folder / str(datetime.now().strftime('%Y_%m_%d-%H_%M_%S'))
         if ground_folder:
             self._ground_folder = Path(ground_folder)
 
@@ -67,17 +69,22 @@ class GeneralPurposeManager:
                           self._assets['models'][model]['file'])
             self._models_configs.append(self._config_folder / model_file)
 
-        # Output results and visualization
+        # Output results and postprocessing
         self._save_results = save_results
+        self._save_metrics = save_metrics
         self._make_plots = make_plots
 
         # List of dictionaries with plot information
         self._plot_info = []
+        self._results = None
 
     def run(self):
         raise NotImplementedError
 
     def render(self):
+        raise NotImplementedError
+
+    def evaluate(self):
         raise NotImplementedError
 
     def _save_plots(self):
@@ -108,7 +115,28 @@ class GeneralPurposeManager:
             else:
                 raise NotImplementedError("Plot type not implemented yet!")
 
-    def _output_results(self, results: pd.DataFrame, summary: dict):
+    def _output_metrics(self, res: dict):
+        """
+
+        Args:
+            res ():
+        """
+        if self._save_metrics:
+            try:
+                os.makedirs(self._output_folder, exist_ok=True)
+            except NotADirectoryError as e:
+                logger.error("It's not possible to create directory {}: {}".format(self._output_folder, e.args))
+
+            # Save experiment summary
+            df = pd.DataFrame.from_dict(res)
+            df.to_csv(self._output_folder / "metrics.csv")
+
+        # Print on the console the summary and results
+        else:
+            logger.info("METRICS")
+            print(pretty_repr(res))
+
+    def _output_results(self, results: dict, summary: dict):
         """
 
         Args:
@@ -126,7 +154,11 @@ class GeneralPurposeManager:
                     f.write('%s: %s\n' % (key, value))
 
             # Save experiment results
-            results.to_csv(self._output_folder / 'dataset.csv', index=False)
+            pd.DataFrame.from_dict(results['operations']).to_csv(self._output_folder / 'dataset.csv', index=False)
+            if results['ground']:
+                pd.DataFrame.from_dict(results['ground']).to_csv(self._output_folder / 'ground.csv', index=False)
+            if results['aging']:
+                pd.DataFrame.from_dict(results['aging']).to_csv(self._output_folder / 'aging.csv', index=False)
 
         # Print on the console the summary and results
         if logger.level == logging.INFO:
