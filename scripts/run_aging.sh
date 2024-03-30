@@ -1,6 +1,6 @@
 python ernesto.py \
     --battery_model thevenin \
-    --thermal_model r2c_thermal \
+    --thermal_model mlp_thermal \
     --aging_model bolun \
     --save_results \
-    simulation --config_files ./data/config/sim_aging.yaml
+    simulation --config_files ./data/config/sim_aging2.yaml

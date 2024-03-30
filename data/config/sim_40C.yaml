@@ -70,7 +70,7 @@ battery:
     params:
         nominal_capacity:
             var: 'capacity'
-            value: 20.
+            value: 20.53340
             unit: 'F'
         v_max:
             var: 'voltage'

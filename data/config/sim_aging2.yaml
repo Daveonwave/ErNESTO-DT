@@ -49,7 +49,8 @@ ground_data:
 #   the timestep of the simulator in seconds.
 # ------------------------------------------------------------------------------- #
 iterations: null
-timestep: 1
+timestep: null
+check_soh_every: 50000
 
 # Battery options
 # ------------------------------------------------------------------------------- #
