@@ -78,6 +78,7 @@ target/
 # exclude data from fmu_script control by default
 /data/output
 /data/external
+/data/ground
 
 # Mac OS-specific storage files
 .DS_Store
@@ -90,8 +91,7 @@ target/
 .mypy_cache/
 
 # Useless folders for now
-/models
 /references
 /reports
-
+/notebooks/plots
 

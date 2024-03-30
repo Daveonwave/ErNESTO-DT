@@ -1,0 +1,11 @@
+# ############################################################################
+# Configuration yaml file of the thermal model used to describe the
+# behaviour of the battery temperature.
+# ----------------------------------------------------------------------------
+# How is it made up of?
+#   - r_term Resistor
+#   - c_term Capacitor
+# ############################################################################
+
+type: thermal
+class_name: DummyThermal

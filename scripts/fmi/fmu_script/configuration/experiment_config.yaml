@@ -15,7 +15,7 @@ goal: "Grasp why the behaviour of voltage has a different trend
 #   1. specify the .csv file from which we have to read data
 
 load_csv: 'input_data.csv'
-ground_csv: 'ground_data.csv'
+ground_csv: 'ground_enrica.csv'
 
 #   2. 'var' has to be a variable among [current, voltage, power]
 #   3. 'label' is the column name of the variable inside the csv file
@@ -77,7 +77,7 @@ initial_conditions:
 models:
     thevenin:
         category: electrical
-        file: thevenin.yaml
+        file: thevenin_silvia.yaml
     rc_thermal:
         category: thermal
         file: rc_thermal.yaml

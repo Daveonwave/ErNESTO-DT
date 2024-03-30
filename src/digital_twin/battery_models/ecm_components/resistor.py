@@ -21,8 +21,8 @@ class Resistor(ECMComponent):
 
     """
     def __init__(self,
-                 name:str,
-                 resistance:Union[Scalar, ParametricFunction, LookupTableFunction],
+                 name: str,
+                 resistance: Union[Scalar, ParametricFunction, LookupTableFunction],
                  ):
         super().__init__(name)
         self._resistance = resistance
@@ -50,19 +50,16 @@ class Resistor(ECMComponent):
 
         return self._resistance.get_value(input_vars=input_vars)
 
-    # TODO: setter method to be updated (do we have to set a lookup table or a function?)
-    """
-    @resistance.setter
-    def resistance(self, value: Union[float, pint.Quantity]):
-        self._resistance = value
-    """
-
-    def init_component(self, r0=0):
+    def init_component(self, v=None, r0=None):
         """
         Initialize R0 component at t=0
         """
-        super().init_component()
+        r0 = self.resistance if r0 is None else r0
+        v = 0 if v is None else v
+
+        super().init_component(v)
         self._update_r0_series(r0)
+
     def get_r0_series(self, k=None):
         """
         Getter of the specific value at step K, if specified, otherwise of the entire collection
@@ -108,7 +105,7 @@ class Resistor(ECMComponent):
         dv_r0 = (i - i_) / dt * self.resistance
         return dv_r0
 
-    def update_step_variables(self, r0, v_r0, dt, k):
+    def update_step_variables(self, r0, v_r0):
         """
         Aggiorno le liste delle variabili calcolate
         """

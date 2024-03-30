@@ -33,14 +33,17 @@ class OCVGenerator(ECMComponent):
 
         return self._ocv_potential.get_value(input_vars=input_vars)
 
-    @ocv_potential.setter
-    def ocv_potential(self, value: float):
-        self._ocv_potential = value
-
-    def compute_v(self):
+    def init_component(self, v=None):
         """
-
+        Initialize V_ocv component at t=0
         """
-        v_ocv = 3.43 + 0.68 * self._soc - 0.68 * (self._soc ** 2) + 0.81 * (self._soc ** 3) - 0.31 * np.exp(-46 * self._soc)
-        return v_ocv
+        v = 0 if v is None else v
+        super().init_component(v)
+
+    # def _compute_v(self):
+    #     """
+    #
+    #     """
+    #     v_ocv = 3.43 + 0.68 * self._soc - 0.68 * (self._soc ** 2) + 0.81 * (self._soc ** 3) - 0.31 * np.exp(-46 * self._soc)
+    #     return v_ocv
 

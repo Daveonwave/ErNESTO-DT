@@ -1,0 +1,78 @@
+# ------------------------------------------------------------------------------- #
+# MODE: What If Analysis
+# ------------------------------------------------------------------------------- #
+# The purpose of experiment is to provide a What If analysis of what
+# could happen running the system in a hypothetical scenario
+# ------------------------------------------------------------------------------- #
+
+# Summary of the experiment
+experiment_name: "What If Analysis"
+description: "Description "
+goal: "GOAL"
+
+# Folder where the results will be saved
+destination_folder: "whatif"
+
+schedule:
+    - "Hold at 10 mV for 20 seconds"
+    - "Discharge at 1 C for 0.5 hour"
+    - "Discharge at C/20 for 0.5 hours"
+    - "Charge at 0.5 C for 45 minutes"
+    - "Discharge at 1 A for 0.5 hours"
+    - "Charge at 200 mA for 45 minutes"
+    - "Discharge at 1 W for 0.5 hours"
+    - "Charge at 200 mW for 45 minutes"
+    - "Rest for 10 minutes"
+    - "Charge at 1 C until 4.1V"
+    - "Hold at 4.1 V until 50mA"
+    - "Hold at 3 V until C/50"
+    - "Discharge at C/3 for 2 hours or until 2.5 V"
+
+# Simulation Options
+# ------------------------------------------------------------------------------- #
+# iterations:
+#   the number of iterations of the simulated experiment (null -> full experiment).
+# timestep:
+#   the timestep of the simulator in seconds.
+# ------------------------------------------------------------------------------- #
+iterations: null
+timestep: null  # default: 1
+
+# Battery options
+# ------------------------------------------------------------------------------- #
+# sign_convention:
+#   - active: (power sources) p<0 and current exiting => i>0 during discharge (default for Thevenin)
+#   - passive: (loads) with p>0 and current entering => i<0 during discharge
+# other params:
+#   - 'var' has to be a variable among of the parameter.
+#   - 'value' is the float value of the parameter.
+#   - 'unit' specifies the unit of the parameter that will be transformed to
+#      Digital Twin internal default units.
+# ------------------------------------------------------------------------------- #
+battery:
+    sign_convention: 'passive'
+    params:
+        nominal_capacity:
+            var: 'capacity'
+            value: 20.
+            unit: 'F'
+        v_max:
+            var: 'voltage'
+            value: 4.15
+            unit: 'V'
+        v_min:
+            var: 'voltage'
+            value: 3.
+            unit: 'V'
+        temp_ambient:
+            var: 'temperature'
+            value: 298.15.
+            unit: 'K'
+    init:
+        voltage: 0.
+        current: 0.
+        temperature: 296.15
+        soc: 1.
+        soh: 1.
+
+      

@@ -56,7 +56,7 @@ class ElectricalModel(GenericModel):
     def init_model(self, **kwargs):
         pass
 
-    def load_battery_state(self, temp:float, soc:float, soh:float):
+    def load_battery_state(self, temp: float, soc: float, soh: float):
         pass
 
     def build_components(self, components:dict):
@@ -68,7 +68,7 @@ class ElectricalModel(GenericModel):
     def get_final_results(self, **kwargs):
         pass
 
-    def get_v_load_series(self, k=None):
+    def get_v_series(self, k=None):
         """
         Getter of the specific value at step K, if specified, otherwise of the entire collection
         """
@@ -82,7 +82,7 @@ class ElectricalModel(GenericModel):
                 raise IndexError("Load Voltage V of the electrical model at step K not computed yet")
         return self._v_load_series
 
-    def get_i_load_series(self, k=None):
+    def get_i_series(self, k=None):
         """
         Getter of the specific value at step K, if specified, otherwise of the entire collection
         """
@@ -151,8 +151,8 @@ class ThermalModel(GenericModel):
         """
         Returns a dictionary with all final results
         """
-        return {'Temperature [degC]': self._temp_series,
-                'Dissipated Heat [W]': self._heat_series}
+        return {'temperature': self._temp_series,
+                'heat': self._heat_series}
 
     def get_temp_series(self, k=None):
         """
@@ -224,5 +224,8 @@ class AgingModel(GenericModel):
             else:
                 raise IndexError("Degradation of aging model at step K not computed yet")
         return self._deg_series
+
+    def update_deg(self, value: float):
+        self._deg_series.append(value)
 
 
