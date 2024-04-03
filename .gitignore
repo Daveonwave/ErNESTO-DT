@@ -94,4 +94,11 @@ target/
 /references
 /reports
 /notebooks/plots
+.python-version
+Makefile
+docs/
+scripts/fmi/
+setup.py
+test_environment.py
+tox.ini
 
