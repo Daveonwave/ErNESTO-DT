@@ -21,11 +21,11 @@ lookup = lookup_data.to_numpy()
 dt = 1
 time = 9599
 timewindow = 0.40
-moving_step = 0.2 #0.2
+moving_step = 0.19 #0.2
 number_restart = 1 #10
 battery_capacity = 53.4 * 3600  # Convert to Coulombs
 # battery_capacity = 50 * 3600
-scale_factors =  {'r0':0.1, 'r1': 0.1, 'c1':10}
+scale_factors =  {'r0':0.1, 'r1': 0.1, 'c1':1}
 i = list(-data['I'])
 v = list(data['V'])
 

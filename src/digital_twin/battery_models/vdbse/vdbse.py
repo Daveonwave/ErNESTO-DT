@@ -1,5 +1,8 @@
 import numpy as np
 from scipy.optimize import minimize
+import nevergrad as ng
+
+from scipy.interpolate import interp1d
 
 class VDBSE:
     """
@@ -39,10 +42,10 @@ class VDBSE:
         self._i_batch = []
         self._v_batch = []
 
-        self._v_hat = list()
+        self._v_hat_batch = []
         self._vocv = 0
         # TODO: Check if it has a meaning [ [lookup_table_vocv] vocv_t vocv_t+1 ... ], how should be _vocv_series
-        self._vocv_series = list(lookup_table[:,0].flatten())
+        self._vocv_batch = list(lookup_table[:, 0].flatten())
         theta = np.random.rand(5) #just for storing the output of the estimate_param
         self._params = {'r0': theta[0], 'r1': theta[1], 'c1': theta[2], 'soc_tau' : theta[3], 'q_max' : theta[4]}
 
@@ -69,12 +72,12 @@ class VDBSE:
         It is needed for the first estimation of the vocv, because of the presence of vocv(t-1)
         self._lookup_table[:,0] : Vocv and self._lookup_table[:,1] : SoC
         """
-        self._vocv = np.interp(self._actual_soc, self._lookup_table[:,0], self._lookup_table[:,1])
-        self._vocv_series.append(self._vocv)
+        self._vocv = np.interp(self._actual_soc, self._lookup_table[:,0], self._lookup_table[:,1], left=np.nan, right=np.nan)
+        self._vocv_batch.append(self._vocv)
 
-    def _get_soc(self):
+    def _interpolate_soc(self):
         """
-
+        spline_interpolation
         """
         self._actual_soc = np.interp(self._vocv, self._lookup_table[:, 1], self._lookup_table[:, 0])
 
@@ -96,7 +99,7 @@ class VDBSE:
         # TODO: check: when is performed the first estimation which value of Vocv must be exploited??0 ---- get_Vocv(SoC_tau_est,lookup)
         if self._first_window:
             self._get_vocv()
-            print("-----------------vocv_series", len(self._vocv_series),self._vocv_series)
+            print("-----------------vocv_series", len(self._vocv_batch), self._vocv_batch)
 
         if len(self._i_batch) < 2 or len(self._v_batch) < 2:
             pass
@@ -104,7 +107,7 @@ class VDBSE:
             self._vocv = (((1 / dt) + (1 / (c * rp))) * self._v_batch[-1] - (self._v_batch[-2] / dt) + (self._vocv / dt)
                            + (((rs / dt) + (1 / c) + (rs / (c * rp))) * self._i_batch[-1]) - (
                                        (rs / dt) * self._i_batch[-2])) / ((1 / dt) + (1 / (c * rp)))
-            self._vocv_series.append(self._vocv)
+            self._vocv_batch.append(self._vocv)
 
 
     def _estimate_v(self, dt):
@@ -118,13 +121,13 @@ class VDBSE:
         c = self._params['c1'] * self._scale_factors['c1']
 
         if self._first_estimation_v:
-            self._v_hat.append(self._v_batch[-1])
+            self._v_hat_batch.append(self._v_batch[0])
             self._first_estimation_v = False
 
         for k in range(len(self._v_batch)):
-            tmp = ((1 / dt) * self._v_hat[k] + ((1 / dt) + 1 / (c * rp)) * self._vocv_series[k] - (
-                            1 / dt) * self._vocv_series[k-1] - ((rs / dt) + (1 / c) * (rs / (rp * c))) * self._i_batch[k-1] + (rs / dt) * self._i_batch[k-1]) / ((1 / dt) + 1 / (c * rp))
-            self._v_hat.append(tmp)
+            v_hat = ((1 / dt) * self._v_hat_batch[k] + ((1 / dt) + 1 / (c * rp)) * self._vocv_batch[k] - (
+                            1 / dt) * self._vocv_batch[k - 1] - ((rs / dt) + (1 / c) * (rs / (rp * c))) * self._i_batch[k - 1] + (rs / dt) * self._i_batch[k - 1]) / ((1 / dt) + 1 / (c * rp))
+            self._v_hat_batch.append(v_hat)
 
 
 
@@ -145,12 +148,12 @@ class VDBSE:
 
         #self._estimate_v(dt)
 
-        print("len of v_hat", len(self._v_hat))
-        v_est = np.array(self._v_hat)
-        print("Len of v_batch", len(self._v_batch))
+        #print("len of v_hat", len(self._v_hat_batch))
+        v_est = np.array(self._v_hat_batch)
+        #print("Len of v_batch", len(self._v_batch))
         #print("Len of v_est", len(v_est))
         v = np.array(self._v_batch)
-        loss = 0.
+        #loss = 0.
 
 
         if len(v_est) == len(v) and len(v_est) >= 1 and len(v) >= 1:
@@ -159,7 +162,7 @@ class VDBSE:
             print("\n")
         else:
             v_est = v_est[-len(v):]
-            print("len of v_est after cutting", len(v_est))
+            #print("len of v_est after cutting", len(v_est))
             loss = np.sum(np.abs(v_est - v))
             print("this is the loss ye ye: ", loss)
             print("\n")
@@ -169,46 +172,25 @@ class VDBSE:
 
     def _estimate_params(self, dt):
         """
-        Estimation of parameters through a nonlinear optimization approach.
-        Returns: r0, r1, c, soc_tau, q_max
-        """
+                Estimation of parameters through a nonlinear optimization approach.
+                Returns: r0, r1, c, soc_tau, q_max
+                """
 
         loss = lambda x: self._loss_function(x, dt)
+        self._actual_soc = abs(self._actual_soc - np.sum(np.array(self._i_batch)) * (dt / self._capacity))
+        self._get_vocv()
+        self._estimate_v(dt)
 
-        best_result = None
-        best_loss = float('inf')
-        lb = np.array([1e-2, 1e-2, 1e-2, 1e-2, 1e4])
-        ub = np.array([1e2, 1e2, 1e2, 1, 1e6])
+        optimizer = ng.optimizers.NGOpt(parametrization=5, budget=100)
+        recommendation = optimizer.minimize(loss)
+        print("reccomendation is:")
+        print(recommendation.value)
 
-        # Random initialization within bounds
-        randmatrix = np.random.rand(self._restarts, len(ub))
-        for jj in range(len(ub)):
-            randmatrix[:, jj] = randmatrix[:, jj] * (ub[jj] - lb[jj]) + lb[jj]
-
-        for jj in range(self._restarts):
-
-            self._actual_soc = abs(self._actual_soc - np.sum(np.array(self._i_batch)) * (dt / self._capacity))
-            self._get_vocv()
-            self._estimate_v(dt)
-
-            result = minimize(loss, randmatrix[jj,:], method='BFGS', options={'disp': True, 'maxiter':1})
-            current_loss = result.fun
-
-            if current_loss < best_loss:
-                best_loss = current_loss
-                best_result = result.x
-
-            # Extract the best parameters
-        res = best_result
-
-        self._params['ro'] = res[0] * self._scale_factors['r0']
-        self._params['r1'] = res[1] * self._scale_factors['r1']
-        self._params['c1'] = res[2] * self._scale_factors['c1']
-        self._params['soc_tau'] = res[3]
-        self._params['q_max'] = res[4]
-
-
-
+        self._params['ro'] = abs(recommendation.value[0]) * self._scale_factors['r0']
+        self._params['r1'] = abs(recommendation.value[1]) * self._scale_factors['r1']
+        self._params['c1'] = abs(recommendation.value[2]) * self._scale_factors['c1']
+        self._params['soc_tau'] = abs(recommendation.value[3])
+        self._params['q_max'] = abs(recommendation.value[4])
 
     def estimate_soc(self, i, v, dt):
         """
@@ -227,8 +209,8 @@ class VDBSE:
             if (self._max_soc - self._min_soc) < self._soc_time_window:
                 self._actual_soc = abs(self._actual_soc - (1 / self._capacity) * i * dt)
                 self._extend_window(i=i, v=v)
-                if len(self._v_batch) == 1 and len(self._i_batch):
-                    self._extend_window(i, v)
+                #if len(self._v_batch) == 1 and len(self._i_batch) == 1:
+                #    self._extend_window(i, v)
 
             else:
                 self._first_window = False
@@ -238,19 +220,21 @@ class VDBSE:
                 print(" the param are:", self._params)
                 self._estimate_vocv(dt)
                 # TODO: JUST A TRIAL
-                #self._get_soc()
+                self._interpolate_soc()
 
                 self._max_soc = 0.
                 self._min_soc = 0.
                 self._i_batch = self._i_batch[-2:]
                 self._v_batch = self._v_batch[-2:]
-                self._v_hat = self._v_hat[-2:]
+                self._v_hat_batch = self._v_hat_batch[-2:]
 
         else:
             if (self._max_soc - self._min_soc) < self._moving_step:
                 print("moving step passed!")
-                self._actual_soc = abs(self._actual_soc - (1 / self._capacity) * i * dt)
+                #self._actual_soc = abs(self._actual_soc - (1 / self._capacity) * i * dt)
+                self._interpolate_soc()
                 self._extend_window(i=i, v=v)
+
             else:
                 self._estimate_vocv(dt)
                 self._estimate_params(dt=dt)
@@ -259,9 +243,9 @@ class VDBSE:
                 self._min_soc = 0.
                 self._i_batch = self._i_batch[-2:]
                 self._v_batch = self._v_batch[-2:]
-                self._v_hat = self._v_hat[-2:]
+                self._v_hat_batch = self._v_hat_batch[-2:]
 
-        self._get_soc()
+            self._interpolate_soc()
 
         return self._actual_soc
 
