@@ -67,7 +67,7 @@ class GeneralPurposeManager:
         for model in models:
             model_file = (Path(self._assets['models_path']) / self._assets['models'][model]['category'] /
                           self._assets['models'][model]['file'])
-            self._models_configs.append(self._config_folder / model_file)
+            self._models_configs.append(read_yaml(yaml_file=self._config_folder / model_file, yaml_type='model'))
 
         # Output results and postprocessing
         self._save_results = save_results
