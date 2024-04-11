@@ -71,8 +71,8 @@ class WhatIfManager(GeneralPurposeManager):
 
         """
         logger.info("'What-If Simulation' started...")
-        self._battery.reset_data()
-        self._battery.simulation_init()
+        self._battery.reset()
+        self._battery.init()
 
         pbar = tqdm(total=len(self._settings['schedule']), position=0, leave=True)
 
@@ -137,7 +137,7 @@ class WhatIfManager(GeneralPurposeManager):
         k = len(self._battery.t_series)
 
         while self._elapsed_time < duration:
-            self._battery.simulation_step(load=value, dt=self._stepsize, k=k)
+            self._battery.step(load=value, dt=self._stepsize, k=k)
             self._battery.t_series.append(self._elapsed_time)
             self._elapsed_time += self._stepsize
             k += 1
@@ -158,7 +158,7 @@ class WhatIfManager(GeneralPurposeManager):
         op = operator.lt if action == 'charge' else operator.gt
 
         while op(curr_value(), cond_value):
-            self._battery.simulation_step(load=value, dt=self._stepsize, k=k)
+            self._battery.step(load=value, dt=self._stepsize, k=k)
             self._battery.t_series.append(self._elapsed_time)
             self._elapsed_time += self._stepsize
             k += 1
@@ -181,7 +181,7 @@ class WhatIfManager(GeneralPurposeManager):
         op = operator.lt if action == 'charge' else operator.gt
 
         while op(curr_value(), cond_value) and self._elapsed_time < duration:
-            self._battery.simulation_step(load=value, dt=self._stepsize, k=k)
+            self._battery.step(load=value, dt=self._stepsize, k=k)
             self._battery.t_series.append(self._elapsed_time)
             self._elapsed_time += self._stepsize
             k += 1

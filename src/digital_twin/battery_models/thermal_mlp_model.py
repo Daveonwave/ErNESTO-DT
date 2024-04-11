@@ -41,7 +41,7 @@ class ThermalMLP(ThermalModel):
             return self.layers(x)
 
     def __init__(self, components_settings: dict, **kwargs):
-        super().__init__()
+        super().__init__(name='MLP_thermal')
         self._settings = components_settings
 
         if 'ground_temps' in kwargs:
@@ -68,7 +68,7 @@ class ThermalMLP(ThermalModel):
     def soc(self):
         return self._soc
 
-    def reset_model(self):
+    def reset_model(self, **kwargs):
         self._temp_series = []
 
     def init_model(self, **kwargs):

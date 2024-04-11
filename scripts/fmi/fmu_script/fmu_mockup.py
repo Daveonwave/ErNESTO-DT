@@ -43,8 +43,8 @@ class DTMockup(Fmi2Slave):
             units_checker=self.experiment_config['use_data_units']
         )
 
-        self.battery.reset_data()
-        self.battery.simulation_init(initial_conditions=self.experiment_config['initial_conditions'])
+        self.battery.reset()
+        self.battery.init(initial_conditions=self.experiment_config['initial_conditions'])
 
         self.load_current = 0.
         self.output_voltage = 0.
@@ -71,7 +71,7 @@ class DTMockup(Fmi2Slave):
 
         """
         #self.output_current = self.load_current
-        self.output_voltage = self.battery.simulation_step(load=self.load_current, dt=step_size, k=self.k)
+        self.output_voltage = self.battery.step(load=self.load_current, dt=step_size, k=self.k)
         self.battery.t_series.append(current_time)
         self.k += 1
         return True
