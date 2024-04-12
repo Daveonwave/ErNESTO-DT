@@ -1,4 +1,3 @@
-import numpy as np
 from typing import Union
 
 from src.digital_twin.battery_models.ecm_components.generic_component import ECMComponent

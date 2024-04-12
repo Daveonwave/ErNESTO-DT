@@ -1,9 +1,4 @@
-import logging
-import numpy as np
-
 from src.digital_twin.battery_models import ElectricalModel
-from src.digital_twin.parameters.data_checker import craft_data_unit
-from src.digital_twin.parameters.units import Unit
 from src.digital_twin.battery_models.ecm_components import Resistor
 from src.digital_twin.battery_models.ecm_components import ResistorCapacitorParallel
 from src.digital_twin.battery_models.ecm_components import OCVGenerator
@@ -20,23 +15,14 @@ class TheveninModel(ElectricalModel):
                  **kwargs
                  ):
         """
-        • 𝑁s𝑚: numero di celle in serie che compongono un singolo modulo;
-        • 𝑁𝑝𝑚: numero di celle in parallelo che compongono un singolo modulo;
-        • 𝑁s𝑏: numero di moduli in serie che compongono il pacco batteria;
-        • 𝑁𝑝𝑏: numero di moduli in parallelo che compongono il pacco batteria;
-        • 𝑁s =𝑁s𝑚 x 𝑁 𝑏 : numero di celle totali connesse in serie che compongono il pacco batteria;
-        • 𝑁𝑝=𝑁𝑝𝑚 x 𝑁𝑝𝑏 : numero di celle totali connesse in parallelo che compongono il pacco batteria;
+
+        Args:
+            components_settings ():
+            sign_convention ():
+            **kwargs ():
         """
         super().__init__(name='Thevenin')
         self._sign_convention = sign_convention
-
-        # TODO: to approximate multiple RC modules in series
-        self.ns_cells_module = 0
-        self.np_cells_module = 0
-        self.ns_modules = 0
-        self.np_modules = 0
-        self.ns_cells_battery = 0
-        self.np_cells_battery = 0
 
         self._init_components = instantiate_variables(components_settings)
 

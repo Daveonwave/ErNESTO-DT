@@ -1,6 +1,5 @@
 #  --- ASSETS ----
 # This yaml is thought to collect structures and params of the DT that are agnostic to the running mode.
-# TODO: understand how to modify parameters of each submodel (electrical, thermal, etc) in a clever way
 
 models_path: "./models/"
 

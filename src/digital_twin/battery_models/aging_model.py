@@ -117,7 +117,7 @@ class BolunModel(AgingModel):
         Compute the calendar aging of the battery from the start of the simulation.
 
         Inputs:
-        :param curr_time: wrt the start of the simulation (TODO: what if the battery is not new at the start of the simulation?)
+        :param curr_time: wrt the start of the simulation
         :param avg_temp:
         :param avg_soc:
         """
@@ -510,8 +510,6 @@ class BolunModel(AgingModel):
             # bounds_tuple = self._min_max_vals[self._cycle_k]
             # min_val, max_val = min(bounds_tuple[0], actual_value), max(bounds_tuple[1], actual_value)
             # self._min_max_vals[self._cycle_k] = (min_val, max_val)
-
-            # TODO potrebbe risolvere non monotonia
             self._number_of_samples[self._cycle_k] += 1
 
         def _get_indices_by_direction(self, direction: Direction, value: float, indices_range: np.array = None):

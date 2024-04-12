@@ -1,18 +1,12 @@
-import time
-import yaml
 import logging
 import os
 import pint.util
 import pandas as pd
-import numpy as np
 from pathlib import Path
-from datetime import datetime, timezone
 from pint import UnitRegistry
-from scipy.interpolate import interp1d
 
-ureg = UnitRegistry(autoconvert_offset_to_baseunit = True)
+ureg = UnitRegistry(autoconvert_offset_to_baseunit=True)
 logger = logging.getLogger('DT_ernesto')
-
 
 # Dictionary of units internally used inside the simulator
 internal_units = dict(
