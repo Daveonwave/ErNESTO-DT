@@ -2,7 +2,7 @@ import numpy as np
 import rainflow
 from enum import Enum
 
-from src.digital_twin.battery_models.generic_models import AgingModel
+from src.digital_twin.battery_models import AgingModel
 from src.digital_twin.battery_models.bolun_components import stress_functions
 
 

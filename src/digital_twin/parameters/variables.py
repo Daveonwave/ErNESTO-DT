@@ -39,6 +39,9 @@ class Scalar(GenericVariable):
     def get_value(self, input_vars: dict = None):
         return self._value
 
+    def set_value(self, new_value):
+        self._value = new_value
+
 
 class Function:
     """
@@ -132,6 +135,10 @@ class LookupTableFunction(GenericVariable):
         else:
             raise Exception("Given inputs list has a wrong dimension for the computation of {}".format(self.name))
 
+    def set_value(self, new_value):
+        raise AttributeError("Is impossible to modify the values within the lookup table of the parameter {}".
+                             format(self.name))
+
     def render(self):
         data_list = self.x_values.copy()
         names_list = self.x_names.copy()
@@ -141,48 +148,44 @@ class LookupTableFunction(GenericVariable):
         print(table)
 
 
-def instantiate_variables(var_dict: dict, ):
+def instantiate_variables(var_dict: dict) -> dict:
     """
     # TODO: cambiare configurazione dati in ingresso (esempio: LookupTable passata con un csv)
     """
-    instantiated_vars = []
+    instantiated_vars = {}
 
     for var in var_dict.keys():
 
         if var_dict[var]['selected_type'] == "scalar":
-            instantiated_vars.append(Scalar(name=var, value=var_dict[var]['scalar']))
+            instantiated_vars[var] = Scalar(name=var, value=var_dict[var]['scalar'])
 
         elif var_dict[var]['selected_type'] == "function":
-            instantiated_vars.append(Function())  # TODO: implement
+            instantiated_vars[var] = Function()  # TODO: implement
 
         elif var_dict[var]['selected_type'] == "lookup":
             # Hardcoded lookup table
             if 'table' not in var_dict[var]['lookup'].keys():
-                instantiated_vars.append(
-                    LookupTableFunction(
-                        name=var,
-                        y_values=var_dict[var]['lookup']['output'],
-                        x_names=var_dict[var]['lookup']['inputs'].keys(),
-                        x_values=[var_dict[var]['lookup']['inputs'][key] for key in
-                                  var_dict[var]['lookup']['inputs'].keys()]
-                    ))
+                instantiated_vars[var] = LookupTableFunction(
+                    name=var,
+                    y_values=var_dict[var]['lookup']['output'],
+                    x_names=var_dict[var]['lookup']['inputs'].keys(),
+                    x_values=[var_dict[var]['lookup']['inputs'][key] for key in
+                              var_dict[var]['lookup']['inputs'].keys()]
+                )
             # Csv lookup table
             else:
                 table = pd.read_csv(params_csv_folder + var_dict[var]['lookup']['table'])
-                instantiated_vars.append(
-                    LookupTableFunction(
-                        name=var_dict[var]['lookup']['output']['label'],
-                        y_values=_validate_data_unit(data_list=table[var_dict[var]['lookup']['output']['label']].tolist(),
-                                                     var_name=var_dict[var]['lookup']['output']['var'],
-                                                     unit=var_dict[var]['lookup']['output']['unit']),
-                        x_names=[var['label'] for var in var_dict[var]['lookup']['inputs']],
-                        x_values=[_validate_data_unit(data_list=table[var['label']].tolist(),
-                                                      var_name=var['var'],
-                                                      unit=var['unit'])
-                                  for var in var_dict[var]['lookup']['inputs']]
-                    )
+                instantiated_vars[var] = LookupTableFunction(
+                    name=var_dict[var]['lookup']['output']['label'],
+                    y_values=_validate_data_unit(data_list=table[var_dict[var]['lookup']['output']['label']].tolist(),
+                                                 var_name=var_dict[var]['lookup']['output']['var'],
+                                                 unit=var_dict[var]['lookup']['output']['unit']),
+                    x_names=[var['label'] for var in var_dict[var]['lookup']['inputs']],
+                    x_values=[_validate_data_unit(data_list=table[var['label']].tolist(),
+                                                  var_name=var['var'],
+                                                  unit=var['unit'])
+                              for var in var_dict[var]['lookup']['inputs']]
                 )
-
 
         else:
             raise Exception("The chosen 'type' for the variable '{}' is wrong or nonexistent! Try to select another"

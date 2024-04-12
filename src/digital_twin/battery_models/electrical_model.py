@@ -27,7 +27,7 @@ class TheveninModel(ElectricalModel):
         • 𝑁s =𝑁s𝑚 x 𝑁 𝑏 : numero di celle totali connesse in serie che compongono il pacco batteria;
         • 𝑁𝑝=𝑁𝑝𝑚 x 𝑁𝑝𝑏 : numero di celle totali connesse in parallelo che compongono il pacco batteria;
         """
-        super().__init__()
+        super().__init__(name='Thevenin')
         self._sign_convention = sign_convention
 
         # TODO: to approximate multiple RC modules in series
@@ -38,16 +38,27 @@ class TheveninModel(ElectricalModel):
         self.ns_cells_battery = 0
         self.np_cells_battery = 0
 
-        [r0, r1, c, v_ocv] = instantiate_variables(components_settings)
+        self._init_components = instantiate_variables(components_settings)
 
-        self.r0 = Resistor(name='R0', resistance=r0)
-        self.rc = ResistorCapacitorParallel(name='RC', resistance=r1, capacity=c)
-        self.ocv_gen = OCVGenerator(name='OCV', ocv_potential=v_ocv)
+        self.r0 = Resistor(name='R0', resistance=self._init_components['r0'])
+        self.rc = ResistorCapacitorParallel(name='RC', resistance=self._init_components['r1'], capacity=self._init_components['c'])
+        self.ocv_gen = OCVGenerator(name='OCV', ocv_potential=self._init_components['v_ocv'])
 
-    def reset_model(self):
+    def reset_model(self, **kwargs):
         self._v_load_series = []
         self._i_load_series = []
-        # self._times = []
+        self.r0.reset_data()
+        self.rc.reset_data()
+        self.ocv_gen.reset_data()
+
+        if 'r0' in kwargs:
+            self.r0.resistance = kwargs['r0']
+        if 'r1' in kwargs:
+            self.rc.resistance = kwargs['r1']
+        if 'c' in kwargs:
+            self.rc.capacity = kwargs['c']
+        if 'v_ocv' in kwargs:
+            self.ocv_gen.ocv_potential = kwargs['v_ocv']
 
     def init_model(self, **kwargs):
         """
@@ -126,7 +137,7 @@ class TheveninModel(ElectricalModel):
         self.update_v_load(value=v_load)
         self.update_power(value=power)
 
-        return i
+        return v_load, i
 
     def step_current_driven(self, i_load, dt, k, p_load=None):
         """

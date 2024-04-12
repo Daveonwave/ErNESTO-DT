@@ -44,13 +44,18 @@ class ElectricalModel(GenericModel):
     """
 
     """
-    def __init__(self):
+    def __init__(self, name: str):
+        self._name = name
         self._v_load_series = []
         self._i_load_series = []
         self._power_series = []
         # self._times = []
 
-    def reset_model(self):
+    @property
+    def name(self):
+        return self._name
+
+    def reset_model(self, **kwargs):
         pass
 
     def init_model(self, **kwargs):
@@ -130,12 +135,17 @@ class ThermalModel(GenericModel):
     """
 
     """
-    def __init__(self):
+    def __init__(self, name: str):
+        self._name = name
         self._temp_series = []
         self._heat_series = []
         # self._times = []
 
-    def reset_model(self):
+    @property
+    def name(self):
+        return self._name
+
+    def reset_model(self, **kwargs):
         pass
 
     def init_model(self, **kwargs):
@@ -193,10 +203,15 @@ class AgingModel(GenericModel):
     """
 
     """
-    def __init__(self):
+    def __init__(self, name: str):
+        self._name = name
         self._deg_series = []
 
-    def reset_model(self):
+    @property
+    def name(self):
+        return self._name
+
+    def reset_model(self, **kwargs):
         pass
 
     def init_model(self, **kwargs):

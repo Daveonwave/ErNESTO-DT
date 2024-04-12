@@ -33,6 +33,10 @@ class OCVGenerator(ECMComponent):
 
         return self._ocv_potential.get_value(input_vars=input_vars)
 
+    @ocv_potential.setter
+    def ocv_potential(self, new_value):
+        self._ocv_potential.set_value(new_value)
+
     def init_component(self, v=None):
         """
         Initialize V_ocv component at t=0
