@@ -4,4 +4,4 @@ python ernesto.py \
     --plot \
     --save_metrics \
     --save_results \
-    simulation --config_files ./data/config/sim_PV2.yaml
+    simulation --config_files ./data/config/sim_PV.yaml

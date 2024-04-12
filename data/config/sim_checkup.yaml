@@ -1,0 +1,106 @@
+# ------------------------------------------------------------------------------- #
+# MODE: Compared Simulation
+# ------------------------------------------------------------------------------- #
+# The purpose of the experiment is to compare the behavior of the DT with
+# real-world (ground) data and evaluate the accuracy of the system.
+# ------------------------------------------------------------------------------- #
+
+# Summary of the experiment
+experiment_name: "Compared Simulation"
+description: "Experiment for paper"
+goal: "GOAL"
+
+# Folder where the results will be saved
+destination_folder: "check_up"
+
+# Ground Data (input and validation)
+# ------------------------------------------------------------------------------- #
+# 1. specify the .csv file from which we have to read real-world data
+# 2. specify variables used as input and output (for validation)
+# 3. specify the format of 'Time' column ('seconds' or 'timestamp')
+# 4. specify for all the variables:
+#   - 'var' has to be a variable among [current, voltage, power, temperature].
+#   - 'label' is the column name of the variable inside the csv file.
+#      Example: {'Voltage [V]', 'Current [A]', 'Power [W]'}
+#      --> [NOTE: there must be always a 'Time' column within the csv]
+#    - 'unit' specifies the unit of input and output preprocessing that will be
+#       transformed to Digital Twin internal default units.
+# # ------------------------------------------------------------------------------- #
+ground_data:
+    file: 'ground_checkup20.csv'
+    load: 'current'
+    time_format: 'timestamp'
+    vars:
+    - var: 'current'
+      label: 'Current(A)'
+      unit: 'A'
+    - var: 'voltage'
+      label: 'Voltage(V)'
+      unit: 'V'
+    - var: 'temperature'
+      label: 'Temperature'
+      unit: 'degC'
+    - var: 'power'
+      label: 'Power(W)'
+      unit: 'W'
+
+# Simulation Options
+# ------------------------------------------------------------------------------- #
+# iterations:
+#   the number of iterations of the simulated experiment (null -> full experiment).
+# timestep:
+#   the timestep of the simulator in seconds.
+# ------------------------------------------------------------------------------- #
+iterations: null
+timestep: null
+
+# Battery options
+# ------------------------------------------------------------------------------- #
+# sign_convention:
+#   - active: (power sources) p<0 and current exiting => i>0 during discharge (default for Thevenin)
+#   - passive: (loads) with p>0 and current entering => i<0 during discharge
+# other params:
+#   - 'var' has to be a variable among of the parameter.
+#   - 'value' is the float value of the parameter.
+#   - 'unit' specifies the unit of the parameter that will be transformed to
+#      Digital Twin internal default units.
+# ------------------------------------------------------------------------------- #
+battery:
+    sign_convention: 'passive'
+    params:
+        nominal_capacity:
+            var: 'capacity'
+            value: 19.4265
+            unit: 'F'
+        v_max:
+            var: 'voltage'
+            value: 4.15
+            unit: 'V'
+        v_min:
+            var: 'voltage'
+            value: 3.
+            unit: 'V'
+        temp_ambient:
+            var: 'temperature'
+            value: 296.15
+            unit: 'K'
+    init:
+        voltage: 4.15
+        current: 0.
+        temperature: 296.15 # 23 degC
+        soc: 1.
+        soh: 1.
+
+# Plot options: how to use it?
+# --------------------------------------------------------------------------------
+#
+# Among 'vars' are enlisted the variables that the user desires to plot:
+#   - 'var' has to be a string among [current, voltage, power, temperature]
+# --------------------------------------------------------------------------------
+#plot_options:
+#    plots:
+#        - type: 'compared'
+#          vars:
+#            - 'voltage'
+#            - 'temperature'
+#            - 'power'

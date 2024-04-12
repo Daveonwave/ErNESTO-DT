@@ -3,4 +3,4 @@ python ernesto.py \
     --thermal_model mlp_thermal \
     --aging_model bolun \
     --save_results \
-    simulation --config_files ./data/config/sim_aging2.yaml
+    simulation --config_files ./data/config/sim_aging.yaml
