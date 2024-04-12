@@ -10,7 +10,7 @@ class DummyThermal(ThermalModel):
 
     """
     def __init__(self, components_settings: None, **kwargs):
-        super().__init__()
+        super().__init__(name='dummy_thermal')
         if 'ground_temps' in kwargs:
             self._ground_temps = kwargs['ground_temps']
         else:
@@ -40,10 +40,13 @@ class R2CThermal(ThermalModel):
     TODO: implement this class (which could be too dependent on cell physical factors)
     """
     def __init__(self, components_settings: dict, **kwargs):
-        super().__init__()
+        super().__init__(name='R2C_thermal')
 
-        self._c_term, self._r_cond, self._r_conv, self._dv_dT, = (
-            instantiate_variables(components_settings))
+        self._init_components = instantiate_variables(components_settings)
+        self._c_term = self._init_components['c_term']
+        self._r_cond = self._init_components['r_cond']
+        self._r_conv = self._init_components['r_conv']
+        self._dv_dT = self._init_components['dv_dT']
         self._soc = None
 
     @property
@@ -102,8 +105,12 @@ class R2CThermal(ThermalModel):
 
         return self._dv_dT.get_value(input_vars=input_vars)
 
-    def reset_model(self):
+    def reset_model(self, **kwargs):
         self._temp_series = []
+        self._c_term = self._init_components['c_term']
+        self._r_cond = self._init_components['r_cond']
+        self._r_conv = self._init_components['r_conv']
+        self._dv_dT = self._init_components['dv_dT']
 
     def init_model(self, **kwargs):
         """
@@ -144,7 +151,7 @@ class RCThermal(ThermalModel):
     Pellegrino paper (@reference [paper link])
     """
     def __init__(self, components_settings: dict):
-        super().__init__()
+        super().__init__(name='RC_thermal')
 
         # TODO: r_term e c_term per ora fisse
         self._r_term, self._c_term = instantiate_variables(components_settings)
@@ -175,7 +182,7 @@ class RCThermal(ThermalModel):
 
         return self._c_term.get_value(input_vars=input_vars)
 
-    def reset_model(self):
+    def reset_model(self, **kwargs):
         self._temp_series = []
 
     def init_model(self, **kwargs):

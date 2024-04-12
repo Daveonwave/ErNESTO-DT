@@ -72,6 +72,15 @@ class ResistorCapacitorParallel(ECMComponent):
 
         return self._capacity.get_value(input_vars=input_vars)
 
+    @resistance.setter
+    def resistance(self, new_value):
+        self._resistance.set_value(new_value)
+        print()
+
+    @capacity.setter
+    def capacity(self, new_value):
+        self._capacity.set_value(new_value)
+
     def get_r1_series(self, k=None):
         """
         Getter of the specific value at step K, if specified, otherwise of the entire collection
@@ -128,17 +137,13 @@ class ResistorCapacitorParallel(ECMComponent):
                 raise IndexError("Current I_c of {} at step K not computed yet".format(self._name))
         return self._i_c_series
 
-    def _update_r1_series(self, value: float):
-        self._r1_series.append(value)
-
-    def _update_c_series(self, value: float):
-        self._c_series.append(value)
-
-    def _update_i_r1_series(self, value: float):
-        self._i_r1_series.append(value)
-
-    def _update_i_c_series(self, value: float):
-        self._i_c_series.append(value)
+    def reset_data(self):
+        self._v_series = []
+        self._i_r1_series = []
+        self._i_c_series = []
+        self._r1_series = []
+        self._c_series = []
+        self._tau_series = []
 
     def init_component(self, r1=None, c=None, i_c=0, i_r1=0, v_rc=None):
         """
@@ -206,6 +211,18 @@ class ResistorCapacitorParallel(ECMComponent):
         """
         tau = self.resistance * self.capacity
         return tau
+
+    def _update_r1_series(self, value: float):
+        self._r1_series.append(value)
+
+    def _update_c_series(self, value: float):
+        self._c_series.append(value)
+
+    def _update_i_r1_series(self, value: float):
+        self._i_r1_series.append(value)
+
+    def _update_i_c_series(self, value: float):
+        self._i_c_series.append(value)
 
     def update_step_variables(self, r1, c, v_rc, i_r1, i_c):
         """
