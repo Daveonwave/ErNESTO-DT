@@ -1,76 +1,55 @@
-ErneStoDT
-==============================
+# ErNESTO Digital Twin
+This repository contains the implementation of the ENErgy STOrage (ErNESTO) Digital Twin. <br>
+The framework is thought with a modular structure to run **_simulation_** and **_whatif_** experiments 
+of battery energy storage systems.
 
-Digital Twin of a Battery Energy Storage System
+This project is a joint endeavor of [Politecnico di Milano](https://www.polimi.it) and [RSE](https://www.rse-web.it).
 
-# Project Organization
-------------
-    ├── LICENSE
-    ├── README.md          <- The top-level README for developers using this project.
-    |
-    ├── notebooks          <- Jupyter notebooks. Naming convention is ...
-    |
-    ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g. generated with `pip freeze > requirements.txt`
-    ├── setup.py           <- Makes project pip installable (pip install -e .) so src can be imported
-    |
-    ├── src                <- Source code for use in this project.
-    │   ├── __init__.py         <- Makes src a Python module
-    │   ├── digital_twin        <- Scripts containing the code of battery models
-    |
-    ├── tests               <- Testing code of this project.
-       └── unit                 <- Tests on the single component of code (class, method or function)
-       └── integration          <- Tests on multiple components of code interacting with each other
---------
+## Installation
+In order to use this codebase you need to work with a Python version >= 3.8.
+To use ErNESTO, just clone this repository and install the required libraries:
+```bash
+git clone https://github.com/Daveonwave/dt-rse.git && \
+cd DT-rse/ && \
+python -m pip install -r requirements.txt
+```
 
-<!--- 
-# Project Organization
-------------
-    ├── LICENSE
-    ├── Makefile           <- Makefile with commands like `make data` or `make train`
-    ├── README.md          <- The top-level README for developers using this project.
-    ├── data
-    │   ├── external       <- Data from third party sources.
-    │   ├── interim        <- Intermediate data that has been transformed.
-    │   ├── output      <- The final, canonical data sets for modeling.
-    │   └── load            <- The original, immutable data dump.
-    │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
-    │
-    ├── electrical             <- Trained and serialized electrical, model predictions, or model summaries
-    │
-    ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
-    │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
-    │
-    ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-    │                         generated with `pip freeze > requirements.txt`
-    │
-    ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
-    ├── src                <- Source code for use in this project.
-    │   ├── __init__.py    <- Makes src a Python module
-    │   │
-    │   ├── data           <- Scripts to download or generate data
-    │   │   └── make_dataset.py
-    │   │
-    │   ├── features       <- Scripts to turn load data into features for modeling
-    │   │   └── build_features.py
-    │   │
-    │   ├── electrical         <- Scripts to train electrical and then use trained electrical to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
-    │   │
-    │   └── postprocessing  <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
-    │
-    └── tox.ini            <- tox file with settings for running tox; see tox.readthedocs.io
+## Usage
+Before launching any script, add to the PYTHONPATH the root folder `DT-rse/`:
+```bash
+export PYTHONPATH=$(pwd)
+```
+
+### Reproducibility
+To reproduce the experiments its necessary to run a `bash` file in the `scripts/` folder. For example:
+```bash
+./scripts/[run_check_up.sh | run_pv.sh | run_aging.sh]
+```
+Edit the `bash` files to choose different configuration files or models. The possible options can 
+be retrieve by running `python ernesto.py --help` and `python ernesto.py [simulation | whatif] --help`
+for the specific experiment.
+
+Notice that `yaml` configuration files, contained in `data/config/` folder, have to adhere to a 
+standard formatting, validated within the script [schema.py](src/preprocessing/schema.py). 
+Follow the formatting of already provided configuration file to generate new ones.
+
+### Results visualization
+If experiments have been run with the `--plot` argument, the DT will automatically generate plots within
+the output folder selected in the configuration file. Otherwise, it is possibile to run experiments with
+the `--save_results` flag to store the `csv` file within the output folder to get datasets of the 
+simulated data and _sanitized_ ground data.
+
+## Roadmap
+The idea is to extend the DT to handle a more complex scenario, considering not only a single energy
+storage system, but a broader Smart Grid. To reach this goal, further steps have to be taken. In particular:
+1. **Parameter adaptation layer** (`online_learning` branch)
+2. **Wrapping with [Gymnasium](https://gymnasium.farama.org)** to apply Reinforcement Learning methods
+3. **Build a multi-agent network**
+
+[comment]: <> (### Examples)
 
 
---------
+## Citing
+```
 
----->
+```
