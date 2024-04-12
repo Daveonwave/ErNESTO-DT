@@ -9,7 +9,7 @@ models_path: "./models/"
 models:
     thevenin:
         category: electrical
-        file: thevenin_silvia.yaml
+        file: thevenin.yaml
     dummy_thermal:
         category: thermal
         file: dummy_thermal.yaml
