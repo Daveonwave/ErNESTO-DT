@@ -1,0 +1,19 @@
+type: thermal
+class_name: R2CThermal
+components:
+  c_term:
+    selected_type: scalar
+    scalar: 410
+  r_cond:
+    selected_type: scalar
+    scalar: 0.000784
+  r_conv:
+    selected_type: scalar
+    scalar: 2.73
+  dv_dT:
+    selected_type: lookup
+    lookup:
+      inputs:
+        soc: [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0]
+      output: [8e-05, 6e-05, 8e-05, 5e-05, 0.0001, 0.00018, 0.00016, 8e-05, -5e-05, -0.00016, -0.0007]
+

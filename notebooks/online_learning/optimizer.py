@@ -1,0 +1,90 @@
+import numpy as np
+from scipy.optimize import minimize
+from src.digital_twin.bess import BatteryEnergyStorageSystem
+
+
+class Optimizer:
+    def __init__(self):
+        self._v_real = None
+        self._i_real = None
+        self._temp_battery = None
+        # the left value of the capacitor should prevent the nan value
+        self.bounds = [(0.001, 0.01), (0.001, 0.01), (0.1, 50000.0)]
+        self.initial_guess = None
+        self.number_of_restarts = 2
+        self.best_results_table = None
+        self.dt = 1
+
+    def get_status(self):
+        return self.best_results_table
+
+    def _equation(self, params):
+        theta = params
+
+        # I Should set theta of the thevenin
+        self._temp_battery._electrical_model.r0.resistance = theta[0]
+        self._temp_battery._electrical_model.rc.resistance = theta[1]
+        self._temp_battery._electrical_model.rc.capacity = theta[2]
+
+        #print(theta[0], self._temp_battery._electrical_model.r0.resistance)
+
+        elapsed_time = 0
+        #dt = 1
+
+        for k, load in enumerate(self._i_real):
+            self._temp_battery.step(load=load, dt=self.dt, k=k)
+            self._temp_battery.t_series.append(elapsed_time)
+            elapsed_time += self.dt
+            #dt = df['time'].iloc[k] - df['time'].iloc[k - 1] if k > 0 else 1.0
+
+        # k differs from len(self.v_real) from 1, one step more always
+        rhs = self._temp_battery._electrical_model.get_v_series(k=len(self._v_real))
+
+        diff = rhs - self._v_real
+
+        alpha = 0.1
+        loss = np.sum(diff ** 2) + alpha * np.linalg.norm(theta)
+        return loss
+
+    def _callback(self, xk):
+        loss = self._equation(xk)
+        print("Current loss value:", loss)
+        print("the theta passed to equation", xk)
+
+
+    def step(self, battery_settings, i_real, v_real, electrical_params, dt):
+        self._i_real = i_real
+        self._v_real = v_real
+        self.dt = dt
+
+
+        results = []
+        loss_series = []
+
+        # Perform multiple restarts
+        for _ in range(self.number_of_restarts):
+            initial_guess = np.array([np.random.uniform(low, high) for low, high in self.bounds])
+
+            self._temp_battery = BatteryEnergyStorageSystem(models_config=battery_settings['models_config'],
+                                                            battery_options=battery_settings['battery_options'],
+                                                            input_var=battery_settings['load_var']
+                                                            )
+
+            #reset_info = {key: electrical_params['components'][key]['scalar'] for key in
+            #              electrical_params['components'].keys()}
+            self._temp_battery.reset(electrical_params)
+            self._temp_battery.init()
+
+            result = minimize(self._equation, initial_guess, method='Nelder-Mead', bounds=self.bounds,
+                              callback=self._callback)
+            loss_series.append(result.fun)
+            if result.fun <= min(loss_series):
+                self.best_results_table = self._temp_battery.build_results_table()
+
+            results.append(result)
+
+        best_result = min(results, key=lambda x: x.fun)
+
+        del self._temp_battery
+
+        return best_result.x
