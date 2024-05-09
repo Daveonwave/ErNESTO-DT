@@ -71,8 +71,9 @@ class Optimizer:
         # Perform multiple restarts
         for _ in range(self.number_of_restarts):
             initial_guess = np.array([np.random.uniform(low, high) for low, high in self.bounds])
+            #initial_guess = np.array([init_info['r0'],init_info['rc'],init_info['c']])
 
-            # TODO: CHECK !
+
             self._temp_battery.reset()
             self._temp_battery.init(init_info=init_info)
 

@@ -90,6 +90,7 @@ class Simulation:
         # TODO: E' UNA PEZZA PER VEDERE SE VA !
         battery.init({'dissipated_heat' : 0 })
 
+        history_theta = list()
         nominal_clusters = dict()
         optimizer = Optimizer( models_config=models_config,battery_options=battery_options,load_var= load_var)
         elapsed_time = 0
@@ -108,6 +109,8 @@ class Simulation:
                 if k % self.batch_size == 0 or grid.is_changed_cell(soc, temp):
                     battery_results = battery.get_last_results()
                     theta = optimizer.step(i_real=i_real[start:k], v_real=v_real[start:k], init_info= battery_results, dt=dt)
+
+                    history_theta.append(theta)
                     #self.update_electrical_params(theta, settings['models_config'])
                     #theta update
                     battery._electrical_model.r0.resistance = theta['r0']
@@ -171,6 +174,10 @@ class Simulation:
         df_temp = pd.DataFrame({'temperature': results['temperature'], 'updated_temp': temp_dt_updated[0:len(results['temperature'])]})
         csv_file_temp = "temp_final.csv"
         df_temp.to_csv(csv_file_temp, index=False)
+
+        df_status = pd.DataFrame(status_series)
+        csv_file_status = "csv_status_series"
+        df_status.to_csv(csv_file_status, index=False)
 
 
 
