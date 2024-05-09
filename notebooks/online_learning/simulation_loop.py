@@ -83,12 +83,15 @@ class Simulation:
         )
 
         #reset_info = {key: electrical_params['components'][key]['scalar'] for key in
-        #             electrical_params['components'].keys()}
-        battery.reset(electrical_params)
-        battery.init()
+        #            electrical_params['components'].keys()}
+        reset_info = {'electricala_params': electrical_params, 'thermal_params': thermal_params}
+        battery.reset(reset_info)
+        #heat = battery._electrical_model.compute_generated_heat()
+        # TODO: E' UNA PEZZA PER VEDERE SE VA !
+        battery.init({'dissipated_heat' : 0 })
 
         nominal_clusters = dict()
-        optimizer = Optimizer()
+        optimizer = Optimizer( models_config=models_config,battery_options=battery_options,load_var= load_var)
         elapsed_time = 0
         dt = 1
         soc = battery.soc_series[-1]
@@ -97,38 +100,38 @@ class Simulation:
         grid = Grid(grid_parameters, soc, temp)
         start = 0
         status_series = list()
-        settings = dict()
-        settings['models_config'] = models_config
-        settings['battery_options'] = battery_options
-        settings['load_var'] = load_var
 
         for k, load in enumerate(i_real):
             if k < self.training_window:
                 elapsed_time += dt
                 dt = df['time'].iloc[k] - df['time'].iloc[k - 1] if k > 0 else 1.0
                 if k % self.batch_size == 0 or grid.is_changed_cell(soc, temp):
-                    # print( ( pd.DataFrame.from_dict(battery.build_results_table()) ) )
-                    theta = optimizer.step(settings, i_real=i_real[start:k], v_real=v_real[start:k],
-                                           electrical_params=electrical_params, dt=dt)
-                    #print(theta)
-                    self.update_electrical_params(theta, settings['models_config'])
+                    battery_results = battery.get_last_results()
+                    theta = optimizer.step(i_real=i_real[start:k], v_real=v_real[start:k], init_info= battery_results, dt=dt)
+                    #self.update_electrical_params(theta, settings['models_config'])
+                    #theta update
+                    battery._electrical_model.r0.resistance = theta['r0']
+                    battery._electrical_model.rc.resistance = theta['rc']
+                    battery._electrical_model.rc.capacity = theta['c']
+
                     start = k
                     status_series.append(optimizer.get_status())
 
                     # cluster population
                     if grid.current_cell not in nominal_clusters:
                         nominal_clusters[grid.current_cell] = Cluster()
-
-                    nominal_clusters[grid.current_cell].add(theta)
+                    nominal_clusters[grid.current_cell].add( np.array([theta['r0'],theta['rc'], theta['c']]) )
                     # end cluster population
 
                 battery.step(load, dt, k)
-                self.update_settings(battery, settings['battery_options'], k)
+                #self.update_settings(battery, settings['battery_options'], k)
+
                 soc = battery.soc_series[-1]
                 temp = battery._thermal_model.get_temp_series(-1)
             # end of training phase:
         # TODO: IMPLEMENT THE ONLINE LEARNING ALGORITHM:
 
+        # printing phase:
         results = battery.build_results_table()
         results = results['operations']
         # Create a figure and two subplots, one for voltage and one for temperature
@@ -160,6 +163,14 @@ class Simulation:
             cluster.compute_variance()
             print("variance :", cluster.variance)
 
+        #save data into a csv
+        df_voltage = pd.DataFrame({'voltage':results['voltage'], 'updated_voltage':v_dt_updated[0:len(results['voltage'])]})
+        csv_file_voltage = "voltage_final.csv"
+        df_voltage.to_csv(csv_file_voltage, index=False)
+
+        df_temp = pd.DataFrame({'temperature': results['temperature'], 'updated_temp': temp_dt_updated[0:len(results['temperature'])]})
+        csv_file_temp = "temp_final.csv"
+        df_temp.to_csv(csv_file_temp, index=False)
 
 
 

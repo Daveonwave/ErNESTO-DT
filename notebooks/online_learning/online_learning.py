@@ -22,7 +22,6 @@ if __name__ == "__main__":
     """
 
     simulation = Simulation(alpha=0.3, batch_size=100, optimizer=None, training_window=20000)
-
     simulation.run_experiment()
 
 

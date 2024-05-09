@@ -4,7 +4,7 @@ from src.digital_twin.bess import BatteryEnergyStorageSystem
 
 
 class Optimizer:
-    def __init__(self):
+    def __init__(self, models_config, battery_options, load_var):
         self._v_real = None
         self._i_real = None
         self._temp_battery = None
@@ -14,6 +14,10 @@ class Optimizer:
         self.number_of_restarts = 2
         self.best_results_table = None
         self.dt = 1
+
+        self._models_config = models_config
+        self._battery_options = battery_options
+        self._load_var = load_var
 
     def get_status(self):
         return self.best_results_table
@@ -52,28 +56,25 @@ class Optimizer:
         print("the theta passed to equation", xk)
 
 
-    def step(self, battery_settings, i_real, v_real, electrical_params, dt):
+    def step(self, i_real, v_real, init_info, dt):
         self._i_real = i_real
         self._v_real = v_real
         self.dt = dt
 
-
         results = []
         loss_series = []
+
+        self._temp_battery = BatteryEnergyStorageSystem(models_config=self._models_config,
+                                                        battery_options=self._battery_options,
+                                                        input_var=self._load_var)
 
         # Perform multiple restarts
         for _ in range(self.number_of_restarts):
             initial_guess = np.array([np.random.uniform(low, high) for low, high in self.bounds])
 
-            self._temp_battery = BatteryEnergyStorageSystem(models_config=battery_settings['models_config'],
-                                                            battery_options=battery_settings['battery_options'],
-                                                            input_var=battery_settings['load_var']
-                                                            )
-
-            #reset_info = {key: electrical_params['components'][key]['scalar'] for key in
-            #              electrical_params['components'].keys()}
-            self._temp_battery.reset(electrical_params)
-            self._temp_battery.init()
+            # TODO: CHECK !
+            self._temp_battery.reset()
+            self._temp_battery.init(init_info=init_info)
 
             result = minimize(self._equation, initial_guess, method='Nelder-Mead', bounds=self.bounds,
                               callback=self._callback)
@@ -87,4 +88,4 @@ class Optimizer:
 
         del self._temp_battery
 
-        return best_result.x
+        return {'r0':best_result.x[0], 'rc': best_result.x[1], 'c': best_result.x[2]}
