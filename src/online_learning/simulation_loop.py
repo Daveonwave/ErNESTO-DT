@@ -1,9 +1,8 @@
 from src.digital_twin.bess import BatteryEnergyStorageSystem
-from notebooks.online_learning.cluster import Cluster
-from notebooks.online_learning.grid import Grid
-from notebooks.online_learning.optimizer import Optimizer
+from src.online_learning.cluster import Cluster
+from src.online_learning.grid import Grid
+from src.online_learning.optimizer import Optimizer
 import pandas as pd
-import yaml
 import numpy as np
 import yaml
 import matplotlib.pyplot as plt
@@ -35,18 +34,6 @@ class Simulation:
             grid_parameters = yaml.safe_load(file)
         return grid_parameters
 
-    def update_settings(self, battery, battery_options, k):
-        battery_options['init']['soc'] = battery.soc_series[-1]
-        battery_options['init']['temperature'] = battery._thermal_model.get_temp_series(k)
-        battery_options['init']['current'] = battery._electrical_model.get_v_series(k)
-        battery_options['init']['voltage'] = battery._electrical_model.get_i_series(k)
-
-    def update_electrical_params(self, theta, models_config):
-        # 0 stands for electrical_params
-        models_config[0]['r0'] = theta[0]
-        models_config[0]['r1'] = theta[1]
-        models_config[0]['c'] = theta[2]
-
     def extract_v(self, status_series):
         v = []
         for item in status_series:
@@ -62,17 +49,17 @@ class Simulation:
 
     def run_experiment(self):
         # Load Dataframe
-        df = pd.read_csv("ground_20.csv")
+        df = pd.read_csv("initialization/ground_20.csv")
 
         v_real = df['voltage'].values
         i_real = df['current'].values
 
         # Load YAML
-        grid_parameters = self.load_grid_parameters_from_yaml('grid_parameters')
-        electrical_params = self.load_electrical_params_from_yaml('electrical_params')
-        thermal_params = self.load_thermal_params_from_yaml('thermal_params')
+        grid_parameters = self.load_grid_parameters_from_yaml('initialization/grid_parameters')
+        electrical_params = self.load_electrical_params_from_yaml('initialization/electrical_params')
+        thermal_params = self.load_thermal_params_from_yaml('initialization/thermal_params')
         models_config = [electrical_params, thermal_params]
-        battery_options = self.load_battery_options_from_yaml('battery_options')
+        battery_options = self.load_battery_options_from_yaml('initialization/battery_options')
 
         load_var = 'current'
 
@@ -101,25 +88,25 @@ class Simulation:
         grid = Grid(grid_parameters, soc, temp)
         start = 0
         status_series = list()
+        battery_results = battery.get_last_results()
 
         for k, load in enumerate(i_real):
             if k < self.training_window:
                 elapsed_time += dt
                 dt = df['time'].iloc[k] - df['time'].iloc[k - 1] if k > 0 else 1.0
                 if k % self.batch_size == 0 or grid.is_changed_cell(soc, temp):
-                    battery_results = battery.get_last_results()
-                    theta = optimizer.step(i_real=i_real[start:k], v_real=v_real[start:k], init_info= battery_results, dt=dt)
-
+                    # TODO: LO STATO CHE MI SALVO E' PER LA WINDOW SUCCESSIVA!!!
+                    theta = optimizer.step(i_real=i_real[start:k], v_real=v_real[start:k], alpha=self.alpha, init_info= battery_results, dt=dt)
                     history_theta.append(theta)
-                    #self.update_electrical_params(theta, settings['models_config'])
                     #theta update
+                    """
                     battery._electrical_model.r0.resistance = theta['r0']
                     battery._electrical_model.rc.resistance = theta['rc']
                     battery._electrical_model.rc.capacity = theta['c']
-
+                    """
                     start = k
                     status_series.append(optimizer.get_status())
-
+                    battery_results = battery.get_last_results()
                     # cluster population
                     if grid.current_cell not in nominal_clusters:
                         nominal_clusters[grid.current_cell] = Cluster()
@@ -127,7 +114,7 @@ class Simulation:
                     # end cluster population
 
                 battery.step(load, dt, k)
-                #self.update_settings(battery, settings['battery_options'], k)
+
 
                 soc = battery.soc_series[-1]
                 temp = battery._thermal_model.get_temp_series(-1)
@@ -167,17 +154,17 @@ class Simulation:
             print("variance :", cluster.variance)
 
         #save data into a csv
-        df_voltage = pd.DataFrame({'voltage':results['voltage'], 'updated_voltage':v_dt_updated[0:len(results['voltage'])]})
-        csv_file_voltage = "voltage_final.csv"
-        df_voltage.to_csv(csv_file_voltage, index=False)
+        #df_voltage = pd.DataFrame({'voltage':results['voltage'], 'updated_voltage':v_dt_updated[0:len(results['voltage'])]})
+        #csv_file_voltage = "../../notebooks/online_learning/voltage_final.csv"
+        #df_voltage.to_csv(csv_file_voltage, index=False)
 
-        df_temp = pd.DataFrame({'temperature': results['temperature'], 'updated_temp': temp_dt_updated[0:len(results['temperature'])]})
-        csv_file_temp = "temp_final.csv"
-        df_temp.to_csv(csv_file_temp, index=False)
+        #df_temp = pd.DataFrame({'temperature': results['temperature'], 'updated_temp': temp_dt_updated[0:len(results['temperature'])]})
+        #csv_file_temp = "../../notebooks/online_learning/temp_final.csv"
+        #df_temp.to_csv(csv_file_temp, index=False)
 
-        df_status = pd.DataFrame(status_series)
-        csv_file_status = "csv_status_series"
-        df_status.to_csv(csv_file_status, index=False)
+        #df_status = pd.DataFrame(status_series)
+        #csv_file_status = "csv_status_series"
+        #df_status.to_csv(csv_file_status, index=False)
 
 
 

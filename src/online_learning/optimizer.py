@@ -14,7 +14,7 @@ class Optimizer:
         self.number_of_restarts = 2
         self.best_results_table = None
         self.dt = 1
-
+        self.alpha = None
         self._models_config = models_config
         self._battery_options = battery_options
         self._load_var = load_var
@@ -47,7 +47,7 @@ class Optimizer:
         diff = rhs - self._v_real
 
         alpha = 0.1
-        loss = np.sum(diff ** 2) + alpha * np.linalg.norm(theta)
+        loss = np.sum(diff ** 2) + self.alpha * np.linalg.norm(theta)
         return loss
 
     def _callback(self, xk):
@@ -56,10 +56,11 @@ class Optimizer:
         print("the theta passed to equation", xk)
 
 
-    def step(self, i_real, v_real, init_info, dt):
+    def step(self, i_real, v_real,alpha , init_info, dt):
         self._i_real = i_real
         self._v_real = v_real
         self.dt = dt
+        self.alpha = alpha
 
         results = []
         loss_series = []

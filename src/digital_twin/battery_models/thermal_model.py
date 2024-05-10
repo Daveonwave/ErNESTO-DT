@@ -107,6 +107,7 @@ class R2CThermal(ThermalModel):
 
     def reset_model(self, **kwargs):
         self._temp_series = []
+        self._heat_series = []
         self._c_term = self._init_components['c_term']
         self._r_cond = self._init_components['r_cond']
         self._r_conv = self._init_components['r_conv']
@@ -117,7 +118,7 @@ class R2CThermal(ThermalModel):
         Initialize the model at timestep t=0 with an initial temperature equal to 25 degC (ambient temperature)
         """
         temp = kwargs['temperature'] if kwargs['temperature'] else 298.15
-        heat = 0  # kwargs['dissipated_heat'] if kwargs['dissipated_heat'] else 0
+        heat = kwargs['dissipated_heat'] if kwargs['dissipated_heat'] else 0
 
         self.update_temp(temp)
         self.update_heat(heat)
@@ -135,6 +136,7 @@ class R2CThermal(ThermalModel):
             dt (float): delta of time from last update
             k (int): iteration
         """
+
         term_1 = self.c_term / dt * self.get_temp_series(k=k)
         term_2 = T_amb / (self.r_cond + self.r_conv)
         denominator = self.c_term / dt + 1 / (self.r_cond + self.r_conv) - self.dv_dT * i

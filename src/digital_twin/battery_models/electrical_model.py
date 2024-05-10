@@ -154,10 +154,16 @@ class TheveninModel(ElectricalModel):
 
         # Compute V_r0 and V_rc
         v_r0 = self.r0.compute_v(i=i_load)
-        v_rc = (self.rc.get_v_series(k=-1) / dt + i_load / c) / (1/dt + 1 / (c*r1))
+        v_rc = (self.rc.get_v_series(k=k) / dt + i_load / c) / (1/dt + 1 / (c*r1))
 
         # Compute V
         v = v_ocv - v_r0 - v_rc
+
+        """
+        print(k, self.rc.get_v_series(), self.rc.get_v_series(k=k))
+        if k > 5:
+            exit()
+        """
 
         # Compute I_r1 and I_c for the RC parallel
         i_r1 = self.rc.compute_i_r1(v_rc=v_rc)
@@ -175,6 +181,8 @@ class TheveninModel(ElectricalModel):
                 power = -power
 
         # Update the collections of variables of ECM components
+        # TODO: CREATE A MORE GENERAL METHOD FOR THE METHODS FOLLOWING -> STEP VOLTAGE DRIVEN ->
+
         self.r0.update_step_variables(r0=r0, v_r0=v_r0)
         self.rc.update_step_variables(r1=r1, c=c, v_rc=v_rc, i_r1=i_r1, i_c=i_c)
         self.ocv_gen.update_v(value=v_ocv)
@@ -217,4 +225,7 @@ class TheveninModel(ElectricalModel):
                 'Vocv': self.ocv_gen.get_v_series(),
                 'R0': self.r0.get_r0_series(),
                 'R1': self.rc.get_r1_series(),
-                'C': self.rc.get_c_series()}
+                'C': self.rc.get_c_series(),
+                'V_rc': self.rc.get_v_series(),
+                'V_r0': self.r0.get_v_series()}
+

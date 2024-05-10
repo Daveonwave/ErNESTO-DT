@@ -1,14 +1,4 @@
-from src.digital_twin.bess import BatteryEnergyStorageSystem
-from scipy.optimize import minimize
-from notebooks.online_learning.grid import Grid
-from notebooks.online_learning.optimizer import Optimizer
-from notebooks.online_learning.simulation_loop import Simulation
-import pandas as pd
-import numpy as np
-import yaml
-import argparse
-import matplotlib.pyplot as plt
-
+from src.online_learning.simulation_loop import Simulation
 
 if __name__ == "__main__":
     #cli -> check why doesn't work
