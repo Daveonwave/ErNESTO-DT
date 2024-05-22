@@ -1,8 +1,8 @@
-from src.digital_twin.battery_models import ElectricalModel
-from src.digital_twin.battery_models.ecm_components import Resistor
-from src.digital_twin.battery_models.ecm_components import ResistorCapacitorParallel
-from src.digital_twin.battery_models.ecm_components import OCVGenerator
-from src.digital_twin.parameters.variables import instantiate_variables
+from src.digital_twin.battery_models.generic_models import ElectricalModel
+from src.digital_twin.battery_models.electrical.ecm_components import Resistor
+from src.digital_twin.battery_models.electrical.ecm_components import ResistorCapacitorParallel
+from src.digital_twin.battery_models.electrical.ecm_components import OCVGenerator
+from src.digital_twin.parameters import instantiate_variables
 
 
 class TheveninModel(ElectricalModel):
@@ -197,10 +197,16 @@ class TheveninModel(ElectricalModel):
         Returns a dictionary with all final results
         TODO: selection of results by label from config file?
         """
-        return {'voltage': self._v_load_series,
-                'current': self._i_load_series,
-                'power': self._power_series,
-                'Vocv': self.ocv_gen.get_v_series(),
-                'R0': self.r0.get_r0_series(),
-                'R1': self.rc.get_r1_series(),
-                'C': self.rc.get_c_series()}
+        k = kwargs['k'] if 'k' in kwargs else None
+
+        return {'voltage': self.get_v_series(k=k),
+                'current': self.get_i_series(k=k),
+                'power': self.get_power_series(k=k),
+                'v_oc': self.ocv_gen.get_v_series(k=k),
+                'r0': self.r0.get_r0_series(k=k),
+                'r1': self.rc.get_r1_series(k=k),
+                'c': self.rc.get_c_series(k=k),
+                'v_r0': self.r0.get_v_series(k=k),
+                'v_rc': self.rc.get_v_series(k=k)
+                }
+
