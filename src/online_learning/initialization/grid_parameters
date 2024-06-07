@@ -6,7 +6,7 @@ soc_interval_two:
   - 1.00
 temp_interval_one:
   - 295.15
-  - 297.15
+  - 297.50
 temp_interval_two:
-  - 297.15
-  - 300.15
+  - 297.50
+  - 299.15

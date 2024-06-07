@@ -9,6 +9,15 @@ class Grid:
     def current_cell(self):
         return self._current_cell
 
+    def get_max_temp(self):
+        max_temp = float('-inf')
+        for key, value in self.grid_parameters.items():
+            if key.startswith('temp_interval'):
+                temp_values = value[1::2]
+                if temp_values:
+                    max_temp = max(max_temp, *temp_values)
+        return max_temp
+
     def __generate_cells(self):
         cells = {}
         soc_intervals = []
@@ -39,13 +48,16 @@ class Grid:
         for index, cell in self.cells.items():
             soc_interval = cell["soc_interval"]
             temp_interval = cell["temp_interval"]
-            if soc_interval[0] <= soc <= soc_interval[1] and temp_interval[0] <= temp <= temp_interval[1]:
+            if soc_interval[0] <= soc <= soc_interval[1] and (temp_interval[0] <= temp <= temp_interval[1]):
                 #just to underline that here you set also the attribute
                 self._current_cell = index
                 return index
         return None
 
     def is_changed_cell(self, soc, temp):
+    # TODO: E' UNA PEZZA
+    #if temp >= self.get_max_temp():
+    #      return False
       if self.current_cell == self.__check_cell(soc, temp):
         return False
       else:
