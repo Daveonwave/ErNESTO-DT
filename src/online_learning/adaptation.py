@@ -83,8 +83,26 @@ def fault_cluster_creation(cluster_parameters, outliers_set):
     if p_value < alpha_c:
         print("Reject the null hypothesis: f_hat and f_tau are different. Create a new cluster.")
         mc = mm.MountainCluster()
-        O_tilde = mc.mountain_method(data=outliers_set, trashold=1)
-        phi = mcd.create_cluster(O_tilde, p=20)
+        print(outliers_set)
+
+        r0 = []
+        rc = []
+        c = []
+        for th in outliers_set:
+            r0.append(th['r0'])
+            rc.append(th['rc'])
+            c.append(th['c'])
+        r0 = np.array(r0)
+        rc = np.array(rc)
+        c = np.array(c)
+        array = np.column_stack([r0, rc, c])
+
+        print("preprocess on outliers set")
+        print(array)
+
+        # TODO: UNDERSTAND HOW TO SEYT THE TRASHOLD
+        O_tilde = mc.mountain_method(data=array, threshold=0.000000000000000)
+        phi = mcd.create_cluster(O_tilde, p=20, support_fraction=0.75)
         return phi
     else:
         print("Fail to reject the null hypothesis: f_hat and f_tau are the same. No new cluster needed.")

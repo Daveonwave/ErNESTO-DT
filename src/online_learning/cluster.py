@@ -50,8 +50,8 @@ class Cluster:
             raise ValueError("Cluster is empty.")
 
     def contains_within(self, point_to_test):
-        if not self.centroid or not self.parameters:
-            return False
+        #if self.centroid == None or not self.parameters:
+        #    return False
 
         if self.covariance_matrix is None:
             self.compute_covariance_matrix()
@@ -63,6 +63,7 @@ class Cluster:
         except np.linalg.LinAlgError:
             return False  # Covariance matrix is singular
 
+        print(np.shape(point_to_test))
         mahalanobis_dist = mahalanobis(np.array(point_to_test), self.centroid, np.linalg.inv(self.covariance_matrix))
 
         t_statistic, _ = stats.ttest_1samp(np.vstack(self.parameters), point_to_test, axis=0)

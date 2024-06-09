@@ -51,18 +51,15 @@ class Battery_Adaptation:
             # Handle potential errors in string conversion
             return []
 
-    def get_nominal_clusters(self):
-        df = pd.read_csv("initialization/nominal_clusters.csv")
-        dict = {}
-        for i in df.keys():
-            #cluster = Cluster()
-            #dict[i] =
-            print(i)
-            print(df.keys())
+    def load_cluster(self, csv_string):
 
+        data = pd.read_csv(csv_string)
 
-        exit()
-        return None
+        array_elements = data[['R_0', 'R_1', 'C_1']].to_numpy()
+
+        list_of_arrays = [np.array(row) for row in array_elements]
+
+        return list_of_arrays
 
 
     # REMEMBER THAT THIS ALG. ASSUMES ALL THE NOMINAL CLUSTERS ARE POPULATED
@@ -97,8 +94,20 @@ class Battery_Adaptation:
         battery.init({'dissipated_heat': 0})
 
         history_theta = list()
-        nominal_clusters = self.get_nominal_clusters()
+        nominal_clusters = dict()
         outliers_sets = dict()
+
+        file_names = ["phi_one.csv", "phi_two.csv", "phi_three.csv", "phi_four.csv"]
+
+        for i, file_name in enumerate(file_names):
+            phi = self.load_cluster(file_name)
+            nominal_clusters[i] = Cluster()
+            nominal_clusters[i].set(phi)
+            nominal_clusters[i].compute_covariance_matrix()
+            nominal_clusters[i].compute_centroid()
+            print(nominal_clusters[i].get_parameters())
+            print(nominal_clusters[i].get_centroid())
+            print(len(phi))
 
         elapsed_time = 0
         dt = 1
@@ -110,7 +119,6 @@ class Battery_Adaptation:
         start = 0
         v_optimizer = list()
         temp_optimizer = list()
-
 
         battery_results = battery.get_last_results()
         optimizer = Optimizer(models_config=models_config, battery_options=battery_options, load_var=load_var,
@@ -137,11 +145,15 @@ class Battery_Adaptation:
                     # TODO: IS IT MEANINGFUL?
                     # TODO: THEN REMOVE!
                     if grid.current_cell in nominal_clusters:
-                       if nominal_clusters[grid.current_cell].contains_within(theta):
+                       print("------------------------------debug")
+                       print(np.shape(theta))
+                       print(theta)
+                       theta_array = np.array([theta['r0'],theta['rc'],theta['c']])
+                       if nominal_clusters[grid.current_cell].contains_within(theta_array):
                           print("------------------------------------------------------------------")
                           print("the prediction is contained in a cluster, hence update the cluster")
                           print("------------------------------------------------------------------")
-                          nominal_clusters[grid.current_cell].add(theta)
+                          nominal_clusters[grid.current_cell].add(theta_array)
                           nominal_clusters[grid.current_cell].compute_centroid()
                           nominal_clusters[grid.current_cell].compute_covariance_matrix()
 
@@ -152,7 +164,6 @@ class Battery_Adaptation:
                        print("nominal_clusters[grid.current_cell]:",
                              nominal_clusters[grid.current_cell].get_parameters())
                        print(type(nominal_clusters[grid.current_cell].get_parameters()))
-                       exit()
 
                        phi_hat = fault_cluster_creation( cluster_parameters=nominal_clusters[grid.current_cell].get_parameters(),
                                                          outliers_set= outliers_sets[grid.current_cell] )
