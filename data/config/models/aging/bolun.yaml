@@ -20,7 +20,7 @@ class_name: BolunModel
 # ----------------------------------------------------------------------------
 components:
     SEI:
-        alpha_sei: 0 #0.0575
+        alpha_sei: 0.0575
         beta_sei: 121
 
     stress_factors:
@@ -36,7 +36,7 @@ components:
             #- dod_exponential
 
     # Choose between rainflow, streamflow or fastflow
-    cycle_counting_mode: rainflow
+    cycle_counting_mode: streamflow
     #compute_every: 1314390
 
 stress_models:

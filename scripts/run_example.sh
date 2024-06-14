@@ -3,4 +3,4 @@ python ernesto.py \
     --thermal_model mlp_thermal \
     --plot \
     --verbose \
-    simulation
+    simulation --config_files ./data/config/sim_config_example.yaml

@@ -27,7 +27,7 @@ destination_folder: "aging_2"
 #       transformed to Digital Twin internal default units.
 # # ------------------------------------------------------------------------------- #
 ground_data:
-    file: 'ground_aging_2.csv'
+    file: 'ground_aging.csv'
     load: 'current'
     time_format: 'seconds'
     vars:

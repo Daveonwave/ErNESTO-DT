@@ -67,7 +67,6 @@ class ParametricFunction(GenericVariable):
     """
 
     """
-
     def __init__(self, name: str, function_terms: dict):
         super().__init__(name)
         self.function_terms = function_terms

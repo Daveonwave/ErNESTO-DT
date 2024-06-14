@@ -8,7 +8,7 @@
 # ############################################################################
 
 type: thermal
-class_name: ThermalMLP
+class_name: MLPThermal
 
 components:
     input_size: 4

@@ -21,7 +21,7 @@ class BolunModel(AgingModel):
             stress_models ():
             init_soc ():
         """
-        super().__init__()
+        super().__init__(name='Bolun')
 
         self._f_cyc_series = []
         self._f_cal_series = []
@@ -445,8 +445,8 @@ class BolunModel(AgingModel):
                 second_signal_value ():
             """
             # Get indices of cycles used, valid and with the same direction of current cycle
-            valid_used_correct_direction = (self._is_used and self._is_valid and
-                                            (self._directions == self._directions[self._cycle_k]))
+            valid_used_correct_direction = np.logical_and(self._is_used, self._is_valid,
+                                                          (self._directions == self._directions[self._cycle_k]))
 
             is_direction_up = self._directions[self._cycle_k] == 1
             min_max_index = 1 if is_direction_up else 0

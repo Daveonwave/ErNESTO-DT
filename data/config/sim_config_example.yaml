@@ -27,7 +27,7 @@ destination_folder: "example"
 #       transformed to Digital Twin internal default units.
 # # ------------------------------------------------------------------------------- #
 ground_data:
-    file: 'ground_silvia_20C.csv'
+    file: 'ground_checkup20.csv'
     load: 'current'
     time_format: 'timestamp'
     vars:

@@ -27,7 +27,7 @@ destination_folder: "PV_profile2"
 #       transformed to Digital Twin internal default units.
 # # ------------------------------------------------------------------------------- #
 ground_data:
-    file: 'ground_PV_profile2.csv'
+    file: 'ground_PV.csv'
     load: 'power'
     time_format: 'timestamp'
     vars:
