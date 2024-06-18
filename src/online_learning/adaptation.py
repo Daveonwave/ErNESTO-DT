@@ -9,6 +9,7 @@ from src.online_learning import mountain_method as mm
 from src.online_learning import minimum_covariance_determinant as mcd
 import numpy as np
 
+
 def estimate_cdf(history_theta):
     """
     Estimate the empirical CDF for univariate data extracted from dictionaries.
@@ -56,6 +57,7 @@ def induced_cdf(cluster_parameters):
     cdf_values = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
 
     return sorted_data, cdf_values
+
 
 def fault_cluster_creation(cluster_parameters, outliers_set):
     if len(outliers_set) < 20:
