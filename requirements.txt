@@ -1,5 +1,4 @@
 # local package
--e .
 pint~=0.20.1
 python-dotenv~=0.21.1
 PyYAML~=6.0.1
@@ -14,3 +13,4 @@ joblib~=1.2.0
 torch~=2.2.1
 ply~=3.11
 schema~=0.7.5
+scikit-learn~=1.2.2

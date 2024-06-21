@@ -27,22 +27,22 @@ destination_folder: "example"
 #       transformed to Digital Twin internal default units.
 # # ------------------------------------------------------------------------------- #
 ground_data:
-    file: 'ground_checkup.csv'
-    load: 'current'
-    time_format: 'timestamp'
-    vars:
-    - var: 'current'
-      label: 'Current(A)'
-      unit: 'A'
-    - var: 'voltage'
-      label: 'Voltage(V)'
-      unit: 'V'
-    - var: 'temperature'
-      label: 'Temperature'
-      unit: 'degC'
-    - var: 'power'
-      label: 'Power(W)'
-      unit: 'W'
+  file: "ground_checkup20.csv"
+  load: "current"
+  time_format: "timestamp"
+  vars:
+    - var: "current"
+      label: "Current(A)"
+      unit: "A"
+    - var: "voltage"
+      label: "Voltage(V)"
+      unit: "V"
+    - var: "temperature"
+      label: "Temperature"
+      unit: "degC"
+    - var: "power"
+      label: "Power(W)"
+      unit: "W"
 
 # Simulation Options
 # ------------------------------------------------------------------------------- #
@@ -52,7 +52,7 @@ ground_data:
 #   the timestep of the simulator in seconds.
 # ------------------------------------------------------------------------------- #
 iterations: null
-timestep: 2.4
+timestep: null
 # todo: interp_ground_data: null
 
 # Battery options
@@ -67,31 +67,30 @@ timestep: 2.4
 #      Digital Twin internal default units.
 # ------------------------------------------------------------------------------- #
 battery:
-    sign_convention: 'passive'
-    params:
-        nominal_capacity:
-            var: 'capacity'
-            value: 20.
-            unit: 'F'
-        v_max:
-            var: 'voltage'
-            value: 4.15
-            unit: 'V'
-        v_min:
-            var: 'voltage'
-            value: 3.
-            unit: 'V'
-        temp_ambient:
-            var: 'temperature'
-            value: 296.15
-            unit: 'K'
-    init:
-        voltage: 4.15
-        current: 0.
-        temperature: 296.15 # 23 degC
-        soc: 1.
-        soh: 1.
-
+  sign_convention: "passive"
+  params:
+    nominal_capacity:
+      var: "capacity"
+      value: 20.
+      unit: "F"
+    v_max:
+      var: "voltage"
+      value: 4.15
+      unit: "V"
+    v_min:
+      var: "voltage"
+      value: 3.
+      unit: "V"
+    temp_ambient:
+      var: "temperature"
+      value: 296.15
+      unit: "K"
+  init:
+    voltage: 4.15
+    current: 0.
+    temperature: 296.15 # 23 degC
+    soc: 1.
+    soh: 1.
 # Plot options: how to use it?
 # --------------------------------------------------------------------------------
 #
