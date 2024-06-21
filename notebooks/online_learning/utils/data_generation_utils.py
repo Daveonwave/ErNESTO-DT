@@ -27,3 +27,28 @@ def generate_outliers(samples, n_outliers, threshold=3):
             count += 1
 
     return np.array(outliers)
+
+
+def generate_exponential_samples(n, bounds):
+    samples = np.empty((n, 3))
+
+    for i, key in enumerate(bounds):
+        lower, upper = bounds[key]
+        samples[:, i] = np.random.uniform(lower, upper, size=n) * np.random.exponential(1, size=n)
+
+    return samples
+
+
+def generate_norm_exp_outliers_mixed_samples(n, n_outliers, bounds_gaussian, bounds_exponential):
+    # Generate the samples
+    gaussian_samples = generate_multivariate_3D_gaussian_samples(n, bounds_gaussian)
+    outlier_samples = generate_outliers(gaussian_samples, n_outliers)
+    exponential_samples = generate_exponential_samples(n, bounds_exponential)
+
+    # Combine the samples
+    combined_samples = np.vstack((gaussian_samples, outlier_samples, exponential_samples))
+
+    # Shuffle the combined samples
+    np.random.shuffle(combined_samples)
+
+    return combined_samples

@@ -1,5 +1,6 @@
 import seaborn as  sns
 import matplotlib.pyplot as plt
+import scipy.stats as stats
 
 def pairwise_scatter(df):
     sns.pairplot(df)
@@ -43,3 +44,9 @@ def samples_and_outliers(samples, outliers):
     ax.legend()
 
     plt.show()
+
+def qq_plots(data):
+    for column in data.columns:
+        stats.probplot(data[column], dist="norm", plot=plt)
+        plt.title(f'Q-Q plot for {column}')
+        plt.show()
