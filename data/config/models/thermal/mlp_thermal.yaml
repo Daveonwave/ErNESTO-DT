@@ -8,14 +8,14 @@
 # ############################################################################
 
 type: thermal
-class_name: ThermalMLP
+class_name: MLPThermal
 
 components:
-    input_size: 4
-    hidden_size: 16
-    output_size: 1
+  input_size: 4
+  hidden_size: 16
+  output_size: 1
 
-    model_state: './data/config/models/data_driven/thermal_mlp/state_checkup_rolling25.pth'
-    scaler: './data/config/models/data_driven/thermal_mlp/scaler_checkup_rolling25.pth'
+  model_state: "./data/config/models/data_driven/thermal_mlp/state_checkup_rolling25.pth"
+  scaler: "./data/config/models/data_driven/thermal_mlp/scaler_checkup_rolling25.pth"
 
-    cuda: False
+  cuda: False

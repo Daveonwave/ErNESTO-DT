@@ -1,5 +1,4 @@
-from .generic_models import GenericModel, ElectricalModel, ThermalModel, AgingModel
-from .electrical_model import TheveninModel
-from .thermal_model import RCThermal, R2CThermal
-from .thermal_mlp_model import ThermalMLP
-from .aging_model import BolunModel
+from .electrical import TheveninModel
+from .thermal import DummyThermal, RCThermal, R2CThermal, MLPThermal
+from .aging import BolunModel
+from .soc_model import SOCEstimator

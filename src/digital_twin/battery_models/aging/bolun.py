@@ -2,8 +2,8 @@ import numpy as np
 import rainflow
 from enum import Enum
 
-from src.digital_twin.battery_models import AgingModel
-from src.digital_twin.battery_models.bolun_components import stress_functions
+from src.digital_twin.battery_models.generic_models import AgingModel
+from src.digital_twin.battery_models.aging import stress_functions
 
 
 class BolunModel(AgingModel):
@@ -21,7 +21,7 @@ class BolunModel(AgingModel):
             stress_models ():
             init_soc ():
         """
-        super().__init__()
+        super().__init__(name='Bolun')
 
         self._f_cyc_series = []
         self._f_cal_series = []
@@ -117,7 +117,7 @@ class BolunModel(AgingModel):
         Compute the calendar aging of the battery from the start of the simulation.
 
         Inputs:
-        :param curr_time: wrt the start of the simulation (TODO: what if the battery is not new at the start of the simulation?)
+        :param curr_time: wrt the start of the simulation
         :param avg_temp:
         :param avg_soc:
         """
@@ -445,8 +445,8 @@ class BolunModel(AgingModel):
                 second_signal_value ():
             """
             # Get indices of cycles used, valid and with the same direction of current cycle
-            valid_used_correct_direction = (self._is_used and self._is_valid and
-                                            (self._directions == self._directions[self._cycle_k]))
+            valid_used_correct_direction = np.logical_and(self._is_used, self._is_valid,
+                                                          (self._directions == self._directions[self._cycle_k]))
 
             is_direction_up = self._directions[self._cycle_k] == 1
             min_max_index = 1 if is_direction_up else 0
@@ -510,8 +510,6 @@ class BolunModel(AgingModel):
             # bounds_tuple = self._min_max_vals[self._cycle_k]
             # min_val, max_val = min(bounds_tuple[0], actual_value), max(bounds_tuple[1], actual_value)
             # self._min_max_vals[self._cycle_k] = (min_val, max_val)
-
-            # TODO potrebbe risolvere non monotonia
             self._number_of_samples[self._cycle_k] += 1
 
         def _get_indices_by_direction(self, direction: Direction, value: float, indices_range: np.array = None):

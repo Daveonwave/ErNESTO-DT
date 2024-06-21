@@ -45,3 +45,11 @@ class SOCEstimator:
 
         if self._soc > 1:
             self._soc = 1
+
+    def get_feasible_current(self, soc_: float, dt: float):
+        """
+        Compute the maximum feasible current of the battery according to the soc.
+        """
+        i_max = (1 - soc_) / dt * self._q_n * 3600
+        i_min = - soc_ / dt * self._q_n * 3600
+        return i_max, i_min
