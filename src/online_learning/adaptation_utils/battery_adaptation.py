@@ -64,9 +64,11 @@ class Battery_Adaptation:
 
     # REMEMBER THAT THIS ALG. ASSUMES ALL THE NOMINAL CLUSTERS ARE POPULATED
     def run_experiment(self):
+        
+        work_dir = "src/online_learning/"
 
         # Load Dataframe
-        df = pd.read_csv("../initialization/ground_20.csv")
+        df = pd.read_csv(work_dir + "initialization/ground_20.csv")
 
         v_real = df['voltage'].values
         i_real = df['current'].values
@@ -74,11 +76,11 @@ class Battery_Adaptation:
         time = df['time']
 
         # Load YAML
-        grid_parameters = self.load_grid_parameters_from_yaml('../initialization/grid_parameters')
-        electrical_params = self.load_electrical_params_from_yaml('../initialization/electrical_params')
-        thermal_params = self.load_thermal_params_from_yaml('../initialization/thermal_params')
+        grid_parameters = self.load_grid_parameters_from_yaml(work_dir + 'initialization/grid_parameters')
+        electrical_params = self.load_electrical_params_from_yaml(work_dir + 'initialization/electrical_params')
+        thermal_params = self.load_thermal_params_from_yaml(work_dir + 'initialization/thermal_params')
         models_config = [electrical_params, thermal_params]
-        battery_options = self.load_battery_options_from_yaml('../initialization/battery_options')
+        battery_options = self.load_battery_options_from_yaml(work_dir + 'initialization/battery_options')
 
         load_var = 'current'
 
