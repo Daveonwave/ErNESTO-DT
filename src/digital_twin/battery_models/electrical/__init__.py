@@ -1,1 +1,1 @@
-from .ecm import TheveninModel
+from .ecm import FirstOrderThevenin, SecondOrderThevenin

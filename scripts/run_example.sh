@@ -1,5 +1,5 @@
 python ernesto.py \
-    --battery_model thevenin \
+    --battery_model first_order_thevenin \
     --thermal_model mlp_thermal \
     --plot \
     --verbose \
