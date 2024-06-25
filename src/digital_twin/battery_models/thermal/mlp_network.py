@@ -1,6 +1,6 @@
 import pandas as pd
 
-from src.digital_twin.battery_models import ThermalModel
+from src.digital_twin.battery_models.generic_models import ThermalModel
 import joblib
 import torch
 import torch.nn as nn
@@ -8,7 +8,7 @@ import numpy as np
 from torch.utils.data import DataLoader, Dataset, ConcatDataset
 
 
-class ThermalMLP(ThermalModel):
+class MLPThermal(ThermalModel):
     """
 
     """

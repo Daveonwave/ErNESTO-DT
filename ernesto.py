@@ -61,8 +61,8 @@ def get_args():
         main_parser.add_argument("--assets", action="store", default="./data/config/assets.yaml",
                                  type=str, help="Specifies the file containing parameters useful for the experiment.")
 
-        electrical_choices = ['thevenin', 'data_driven']
-        main_parser.add_argument("--battery_model", nargs=1, choices=electrical_choices, default=['thevenin'],
+        electrical_choices = ['first_order_thevenin', 'second_order_thevenin', 'data_driven']
+        main_parser.add_argument("--battery_model", nargs=1, choices=electrical_choices, default=['first_order_thevenin'],
                                  help="Specifies the name of the core model of the battery, electrical or data driven.")
 
         thermal_choices = ['rc_thermal', 'r2c_thermal', 'dummy_thermal', 'mlp_thermal']

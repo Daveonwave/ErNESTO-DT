@@ -1,10 +1,6 @@
-import pint
 from typing import Union
-
-from src.digital_twin.parameters.units import Unit
-from src.digital_twin.parameters.data_checker import craft_data_unit, check_data_unit
 from src.digital_twin.parameters.variables import Scalar, ParametricFunction, LookupTableFunction
-from src.digital_twin.battery_models.ecm_components.generic_component import ECMComponent
+from src.digital_twin.battery_models.electrical.ecm_components.generic_component import ECMComponent
 
 
 class Resistor(ECMComponent):
@@ -26,10 +22,6 @@ class Resistor(ECMComponent):
                  ):
         super().__init__(name)
         self._resistance = resistance
-
-        # TODO: fix the unit through a yaml file
-        self._r0_unit = Unit.OHM
-
         # Collections
         self._r0_series = []
 
