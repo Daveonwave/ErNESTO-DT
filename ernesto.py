@@ -31,20 +31,9 @@ def get_args():
         """
         Parser of arguments for LEARNING mode
         """
-        learn_parser.add_argument("--iterations", default=500, type=int,
-                                  help="Specifies the number of iterations of the entire experiment.")
-        learn_parser.add_argument("--timestep", default=1., type=float,
-                                  help="Specifies the timestep of the simulator in seconds.")
-
-    def get_optim_parser():
-        """
-        Parser of arguments for OPTIMIZATION mode
-        """
-        optim_parser.add_argument("--iterations", default=500, type=int,
-                                  help="Specifies the number of iterations of the entire experiment.")
-        optim_parser.add_argument("--timestep", default=1., type=float,
-                                  help="Specifies the timestep of the simulator in seconds.")
-
+        whatif_parser.add_argument("--config", action="store", default="./data/config/learn_config.yaml",
+                                   type=str, help="Specifies the file containing parameters for learning mode.")
+        
     def get_generic_args():
         """
         Arguments of the main parser that can be useful to all the kind of modes
@@ -104,10 +93,6 @@ def get_args():
     learn_parser = subparsers.add_parser('learning', help="Learning Mode",
                                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     get_learn_args()
-
-    optim_parser = subparsers.add_parser('optimization', help="Optimization Mode",
-                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    get_optim_parser()
 
     main_args = vars(main_parser.parse_args())
     return main_args
