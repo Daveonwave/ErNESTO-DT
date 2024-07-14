@@ -1,6 +1,6 @@
 # local package
 -e .
-pint~=0.20.1
+pint>=0.20.1
 
 # external requirements
 #click
