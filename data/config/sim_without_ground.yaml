@@ -11,7 +11,7 @@ description: "Example experiment"
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "example"
+destination_folder: "only_current"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
@@ -34,15 +34,6 @@ ground_data:
     - var: "current"
       label: "Current(A)"
       unit: "A"
-    - var: "voltage"
-      label: "Voltage(V)"
-      unit: "V"
-    - var: "temperature"
-      label: "Temperature"
-      unit: "degC"
-    - var: "power"
-      label: "Power(W)"
-      unit: "W"
 
 # Simulation Options
 # ------------------------------------------------------------------------------- #
@@ -52,7 +43,7 @@ ground_data:
 #   the timestep of the simulator in seconds.
 # ------------------------------------------------------------------------------- #
 iterations: null
-timestep: 2.4
+timestep: null
 # todo: interp_ground_data: null
 
 # Battery options
@@ -97,11 +88,10 @@ battery:
 # Among 'vars' are enlisted the variables that the user desires to plot:
 #   - 'var' has to be a string among [current, voltage, power, temperature]
 # --------------------------------------------------------------------------------
-#
-# plots:
-#   compared:
-#     - 'voltage'
-#     - 'temperature'
-#     - 'power'
-#   single:
-#     - 'voltage'
+#plot_options:
+#    plots:
+#        - type: 'compared'
+#          vars:
+#            - 'voltage'
+#            - 'temperature'
+#            - 'power'

@@ -88,7 +88,7 @@ class BatteryEnergyStorageSystem:
 
             elif model_config['type'] == 'thermal':
                 components = model_config['components'] if 'components' in model_config.keys() else None
-                kwargs = {'ground_temps': self._ground_data['temperature'] if self._ground_data else None}
+                kwargs = {'ground_temps': self._ground_data['temperature'] if 'temperature' in self._ground_data else None}
                 self._thermal_model = globals()[model_config['class_name']](components_settings=components, **kwargs)
                 self.models.append(self._thermal_model)
 

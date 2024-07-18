@@ -14,19 +14,19 @@ goal: "GOAL"
 destination_folder: "whatif"
 
 schedule:
-    - "Hold at 10 mV for 20 seconds"
-    - "Discharge at 1 C for 0.5 hour"
-    - "Discharge at C/20 for 0.5 hours"
-    - "Charge at 0.5 C for 45 minutes"
-    - "Discharge at 1 A for 0.5 hours"
-    - "Charge at 200 mA for 45 minutes"
-    - "Discharge at 1 W for 0.5 hours"
-    - "Charge at 200 mW for 45 minutes"
-    - "Rest for 10 minutes"
-    - "Charge at 1 C until 4.1V"
-    - "Hold at 4.1 V until 50mA"
-    - "Hold at 3 V until C/50"
-    - "Discharge at C/3 for 2 hours or until 2.5 V"
+  - "Hold at 10 mV for 20 seconds"
+  - "Discharge at 1 C for 0.5 hour"
+  - "Discharge at C/20 for 0.5 hours"
+  - "Charge at 0.5 C for 45 minutes"
+  - "Discharge at 1 A for 0.5 hours"
+  - "Charge at 200 mA for 45 minutes"
+  - "Discharge at 1 W for 0.5 hours"
+  - "Charge at 200 mW for 45 minutes"
+  - "Rest for 10 minutes"
+  - "Charge at 1 C until 4.1V"
+  - "Hold at 4.1 V until 50mA"
+  - "Hold at 3 V until C/50"
+  - "Discharge at C/3 for 2 hours or until 2.5 V"
 
 # Simulation Options
 # ------------------------------------------------------------------------------- #
@@ -36,7 +36,7 @@ schedule:
 #   the timestep of the simulator in seconds.
 # ------------------------------------------------------------------------------- #
 iterations: null
-timestep: null  # default: 1
+timestep: null # default: 1
 
 # Battery options
 # ------------------------------------------------------------------------------- #
@@ -50,29 +50,27 @@ timestep: null  # default: 1
 #      Digital Twin internal default units.
 # ------------------------------------------------------------------------------- #
 battery:
-    sign_convention: 'passive'
-    params:
-        nominal_capacity:
-            var: 'capacity'
-            value: 20.
-            unit: 'F'
-        v_max:
-            var: 'voltage'
-            value: 4.15
-            unit: 'V'
-        v_min:
-            var: 'voltage'
-            value: 3.
-            unit: 'V'
-        temp_ambient:
-            var: 'temperature'
-            value: 298.15.
-            unit: 'K'
-    init:
-        voltage: 0.
-        current: 0.
-        temperature: 296.15
-        soc: 1.
-        soh: 1.
-
-      
+  sign_convention: "passive"
+  params:
+    nominal_capacity:
+      var: "capacity"
+      value: 20.
+      unit: "F"
+    v_max:
+      var: "voltage"
+      value: 4.15
+      unit: "V"
+    v_min:
+      var: "voltage"
+      value: 3.
+      unit: "V"
+    temp_ambient:
+      var: "temperature"
+      value: 298.15.
+      unit: "K"
+  init:
+    voltage: 0.
+    current: 0.
+    temperature: 296.15
+    soc: 1.
+    soh: 1.

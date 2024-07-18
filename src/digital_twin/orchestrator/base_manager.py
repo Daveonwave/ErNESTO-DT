@@ -9,7 +9,7 @@ from rich.pretty import pretty_repr
 from src.preprocessing.schema import read_yaml
 from src.postprocessing.visualization import plot_compared_data, plot_separate_vars
 
-logger = logging.getLogger('DT_ernesto')
+logger = logging.getLogger('ErNESTO-DT')
 
 
 class GeneralPurposeManager:

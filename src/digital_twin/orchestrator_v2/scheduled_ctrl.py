@@ -5,39 +5,37 @@ import pandas as pd
 from tqdm import tqdm
 
 from src.digital_twin.bess import BatteryEnergyStorageSystem
-from src.digital_twin.orchestrator.base_manager import GeneralPurposeManager
+from src.digital_twin.orchestrator_v2.base_ctrl import Orchestrator
+from src.digital_twin.orchestrator_v2.loader import DataLoader
+from src.digital_twin.orchestrator_v2.writer import DataWriter
 from src.preprocessing.data_preparation import load_data_from_csv, validate_parameters_unit, sync_data_with_step
 from src.preprocessing.schedule.schedule import Schedule
 from src.preprocessing.schema import read_yaml
 
-logger = logging.getLogger('DT_ernesto')
+logger = logging.getLogger('ErNESTO-DT')
 
 
-class WhatIfManager(GeneralPurposeManager):
+class ScheduleSimulator(Orchestrator):
     """
-    Handler of the What-if experiment. (Experiment w/ Schedule)
+    Handler of the non-adaptive experiment.
     -----------------------------------------
-    The simulator is conceived to be the orchestrator and the brain of the specified experiment.
-
     From here, all the kinds of data (input, output, config) are delivered to their consumer hubs, the
     environment is instantiated and the instructions related to the simulation mode chosen by the user are provided.
     """
     def __init__(self, **kwargs):
-        self._mode = "whatif"
-        logger.info("Instantiated {} class as experiment orchestrator".format(self.__class__.__name__))
+        logger.info("Launching orchestrator in {} mode".format(kwargs['mode']))
 
-        self._settings = read_yaml(yaml_file=kwargs['config'], yaml_type='whatif_config')
+        self._settings = read_yaml(yaml_file=kwargs['config'], yaml_type='orchestrator')
 
         super().__init__(config_folder=kwargs['config_folder'],
                          output_folder=kwargs['output_folder'],
-                         ground_folder=kwargs['ground_folder'],
                          exp_id_folder=self._mode + '/' + self._settings['destination_folder'],
                          assets_file=kwargs['assets'],
                          models=kwargs['models'],
                          save_results=kwargs['save_results'],
                          save_metrics=kwargs['save_metrics'],
-                         make_plots=kwargs['plot'],
                          )
+        self.data_writer = DataWriter()
         
         # Validate battery parameters unit
         self._settings['battery']['params'] = validate_parameters_unit(self._settings['battery']['params'])
@@ -49,7 +47,7 @@ class WhatIfManager(GeneralPurposeManager):
         
         self._schedule = Schedule(instructions=self._settings['schedule'], 
                                   c_value=self._settings['battery']['params']['nominal_capacity'])
-
+        
         self._instructions = []
         self._events = {
             'overvoltage': [],
@@ -63,19 +61,22 @@ class WhatIfManager(GeneralPurposeManager):
             battery_options=self._settings['battery'],
             input_var='current'
         )
-    
+
+    # ------------------------------------------------------------------------------
+    # Run an experiment following a SCHEDULE
+    # ------------------------------------------------------------------------------
     def run(self):
         """
 
         """
-        logger.info("'What-If Simulation' started...")
+        logger.info("'Scheduled Experiment' started...")
         self._battery.reset()
         self._battery.init()
 
-        pbar = tqdm(total=len(self._settings['schedule']), position=0, leave=True)
+        pbar = tqdm(total=len(self._schedule), position=0, leave=True)
 
         # Main loop of the simulation
-        while not self._schedule.is_empty():
+        while not self._schedule.is_empty(): 
             cmd = self._schedule.get_cmd()
             event_start = self._elapsed_time
             logger.info("Starting command: " + cmd['sentence'])
@@ -112,16 +113,13 @@ class WhatIfManager(GeneralPurposeManager):
             self._schedule.next_cmd()
             self._instructions.append([event_start, self._elapsed_time])
 
-        logger.info("'What-If Simulation' ended without errors!")
+        logger.info("'Scheduled Experiment' ended without errors!")
         pbar.close()
 
         self.done = True
         self._results = self._battery.build_results_table()
-
         self._output_results(results=self._results, summary=self._get_summary())
-        if self._make_plots:
-            self._prepare_plots()
-
+        
     def _run_for_time(self, load: str, value: float, time: float):
         """
 
@@ -183,7 +181,8 @@ class WhatIfManager(GeneralPurposeManager):
             self._battery.t_series.append(self._elapsed_time)
             self._elapsed_time += self._stepsize
             k += 1
-
+    # ------------------------------------------------------------------------------
+    
     def _get_summary(self):
         """
         Get simulation summary with important information
@@ -197,24 +196,4 @@ class WhatIfManager(GeneralPurposeManager):
                 'initial_conditions': self._settings['battery']['init'],
                 'models': [model.__class__.__name__ for model in self._battery.models]
                 }
-
-    def _prepare_plots(self):
-        """
-
-        """
-        var_to_plot = ['voltage', 'temperature', 'power', 'current']
-
-        df = pd.DataFrame(data=self._results['operations'], columns=self._results['operations'].keys())
-
-        # Save information for each different kind of plot
-        plot_dict = {
-            'type': "single",
-            'df': df.iloc[1:],
-            'variables': var_to_plot,
-            'x_ax': 'Time',
-            'title': "What-If",
-            'events': self._instructions
-        }
-        self._plot_info.append(plot_dict)
-        self._save_plots()
 

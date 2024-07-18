@@ -11,7 +11,7 @@ from src.postprocessing.metrics import compute_metrics
 logger = logging.getLogger('DT_ernesto')
 
 
-class SimulationManager(GeneralPurposeManager):
+class DrivenController:
     """
     Handler of the Compared Simulation experiment.
     -----------------------------------------
@@ -20,22 +20,9 @@ class SimulationManager(GeneralPurposeManager):
     From here, all the kinds of data (input, output, config) are delivered to their consumer hubs, the
     environment is instantiated and the instructions related to the simulation mode chosen by the user are provided.
     """
-    def __init__(self, **kwargs):
+    def __init__(self, data_loader):
         self._mode = "simulation"
         logger.info("Instantiated {} class as experiment orchestrator".format(self.__class__.__name__))
-
-        self._settings = read_yaml(yaml_file=kwargs['config'], yaml_type='sim_config')
-
-        super().__init__(config_folder=kwargs['config_folder'],
-                         output_folder=kwargs['output_folder'],
-                         ground_folder=kwargs['ground_folder'],
-                         exp_id_folder=self._mode + '/' + self._settings['destination_folder'],
-                         assets_file=kwargs['assets'],
-                         models=kwargs['models'],
-                         save_results=kwargs['save_results'],
-                         save_metrics=kwargs['save_metrics'],
-                         make_plots=kwargs['plot'],
-                         )
 
         # Prepare ground preprocessing for input and validation
         self._input_var = self._settings['ground_data']['load']

@@ -41,6 +41,7 @@ class ElectricalModel(GenericModel):
     """
     def __init__(self, name: str):
         self._name = name
+        self._params = []
         self._v_load_series = []
         self._i_load_series = []
         self._power_series = []
@@ -50,10 +51,20 @@ class ElectricalModel(GenericModel):
     def name(self):
         return self._name
 
+    @property
+    def param_names(self):
+        return self._params
+    
     def reset_model(self, **kwargs):
         pass
 
     def init_model(self, **kwargs):
+        pass
+
+    def get_params(self):
+        pass
+    
+    def set_params(self, **kwargs):
         pass
 
     def load_battery_state(self, temp: float, soc: float, soh: float):
