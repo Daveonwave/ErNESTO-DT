@@ -89,7 +89,7 @@ class R2CThermal(ThermalModel):
     def load_battery_state(self, **kwargs):
         self._soc = kwargs['soc']
 
-    def compute_temp(self, q, i, T_amb, dt, k=-1):
+    def compute_temp(self, q, i, T_amb, dt, k=-1, **kwargs):
         """
         Compute the current temperature with equation described in the aforementioned paper
         Args:
@@ -108,5 +108,5 @@ class R2CThermal(ThermalModel):
         t_surf = t_core + self.r_cond * (T_amb - t_core) / (self.r_cond + self.r_conv)
 
         return t_surf
-
+    
 

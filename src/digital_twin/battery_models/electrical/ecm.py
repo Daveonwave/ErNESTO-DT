@@ -192,10 +192,9 @@ class FirstOrderThevenin(ElectricalModel):
             self.rc.get_r_series(k=k) * self.rc.get_i_r_series(k=k)**2
         # return self.r0.get_r0_series(k=k) * self.get_i_series(k=k) ** 2
 
-    def get_final_results(self, **kwargs):
+    def get_results(self, **kwargs):
         """
-        Returns a dictionary with all final results
-        TODO: selection of results by label from config file?
+        Returns a dictionary with results
         """
         k = kwargs['k'] if 'k' in kwargs else None
 
@@ -424,7 +423,7 @@ class SecondOrderThevenin(ElectricalModel):
             self.rc2.get_r_series(k=k) * self.rc2.get_i_r_series(k=k)**2
         # return self.r0.get_r0_series(k=k) * self.get_i_series(k=k) ** 2
 
-    def get_final_results(self, **kwargs):
+    def get_results(self, **kwargs):
         """
         Returns a dictionary with all final results
         TODO: selection of results by label from config file?

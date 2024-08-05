@@ -8,14 +8,14 @@ class DummyThermal(ThermalModel):
     """
     def __init__(self, **kwargs):
         super().__init__(name='dummy_thermal')
-        if 'ground_temps' in kwargs:
-            self._ground_temps = kwargs['ground_temps']
-        else:
-            raise AttributeError("The parameter to initialize the attribute of DummyThermal has not benn passed!")
+        #if 'ground_temps' in kwargs:
+        #    self._ground_temps = kwargs['ground_temps']
+        #else:
+        #    raise AttributeError("The parameter to initialize the attribute of DummyThermal has not benn passed!")
 
-    @property
-    def temps(self):
-        return self._ground_temps
+    #@property
+    #def temps(self):
+    #    return self._ground_temps
 
     def reset_model(self, **kwargs):
         self._temp_series = []
@@ -31,4 +31,7 @@ class DummyThermal(ThermalModel):
         self.update_heat(heat)
 
     def compute_temp(self, **kwargs):
-        return self._ground_temps[kwargs['k']]
+        assert kwargs['ground_temp'] is not None, "The '{}' model needs the ground temperature to compute " \
+            "the battery temperature. If you are running a scheduled simulation or a cyclic " \
+            "driven simulation, you should adopt a different thermal model.".format(self.name)
+        return kwargs['ground_temp']

@@ -10,7 +10,7 @@ from src.postprocessing.metrics import compute_metrics
 logger = logging.getLogger('DT_ernesto')
 
 
-class AdaptiveSimulator():
+class AdaptiveSimulator:
     """
     Handler of the Compared Simulation experiment.
     -----------------------------------------
