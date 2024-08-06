@@ -8,7 +8,7 @@ models_path: "./models/"
 models:
   first_order_thevenin:
     category: electrical
-    file: thevenin_silvia.yaml
+    file: thevenin_nicola.yaml #thevenin_silvia.yaml
   second_order_thevenin:
     category: electrical
     file: thevenin_2exp.yaml
