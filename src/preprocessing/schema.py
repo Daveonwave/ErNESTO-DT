@@ -37,6 +37,13 @@ ground_data = Schema(
     }
 )
 
+schedule = Schema(
+    {
+        "instructions": [Or(str, string_pattern)],
+        Optional("constants"): {And(str, var_pattern): Or(float, And(int, Use(float)))} 
+    }
+)
+
 battery_param = Schema(
     {
         "var": And(str, var_pattern, Use(str.lower)),
@@ -45,15 +52,18 @@ battery_param = Schema(
     }
 )
 
+bound_param = Schema(
+    {        
+        "low": Or(float, And(int, Use(float))),
+        "high": Or(float, And(int, Use(float)))
+    }
+)
+
 battery = Schema(
     {
         "sign_convention": Or('active', 'passive'),
-        "params": {
-            "nominal_capacity": battery_param,
-            "v_max": battery_param,
-            "v_min": battery_param,
-            "temp_ambient": battery_param,
-        },
+        "params": {And(str, var_pattern): battery_param},
+        "bounds": {And(str, var_pattern): bound_param},
         "init":
             {
                 Optional('voltage'): Or(float, And(int, Use(float))),
@@ -66,40 +76,24 @@ battery = Schema(
     }
 )
 
-sim_config_schema = Schema(
+config_schema = Schema(
     {
         # Summary
         Optional("experiment_name"): And(str, string_pattern),
         Optional("description"): And(str),
         Optional("goal"): And(str),
         "destination_folder": And(str, string_pattern),
+        
         # Ground data options
-        "ground_data": ground_data,
+        "input": {
+            Optional("ground_data"): ground_data,
+            Optional("schedule"): schedule,
+            Optional("cycle_for"): Or(int, None),
+        },
         # Simulation options
         Optional("iterations"): Or(int, None),
         Optional("timestep"): Or(int, float, None),
         Optional("check_soh_every"): Or(int, None),
-        # Battery parameters
-        "battery": battery,
-    }
-)
-
-whatif_config_schema = Schema(
-    {
-        # Summary
-        Optional("experiment_name"): And(str, string_pattern),
-        Optional("description"): And(str),
-        Optional("goal"): And(str),
-        "destination_folder": And(str, string_pattern),
-
-        # Schedule defined by the user
-        "schedule": [Or(str, string_pattern)],
-
-        # Simulation options
-        Optional("iterations"): Or(int, None),
-        Optional("timestep"): Or(int, float, None),
-        Optional("check_soh_every"): Or(int, None),
-
         # Battery parameters
         "battery": battery,
     }
@@ -257,8 +251,8 @@ model_schema = Schema(
     }
 )
 
-schemas['sim_config'] = sim_config_schema
-schemas['whatif_config'] = whatif_config_schema
+schemas['driven'] = config_schema
+schemas['scheduled'] = config_schema
 schemas['assets'] = assets_schema
 schemas['model'] = model_schema
 
@@ -287,10 +281,10 @@ def read_yaml(yaml_file: str, yaml_type: str):
     Returns:
 
     """
-    _file_types = ['sim_config', 'whatif_config', 'assets', 'model']
+    _file_types = ['sim_config', 'whatif_config', 'assets', 'model', 'driven', 'scheduled']
 
     if yaml_type not in _file_types:
-        logger.error("The schema type of file {} is not existing!".format(yaml_file))
+        logger.error("The schema type '{}' of file {} is not existing!".format(yaml_type, yaml_file))
         exit(1)
 
     with open(yaml_file, 'r') as fin:

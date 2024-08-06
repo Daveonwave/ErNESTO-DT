@@ -95,6 +95,7 @@ def sync_data_with_step(times: list, data: dict, sim_step: float, interp: bool =
             if not interp:
                 aug_data = {key: [data[key][i - 1]] * (floor - 1) for key in sync_data.keys()}
             else:
+                #TODO: implement interpolation
                 raise NotImplementedError()
 
             # Extend the new data dictionary with repeated data

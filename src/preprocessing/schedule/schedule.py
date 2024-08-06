@@ -7,13 +7,16 @@ class Schedule:
     """
 
     """
-    def __init__(self, instructions: [str], c_value: float):
+    def __init__(self, 
+                 instructions: [str], 
+                 c_value: float,
+                 n_cycles: int = 1):
         """
 
         Args:
             instructions ():
         """
-        self._instructions = instructions
+        self._instructions = instructions * n_cycles
         self._lexer = ScheduleLexer()
         self._parser = ScheduleParser(self._lexer)
 
@@ -21,6 +24,10 @@ class Schedule:
         self._command_buffer = []
 
         self._traslate_cmds()
+        
+    @property
+    def buffer(self):
+        return self._command_buffer
 
     def _traslate_cmds(self):
         """
@@ -78,29 +85,31 @@ class Schedule:
                     cmd['until_cond'] = {'current': round(self._C_value / info['until_rate']['value'], 4)}
 
             self._command_buffer.append(cmd)
+            
+    def __len__(self):
+        return len(self._command_buffer)
 
     def get_cmd(self):
         """
-
-        Returns:
-
+        Return the current command that has to be executed.
         """
         return self._command_buffer[0]
 
     def is_empty(self):
         """
-        Returns True if the command buffer is empty, False otherwise
+        Returns True if the command buffer is empty, False otherwise.
         """
         return len(self._command_buffer) == 0
 
     def reset_cmd_buffer(self):
+        """
+        Reset the entire command buffer.
+        """
         self._command_buffer = []
 
     def next_cmd(self):
         """
-
-        Returns:
-
+        Deques the last executed comment.
         """
         self._command_buffer.pop(0)
 

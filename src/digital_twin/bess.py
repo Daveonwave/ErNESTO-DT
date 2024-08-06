@@ -10,7 +10,7 @@ class BatteryEnergyStorageSystem:
     def __init__(self,
                  models_config: list,
                  battery_options: dict,
-                 input_var: str,
+                 input_var: str='current',
                  check_soh_every=None,
                  **kwargs
                  ):
@@ -34,23 +34,32 @@ class BatteryEnergyStorageSystem:
 
         # TODO: both BATTERY OPTIONS and INITIAL COND can depend by the experiment mode => put them in init method
         # Battery options passed by the simulator
-        self._init_conditions = battery_options['init']
-        self._sign_convention = battery_options['sign_convention']
         self.nominal_capacity = battery_options['params']['nominal_capacity']
+        self.nominal_dod = battery_options['params']['nominal_dod'] \
+            if 'nominal_dod' in battery_options['params'].keys() else None
+        self.nominal_lifetime = battery_options['params']['nominal_lifetime'] \
+            if 'nominal_lifetime' in battery_options['params'].keys() else None
+        self.nominal_voltage = battery_options['params']['nominal_voltage'] \
+            if 'nominal_voltage' in battery_options['params'].keys() else None
         self._v_max = battery_options['params']['v_max']
         self._v_min = battery_options['params']['v_min']
         self._temp_ambient = battery_options['params']['temp_ambient']
-        self._reset_soc_every = battery_options['reset_soc_every'] if 'reset_soc_every' in battery_options else None
-        self._check_soh_every = check_soh_every if check_soh_every is not None else 99999999
-
-        # Instantiation of battery state estimators
-        self.soc_estimator = SOCEstimator(nominal_capacity=self.nominal_capacity)
+        
+        # Bounds of operating conditions of the battery
+        self.soc_min = battery_options['bounds']['soc']['low']
+        self.soc_max = battery_options['bounds']['soc']['high']
+        
+        # Initial conditions of the battery
+        self._init_conditions = battery_options['init']
+        self._sign_convention = battery_options['sign_convention']
+        self._reset_soc_every = battery_options['reset_soc_every'] if 'reset_soc_every' in battery_options['params'].keys() else None
+        self._check_soh_every = check_soh_every if check_soh_every is not None else 3600
 
         # Collection where will be stored the simulation variables
         self.soc_series = []
         self.soh_series = []
-        # self.temp_series = []
         self.t_series = []
+        self.c_max_series = []
 
         # Instantiate models
         self._build_models()
@@ -88,8 +97,8 @@ class BatteryEnergyStorageSystem:
 
             elif model_config['type'] == 'thermal':
                 components = model_config['components'] if 'components' in model_config.keys() else None
-                kwargs = {'ground_temps': self._ground_data['temperature'] if 'temperature' in self._ground_data else None}
-                self._thermal_model = globals()[model_config['class_name']](components_settings=components, **kwargs)
+                #kwargs = {'ground_temps': self._ground_data['temperature'] if 'temperature' in self._ground_data else None}
+                self._thermal_model = globals()[model_config['class_name']](components_settings=components)
                 self.models.append(self._thermal_model)
 
             elif model_config['type'] == 'aging':
@@ -101,17 +110,21 @@ class BatteryEnergyStorageSystem:
             else:
                 raise Exception("The 'type' of {} you are trying to instantiate is wrong!"\
                                 .format(model_config['class_name']))
+        
+        # Instantiation of battery state estimators
+        self._soc_model = SOCEstimator(capacity=self.nominal_capacity, soc_max=self.soc_max, soc_min=self.soc_min)
 
-    def reset(self, init_info: dict = {}):
+    def reset(self, reset_info: dict = {}):
         """
 
         """
         self.soc_series = []
         self.soh_series = []
         self.t_series = []
+        self.c_max_series = []
 
         for model in self.models:
-            model.reset_model(**init_info)
+            model.reset_model(**reset_info)
 
     def init(self, init_info: dict = {}):
         """
@@ -120,6 +133,7 @@ class BatteryEnergyStorageSystem:
         self.t_series.append(-1)
         self.soc_series.append(self._init_conditions['soc'])
         self.soh_series.append(self._init_conditions['soh'])
+        self.c_max_series.append(self.nominal_capacity)
 
         for model in self.models:
             model.load_battery_state(temp=self._init_conditions['temperature'],
@@ -128,13 +142,18 @@ class BatteryEnergyStorageSystem:
 
             model.init_model(**self._init_conditions)
 
-    def step(self, load: float, dt: float, k: int):
+    def step(self, load: float, dt: float, k: int, ground_temp: float = None):
         """
+        Perform a step of the simulation by applying the load to the battery and updating the state of the system.
 
         Args:
-            load ():
-            dt ():
-            k ():
+            load (float): value of the load to apply to the battery.
+            dt (float): delta of time between the current and the previous sample.
+            k (int): k-th iteration of the simulation.
+            ground_temp (float, optional): actual ground temperature to consider in the thermal model (if needed).
+
+        Raises:
+            Exception: if the provided battery simulation mode doesn't exist or is just not implemented.
         """
         if self._load_var == 'current':
             v_out, _ = self._electrical_model.step_current_driven(i_load=load, dt=dt, k=k)
@@ -156,8 +175,8 @@ class BatteryEnergyStorageSystem:
         # Compute the SoC through the SoC estimator and update the state of the circuit
         dissipated_heat = self._electrical_model.compute_generated_heat()
 
-        curr_temp = self._thermal_model.compute_temp(q=dissipated_heat, i=i, T_amb=self._temp_ambient, dt=dt, k=k)
-        curr_soc = self.soc_estimator.compute_soc(soc_=self.soc_series[-1], i=i, dt=dt)
+        curr_temp = self._thermal_model.compute_temp(q=dissipated_heat, i=i, T_amb=self._temp_ambient, dt=dt, k=k, ground_temp=ground_temp)
+        curr_soc = self._soc_model.compute_soc(soc_=self.soc_series[-1], i=i, dt=dt)
 
         self._thermal_model.update_temp(value=curr_temp)
         self._thermal_model.update_heat(value=dissipated_heat)
@@ -166,25 +185,32 @@ class BatteryEnergyStorageSystem:
         # Compute SoH of the system if a model has been selected, SoH=constant otherwise
         curr_soh = self.soh_series[-1]
         if self._aging_model is not None and k % self._check_soh_every == 0:
+            print("Aging step")
             curr_soh = self.soh_series[0] - self._aging_model.compute_degradation(soc_history=self.soc_series,
-                                                                 temp_history=self._thermal_model.get_temp_series(),
-                                                                 elapsed_time=self.t_series[-1],
-                                                                 k=k)
+                                                                                  temp_history=self._thermal_model.get_temp_series(),
+                                                                                  elapsed_time=self.t_series[-1],
+                                                                                  k=k)
+        self.soh_series.append(curr_soh)
+        
+        # Update the maximum capacity of the battery and the SoC model since the battery capacity fades with SoH
+        curr_c_max = self.nominal_capacity * curr_soh
+        self._soc_model.c_max = curr_c_max
+        self.c_max_series.append(curr_c_max)
 
-        # Forward SoC, SoH and temperature to models and their components (currently used only by electrical model)
+        # Forward SoC, SoH and temperature to models and their components
         for model in self.models:
             model.load_battery_state(temp=curr_temp, soc=curr_soc, soh=curr_soh)
 
-        self.soh_series.append(curr_soh)
-
+        # Reset the SoC estimation to avoid an error drift of the SoC estimation. TODO: move this in the SoC model maybe?
         if self._reset_soc_every is not None and k % self._reset_soc_every == 0:
-            self.soc_series[-1] = self.soc_estimator.reset_soc(v=v_out, v_max=self._v_max, v_min=self._v_min)
+            self.soc_series[-1] = self._soc_model.reset_soc(v=v_out, v_max=self._v_max, v_min=self._v_min)
 
     def get_status_table(self):
         """
-
+        Collect the status of the battery and its components at the current time step.
+        Used to update the queues of the writer.
         """
-        status_dict = {'time': self.t_series[-1], 'soc': self.soc_series[-1], 'soh': self.soh_series[-1]}
+        status_dict = {'time': self.t_series[-1], 'soc': self.soc_series[-1], 'soh': self.soh_series[-1], 'c_max': self.c_max_series[-1]}
 
         for model in self.models:
             status_dict.update(model.get_results(**{'k': -1}))
@@ -193,8 +219,10 @@ class BatteryEnergyStorageSystem:
 
     def build_results_table(self):
         """
+        Collct results of the entire simulation and return them in a dictionary.
+        NOTE: No more used since we have the writer to collect data by queues updated at each step.
         """
-        final_dict = {'time': self.t_series, 'soc': self.soc_series, 'soh': self.soh_series}
+        final_dict = {'time': self.t_series, 'soc': self.soc_series, 'soh': self.soh_series, 'c_max': self.c_max_series}
 
         for model in self.models:
             final_dict.update(model.get_final_results())
