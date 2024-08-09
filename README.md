@@ -1,7 +1,7 @@
 # ErNESTO Digital Twin
 
 This repository contains the implementation of the ENErgy STOrage (ErNESTO) Digital Twin. <br>
-The framework is thought with a modular structure to run **_simulation_** and **_whatif_** experiments
+The framework is thought with a modular structure to run **_driven_** and **_scheduled_** experiments
 of battery energy storage systems.
 
 This project is a joint endeavor of [Politecnico di Milano](https://www.polimi.it) and [RSE](https://www.rse-web.it).
@@ -12,7 +12,7 @@ In order to use this codebase you need to work with a Python version >= 3.8.
 To use ErNESTO, clone this repository and install the required libraries:
 
 ```bash
-git clone https://github.com/Daveonwave/dt-rse.git && \
+git clone https://github.com/Daveonwave/ErNESTO-DT.git && \
 cd DT-rse/ && \
 python -m pip install -r requirements.txt
 ```
@@ -34,7 +34,7 @@ To reproduce the experiments, a `bash` file must be run in the `scripts/` folder
 ```
 
 Edit the `bash` files to choose different configuration files or models. The possible options can
-be retrieved by running `python ernesto.py --help` and `python ernesto.py [simulation | whatif] --help`
+be retrieved by running `python ernesto.py --help` and `python ernesto.py [driven | scheduled] --help`
 for the specific experiment.
 
 Notice that `yaml` configuration files, contained in `data/config/` folder, have to adhere to a
@@ -43,10 +43,7 @@ Follow the formatting of the already provided configuration file to generate new
 
 ### Results visualization
 
-If experiments have been run with the `--plot` argument, the DT will automatically generate plots within
-the output folder selected in the configuration file. Otherwise, it is possible to run experiments with
-the `--save_results` flag to store the `csv` file within the output folder to get datasets of the
-simulated data and _sanitized_ ground data.
+To properly visualize results plots and metrics, to compare the simulated data to the provided ground truth, a friendly notebook has been provided within the `notebook` folder, stored at this [link](https://github.com/Daveonwave/ErNESTO-DT/blob/master/notebooks/evaluation_of_driven_exp.ipynb).
 
 ## :triangular_flag_on_post: Roadmap
 
@@ -54,8 +51,12 @@ The idea is to extend the DT to handle a more complex scenario, considering not 
 storage system, but a broader Smart Grid. To reach this goal, further steps have to be taken. In particular:
 
 1. **Parameter adaptation layer** (`online_learning` branch)
-2. **Wrapping with [Gymnasium](https://gymnasium.farama.org)** to apply Reinforcement Learning methods
-3. **Build a multi-agent network**
+2. Integration within a **real-world energy storage system**, provided by the Italian research center [RSE](https://www.rse-web.it/en/).
+
+Parallely, we are working to employ the DT also in other fields, such as:
+
+1. **Reinforcement Learning**, by creating [ErNESTO-gym](https://github.com/Daveonwave/ErNESTO-gym), a [Gymnasium](https://gymnasium.farama.org) environment to test new RL algorithms
+2. **Multi-Agent RL**, by improving [ErNESTO-gym](https://github.com/Daveonwave/ErNESTO-gym) in order to handle a distributed MiniGrid environment composed by multiple energy storage systems.
 
 [comment]: <> (### Examples)
 
