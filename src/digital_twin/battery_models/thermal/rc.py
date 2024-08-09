@@ -51,7 +51,7 @@ class RCThermal(ThermalModel):
         self.update_temp(temp)
         self.update_heat(heat)
 
-    def compute_temp(self, q, T_amb, dt, k=-1, i=None):
+    def compute_temp(self, q, T_amb, dt, k=-1, i=None, **kwargs):
         """
         Compute the current temperature with equation described in the aforementioned paper
 

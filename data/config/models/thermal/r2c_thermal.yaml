@@ -26,9 +26,9 @@ components:
 
     r_cond: # []
         selected_type: scalar
+        #scalar: 0.1
         scalar: 0.000784
         #scalar: 49903
-
 
     r_conv: # [K/W]
         selected_type: scalar

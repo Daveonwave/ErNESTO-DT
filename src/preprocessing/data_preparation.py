@@ -1,18 +1,12 @@
-import time
-import yaml
 import logging
 import os
 import pint.util
 import pandas as pd
-import numpy as np
 from pathlib import Path
-from datetime import datetime, timezone
 from pint import UnitRegistry
-from scipy.interpolate import interp1d
 
-ureg = UnitRegistry(autoconvert_offset_to_baseunit = True)
+ureg = UnitRegistry(autoconvert_offset_to_baseunit=True)
 logger = logging.getLogger('DT_ernesto')
-
 
 # Dictionary of units internally used inside the simulator
 internal_units = dict(
@@ -101,6 +95,7 @@ def sync_data_with_step(times: list, data: dict, sim_step: float, interp: bool =
             if not interp:
                 aug_data = {key: [data[key][i - 1]] * (floor - 1) for key in sync_data.keys()}
             else:
+                #TODO: implement interpolation
                 raise NotImplementedError()
 
             # Extend the new data dictionary with repeated data

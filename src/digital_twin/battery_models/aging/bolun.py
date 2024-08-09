@@ -280,15 +280,17 @@ class BolunModel(AgingModel):
 
         return cyclic_aging
 
-    def get_final_results(self, **kwargs):
+    def get_results(self, **kwargs):
         """
         Returns a dictionary with all final results
         TODO: selection of results by label from config file?
         """
-        return {'iteration': self._k_iters,
-                'cyclic_aging': self._f_cyc_series,
-                'calendar_aging': self._f_cal_series,
-                'degradation': self.get_deg_series()
+        k = kwargs['k'] if 'k' in kwargs else None
+        
+        return {'aging_iteration': self._k_iters[k] if k is not None else self._k_iters,
+                'cyclic_aging': self.get_f_cyc_series(k=k),
+                'calendar_aging': self.get_f_cal_series(k=k),
+                'degradation': self.get_deg_series(k=k)
                 }
 
     class Streamflow:

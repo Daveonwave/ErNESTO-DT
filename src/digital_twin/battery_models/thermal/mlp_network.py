@@ -43,12 +43,13 @@ class MLPThermal(ThermalModel):
     def __init__(self, components_settings: dict, **kwargs):
         super().__init__(name='MLP_thermal')
         self._settings = components_settings
-
-        if 'ground_temps' in kwargs:
-            self._ground_temps = kwargs['ground_temps']
-            self._rolling_25 = pd.Series(self._ground_temps).rolling(window=25, min_periods=1).mean()
-        else:
-            raise AttributeError("The parameter to initialize the attribute of DummyThermal has not benn passed!")
+        self._ground_temps = []
+        
+        #if 'ground_temps' in kwargs:
+        #    self._ground_temps = kwargs['ground_temps']
+        #    self._rolling_25 = pd.Series(self._ground_temps).rolling(window=25, min_periods=1).mean()
+        #else:
+        #    raise AttributeError("The parameter to initialize the attribute of DummyThermal has not benn passed!")
 
         self._soc = None
 
@@ -88,7 +89,8 @@ class MLPThermal(ThermalModel):
         """
 
         """
-        rolling_25 = self._rolling_25[kwargs['k']]
+        self._ground_temps.append(kwargs['ground_temp'])
+        rolling_25 = np.mean(self._ground_temps[-25:])
         #rolling_25 = np.mean(self._ground_temps[-25 + kwargs['k'] : kwargs['k']])
         inputs = [kwargs['i'],  kwargs['q'], kwargs['T_amb'], rolling_25]
 

@@ -1,48 +1,42 @@
 import argparse
 import logging
+import sys
 from joblib import Parallel, delayed
 from src.utils.logger import CustomFormatter
-from src.digital_twin.orchestrator import GeneralPurposeManager
+from src.digital_twin.orchestrator.orchestrator import DTOrchestrator
 
 
 def get_args():
     main_parser = argparse.ArgumentParser(description="Digital Twin of a Battery Energy Storage System (RSE)",
                                           formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    def get_sim_args():
+    def get_driven_args():
         """
-        Parser of arguments for SIMULATION mode
+        Parser of arguments for DRIVEN SIMULATION mode
         """
-        sim_parser.add_argument("--config_files", nargs='*', default=["./data/config/sim_config_example.yaml"],
-                                help="Specifies the list of files containing parameters for each parallel experiment.")
+        driven_parser.add_argument("--config_files", nargs='*', default=["./data/config/sim_config_example2.yaml"],
+                                   help="Specifies the list of files containing parameters for each parallel experiment.")
 
-    def get_whatif_args():
+    def get_schedule_args():
         """
-        Parser of arguments for WHAT-IF mode
+        Parser of arguments for SCHEDULED SIMULATION mode
         """
-        whatif_parser.add_argument("--config", action="store", default="./data/config/whatif_config.yaml",
-                                   type=str, help="Specifies the file containing parameters for what-if mode.")
-        whatif_parser.add_argument("--iterations", default=500, type=int,
+        schedule_parser.add_argument("--config_files", nargs='*', default=["./data/config/scheduled_config.yaml"],
+                                     help="Specifies the list of files containing parameters for each parallel experiment.")
+        schedule_parser.add_argument("--iterations", default=500, type=int,
                                    help="Specifies the number of iterations of the entire experiment.")
-        whatif_parser.add_argument("--timestep", default=1., type=float,
+        schedule_parser.add_argument("--timestep", default=1., type=float,
                                    help="Specifies the timestep of the simulator in seconds.")
 
-    def get_learn_args():
+    def get_adaptive_args():
         """
-        Parser of arguments for LEARNING mode
+        Parser of arguments for ADAPTIVE SIMULATION mode
         """
-        learn_parser.add_argument("--iterations", default=500, type=int,
+        adaptive_parser.add_argument("--config_files", nargs='*', default=["./data/config/adaptive_config.yaml"],
+                                     help="Specifies the list of files containing parameters for each parallel experiment.")
+        adaptive_parser.add_argument("--iterations", default=500, type=int,
                                   help="Specifies the number of iterations of the entire experiment.")
-        learn_parser.add_argument("--timestep", default=1., type=float,
-                                  help="Specifies the timestep of the simulator in seconds.")
-
-    def get_optim_parser():
-        """
-        Parser of arguments for OPTIMIZATION mode
-        """
-        optim_parser.add_argument("--iterations", default=500, type=int,
-                                  help="Specifies the number of iterations of the entire experiment.")
-        optim_parser.add_argument("--timestep", default=1., type=float,
+        adaptive_parser.add_argument("--timestep", default=1., type=float,
                                   help="Specifies the timestep of the simulator in seconds.")
 
     def get_generic_args():
@@ -61,31 +55,35 @@ def get_args():
         main_parser.add_argument("--assets", action="store", default="./data/config/assets.yaml",
                                  type=str, help="Specifies the file containing parameters useful for the experiment.")
 
-        electrical_choices = ['thevenin', 'data_driven']
-        main_parser.add_argument("--battery_model", nargs=1, choices=electrical_choices, default=['thevenin'],
+        electrical_choices = ['first_order_thevenin', 'second_order_thevenin']
+        main_parser.add_argument("--battery_model", nargs=1, choices=electrical_choices, default=['first_order_thevenin'],
                                  help="Specifies the name of the core model of the battery, electrical or data driven.")
 
         thermal_choices = ['rc_thermal', 'r2c_thermal', 'dummy_thermal', 'mlp_thermal']
-        main_parser.add_argument("--thermal_model", nargs=1, choices=thermal_choices, default=['dummy_thermal'],
+        main_parser.add_argument("--thermal_model", nargs=1, choices=thermal_choices, default=['r2c_thermal'],
                                  help="Specifies the name of the thermal model that has to be used.")
 
         aging_choices = ['bolun']
         main_parser.add_argument("--aging_model", nargs=1, choices=aging_choices,
                                  help="Specifies the name of the aging model that has to be used.")
 
-        main_parser.add_argument("--save_results", action="store_true",
-                                 help="Specifies if save computed results at the end of the experiment.")
+        #main_parser.add_argument("--save_results", action="store_true",
+        #                         help="Specifies if save computed results at the end of the experiment.")
 
-        main_parser.add_argument("--save_metrics", action="store_true",
-                                 help="Specifies if save computed metrics at the end of the experiment.")
+        #main_parser.add_argument("--save_metrics", action="store_true",
+        #                         help="Specifies if save computed metrics at the end of the experiment.")
 
-        main_parser.add_argument("--plot", action="store_true",
-                                 help="Specifies if plot computed results at the end of the experiment.")
+        #main_parser.add_argument("--plot", action="store_true",
+        #                         help="Specifies if plot computed results at the end of the experiment.")
 
         main_parser.add_argument("--n_cores", action="store", default=-1, type=int,
                                  help="Specifies the number of cores to use for parallel simulations. If save_results "
                                       "is set, cores will be override to 1 to limit RAM consumption.")
+        
+        main_parser.add_argument("--interactive", action="store_true",
+                                 help="Enable the interaction of the user by a dedicated CLI.")
 
+        
         main_parser.add_argument("--verbose", action="store_true",
                                  help="Increases logged information, but slows down the computation.")
 
@@ -93,21 +91,17 @@ def get_args():
     subparsers = main_parser.add_subparsers(title="Mode", dest='mode', description="Experiment mode",
                                             help="Working mode of the Digital Twin", required=True)
 
-    sim_parser = subparsers.add_parser('simulation', help="Simulation Mode",
-                                       formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    get_sim_args()
-
-    whatif_parser = subparsers.add_parser('whatif', help="What-If Mode",
+    driven_parser = subparsers.add_parser('driven', help="Driven Simulation Mode",
                                           formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    get_whatif_args()
+    get_driven_args()
 
-    learn_parser = subparsers.add_parser('learning', help="Learning Mode",
-                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    get_learn_args()
+    schedule_parser = subparsers.add_parser('scheduled', help="Scheduled Simulation Mode",
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    get_schedule_args()
 
-    optim_parser = subparsers.add_parser('optimization', help="Optimization Mode",
-                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    get_optim_parser()
+    adaptive_parser = subparsers.add_parser('adaptive', help="Adaptive Simulation Mode",
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    get_adaptive_args()
 
     main_args = vars(main_parser.parse_args())
     return main_args
@@ -117,8 +111,8 @@ if __name__ == '__main__':
     args = get_args()
 
     # Setup logger
-    #logging.basicConfig(format='%(asctime)s | %(name)s-%(levelname)s: %(message)s')
-    logger = logging.getLogger(name="DT_ernesto")
+    logging.basicConfig(format='%(asctime)s | %(name)s-%(levelname)s: %(message)s')
+    logger = logging.getLogger(name="ErNESTO-DT")
     ch = logging.StreamHandler()
 
     if args['verbose']:
@@ -142,22 +136,25 @@ if __name__ == '__main__':
         args['models'].extend(args['aging_model'])
         del args['aging_model']
 
-    dt_manager = GeneralPurposeManager.get_instance(args['mode'])
-
     def run_experiment(args, config_file):
         args['config'] = config_file
-        orchestrator = dt_manager(**args)
+        orchestrator = DTOrchestrator(**args)
         orchestrator.run()
-        orchestrator.evaluate()
+        #orchestrator.evaluate()
 
     parallel_exp_config = args['config_files']
     del args['config_files']
 
     n_cores = args['n_cores']
     del args['n_cores']
+    
+    try:
+        if n_cores == 1:
+            run_experiment(args, parallel_exp_config[0])
+        else:
+            Parallel(n_jobs=n_cores)(delayed(run_experiment)(args, config) for config in parallel_exp_config)
 
-    if n_cores == 1:
-        run_experiment(args, parallel_exp_config[0])
-    else:
-        Parallel(n_jobs=n_cores)(delayed(run_experiment)(args, config) for config in parallel_exp_config)
-
+    except Exception as e:
+        logger.error("An error occurred during the simulation. Exiting...")
+        logger.error(e)
+        sys.exit(1)

@@ -31,7 +31,7 @@ class GenericModel(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_final_results(self, **kwargs):
+    def get_results(self, **kwargs):
         raise NotImplementedError
 
 
@@ -41,6 +41,7 @@ class ElectricalModel(GenericModel):
     """
     def __init__(self, name: str):
         self._name = name
+        self._params = []
         self._v_load_series = []
         self._i_load_series = []
         self._power_series = []
@@ -50,10 +51,20 @@ class ElectricalModel(GenericModel):
     def name(self):
         return self._name
 
+    @property
+    def param_names(self):
+        return self._params
+    
     def reset_model(self, **kwargs):
         pass
 
     def init_model(self, **kwargs):
+        pass
+
+    def get_params(self):
+        pass
+    
+    def set_params(self, **kwargs):
         pass
 
     def load_battery_state(self, temp: float, soc: float, soh: float):
@@ -65,7 +76,7 @@ class ElectricalModel(GenericModel):
     def compute_generated_heat(self, k:int):
         pass
 
-    def get_final_results(self, **kwargs):
+    def get_results(self, **kwargs):
         pass
 
     def get_v_series(self, k=None):
@@ -152,12 +163,14 @@ class ThermalModel(GenericModel):
     def compute_temp(self, **kwargs):
         pass
 
-    def get_final_results(self, **kwargs):
+    def get_results(self, **kwargs):
         """
         Returns a dictionary with all final results
         """
-        return {'temperature': self._temp_series,
-                'heat': self._heat_series}
+        k = kwargs['k'] if 'k' in kwargs else None
+        return {'temperature': self.get_temp_series(k=k),
+                'heat': self.get_heat_series(k=k)}
+
 
     def get_temp_series(self, k=None):
         """
@@ -218,7 +231,7 @@ class AgingModel(GenericModel):
     def compute_degradation(self, **kwargs):
         pass
 
-    def get_final_results(self, **kwargs):
+    def get_results(self, **kwargs):
         pass
 
     def get_deg_series(self, k=None):

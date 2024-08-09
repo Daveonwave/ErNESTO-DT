@@ -9,7 +9,7 @@
 # ############################################################################
 
 type: electrical
-class_name: FirstOrderThevenin
+class_name: SecondOrderThevenin
 
 # ----------------------------------------------------------------------------
 # Components can be instantiated in 3 different ways:
@@ -57,7 +57,45 @@ components:
         label: "r1"
         unit: "ohm"
 
-  c:
+  c1:
+    selected_type: lookup
+
+    scalar: 10.
+    # function: To be implemented, maybe useless!
+    lookup:
+      table: "c1_table.csv"
+      inputs:
+        - var: "temperature"
+          label: "temp"
+          unit: "degC"
+        - var: "soc"
+          label: "soc"
+          unit: null
+      output:
+        var: "capacity"
+        label: "c"
+        unit: "F"
+
+  r2:
+    selected_type: lookup
+
+    scalar: 10.
+    # function: To be implemented, maybe useless!
+    lookup:
+      table: "r1_table.csv"
+      inputs:
+        - var: "temperature"
+          label: "temp"
+          unit: "degC"
+        - var: "soc"
+          label: "soc"
+          unit: null
+      output:
+        var: "resistance"
+        label: "r1"
+        unit: "ohm"
+
+  c2:
     selected_type: lookup
 
     scalar: 10.

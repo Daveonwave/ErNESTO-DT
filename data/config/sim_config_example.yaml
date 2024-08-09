@@ -18,7 +18,9 @@ destination_folder: "example"
 # 1. specify the .csv file from which we have to read real-world data
 # 2. specify variables used as input and output (for validation)
 # 3. specify the format of 'Time' column ('seconds' or 'timestamp')
-# 4. specify for all the variables:
+# 4. specify the number of times the experiment has to be repeated by providing
+#    the ground data in input. Defailt is 1.
+# 5. specify for all the variables:
 #   - 'var' has to be a variable among [current, voltage, power, temperature].
 #   - 'label' is the column name of the variable inside the csv file.
 #      Example: {'Voltage [V]', 'Current [A]', 'Power [W]'}
@@ -26,23 +28,25 @@ destination_folder: "example"
 #    - 'unit' specifies the unit of input and output preprocessing that will be
 #       transformed to Digital Twin internal default units.
 # # ------------------------------------------------------------------------------- #
-ground_data:
-  file: "ground_checkup20.csv"
-  load: "current"
-  time_format: "timestamp"
-  vars:
-    - var: "current"
-      label: "Current(A)"
-      unit: "A"
-    - var: "voltage"
-      label: "Voltage(V)"
-      unit: "V"
-    - var: "temperature"
-      label: "Temperature"
-      unit: "degC"
-    - var: "power"
-      label: "Power(W)"
-      unit: "W"
+input:
+  ground_data:
+    file: "ground_checkup20.csv"
+    load: "current"
+    time_format: "timestamp"
+    vars:
+      - var: "current"
+        label: "Current(A)"
+        unit: "A"
+      - var: "voltage"
+        label: "Voltage(V)"
+        unit: "V"
+      - var: "temperature"
+        label: "Temperature"
+        unit: "degC"
+      - var: "power"
+        label: "Power(W)"
+        unit: "W"
+  cycle_for: 1
 
 # Simulation Options
 # ------------------------------------------------------------------------------- #
@@ -53,6 +57,8 @@ ground_data:
 # ------------------------------------------------------------------------------- #
 iterations: null
 timestep: null
+check_soh_every: 3600
+get_rest_after: 120
 # todo: interp_ground_data: null
 
 # Battery options
@@ -68,6 +74,7 @@ timestep: null
 # ------------------------------------------------------------------------------- #
 battery:
   sign_convention: "passive"
+
   params:
     nominal_capacity:
       var: "capacity"
@@ -85,6 +92,12 @@ battery:
       var: "temperature"
       value: 296.15
       unit: "K"
+
+  bounds:
+    soc:
+      low: 0.
+      high: 1.
+
   init:
     voltage: 4.15
     current: 0.
@@ -97,10 +110,11 @@ battery:
 # Among 'vars' are enlisted the variables that the user desires to plot:
 #   - 'var' has to be a string among [current, voltage, power, temperature]
 # --------------------------------------------------------------------------------
-#plot_options:
-#    plots:
-#        - type: 'compared'
-#          vars:
-#            - 'voltage'
-#            - 'temperature'
-#            - 'power'
+#
+# plots:
+#   compared:
+#     - 'voltage'
+#     - 'temperature'
+#     - 'power'
+#   single:
+#     - 'voltage'
