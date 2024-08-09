@@ -63,7 +63,7 @@ battery = Schema(
     {
         "sign_convention": Or('active', 'passive'),
         "params": {And(str, var_pattern): battery_param},
-        "bounds": {And(str, var_pattern): bound_param},
+        Optional("bounds"): {And(str, var_pattern): bound_param},
         "init":
             {
                 Optional('voltage'): Or(float, And(int, Use(float))),
@@ -94,6 +94,7 @@ config_schema = Schema(
         Optional("iterations"): Or(int, None),
         Optional("timestep"): Or(int, float, None),
         Optional("check_soh_every"): Or(int, None),
+        Optional("get_rest_after"): Or(int, None),
         # Battery parameters
         "battery": battery,
     }

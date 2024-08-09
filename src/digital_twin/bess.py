@@ -46,8 +46,8 @@ class BatteryEnergyStorageSystem:
         self._temp_ambient = battery_options['params']['temp_ambient']
         
         # Bounds of operating conditions of the battery
-        self.soc_min = battery_options['bounds']['soc']['low']
-        self.soc_max = battery_options['bounds']['soc']['high']
+        self.soc_min = battery_options['bounds']['soc']['low'] if 'bounds' in battery_options.keys() else 0.
+        self.soc_max = battery_options['bounds']['soc']['high'] if 'bounds' in battery_options.keys() else 1.
         
         # Initial conditions of the battery
         self._init_conditions = battery_options['init']

@@ -27,8 +27,8 @@ class DrivenSimulator(BaseSimulator):
         
         # Simulation variables
         self._sample = None
-        self._get_rest_after = 3600
-        self._elapsed_time = 0
+        self._get_rest_after = sim_config['get_rest_after'] if 'get_rest_after' in sim_config and sim_config['get_rest_after'] is not None else 3600
+        self._elapsed_time = -1
         self._done = False
         
         # Instantiate the BESS environment
@@ -49,9 +49,10 @@ class DrivenSimulator(BaseSimulator):
         self._battery.reset()
         self._battery.init()
         self._battery.load_var = self._loader.input_var
-        
+        self._writer.add_simulated_data(self._battery.get_status_table())
+
         k = 0
-        dt = self._loader.timestep if self._loader.timestep is not None else 0
+        dt = self._loader.timestep if self._loader.timestep is not None else 1
         prev_time = -1
         pbar = tqdm(total=int(self._loader.duration), position=0, leave=True)
         
@@ -63,8 +64,10 @@ class DrivenSimulator(BaseSimulator):
             
             # Make a step in the simulation. If dt == 0 then no progresses have been made.
             if dt != 0:
-                k, dt = self.step(k=k, dt=dt)
+                k, dt = self.step(k=k, dt=dt)    
                 pbar.update(dt)
+            
+            #print(self._sample['time'], self._battery.t_series[-1], dt, self._elapsed_time)
             
             # Check if the simulation is over, otherwise get the next sample.
             if self._elapsed_time < self._loader.duration:
@@ -76,7 +79,6 @@ class DrivenSimulator(BaseSimulator):
             
         pbar.close()
         logger.info("'Driven Simulation' ended without errors!")
-        print("'Driven Simulation' ended without errors!")
             
     def step(self, k: int, dt: float):
         """
@@ -97,17 +99,20 @@ class DrivenSimulator(BaseSimulator):
             self._battery.load_var = 'current'
             self._battery.step(load=0, dt=dt-1, k=k)
             self._battery.load_var = self._loader.input_var
-            self._battery.t_series.append(self._elapsed_time)
+            
             self._elapsed_time += (dt - 1)
+            self._battery.t_series.append(self._elapsed_time)
             dt = 1
             k += 1
+            
             self._writer.add_simulated_data(self._battery.get_status_table())
             
         # Normal operating step of the battery system.
         ground_temp = self._sample['temperature'] if 'temperature' in self._sample else None
         self._battery.step(load=self._sample[self._loader.input_var], dt=dt, k=k, ground_temp=ground_temp)
-        self._battery.t_series.append(self._elapsed_time)
+        
         self._elapsed_time += dt
+        self._battery.t_series.append(self._elapsed_time)
         k += 1
         
         self._writer.add_ground_data(self._sample)

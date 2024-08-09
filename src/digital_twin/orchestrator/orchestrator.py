@@ -49,8 +49,6 @@ class DTOrchestrator:
         
         # Output results and postprocessing
         self._results = None
-        self._save_results = kwargs['save_results']
-        self._save_metrics = kwargs['save_metrics']
         
         # Entities useful for the simulation
         self._data_loader = DataLoader.get_instance(mode=kwargs['mode'])(self._settings)
@@ -100,38 +98,3 @@ class DTOrchestrator:
         else:
             logger.info("METRICS")
             print(pretty_repr(res))
-
-    def output_results(self, results: dict, summary: dict):
-        """
-
-        Args:
-            summary (dict):
-        """
-        if self._save_results:
-            try:
-                os.makedirs(self._output_folder, exist_ok=True)
-            except NotADirectoryError as e:
-                logger.error("It's not possible to create directory {}: {}".format(self._output_folder, e.args))
-
-            # Save experiment summary
-            with open(self._output_folder / "summary.txt", 'w') as f:
-                for key, value in summary.items():
-                    f.write('%s: %s\n' % (key, value))
-
-            # Save experiment results
-            pd.DataFrame.from_dict(results['operations']).to_csv(self._output_folder / 'dataset.csv', index=False)
-            if results['ground']:
-                pd.DataFrame.from_dict(results['ground']).to_csv(self._output_folder / 'ground.csv', index=False)
-            if results['aging']:
-                pd.DataFrame.from_dict(results['aging']).to_csv(self._output_folder / 'aging.csv', index=False)
-
-        # Print on the console the summary and results
-        if logger.level == logging.INFO:
-            print('\n')
-            logger.info("SUMMARY")
-            print(pretty_repr(summary))
-            logger.info("RESULTS")
-            print(str(results))
-
-
-

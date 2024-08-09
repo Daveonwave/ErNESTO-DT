@@ -67,14 +67,14 @@ def get_args():
         main_parser.add_argument("--aging_model", nargs=1, choices=aging_choices,
                                  help="Specifies the name of the aging model that has to be used.")
 
-        main_parser.add_argument("--save_results", action="store_true",
-                                 help="Specifies if save computed results at the end of the experiment.")
+        #main_parser.add_argument("--save_results", action="store_true",
+        #                         help="Specifies if save computed results at the end of the experiment.")
 
-        main_parser.add_argument("--save_metrics", action="store_true",
-                                 help="Specifies if save computed metrics at the end of the experiment.")
+        #main_parser.add_argument("--save_metrics", action="store_true",
+        #                         help="Specifies if save computed metrics at the end of the experiment.")
 
-        main_parser.add_argument("--plot", action="store_true",
-                                 help="Specifies if plot computed results at the end of the experiment.")
+        #main_parser.add_argument("--plot", action="store_true",
+        #                         help="Specifies if plot computed results at the end of the experiment.")
 
         main_parser.add_argument("--n_cores", action="store", default=-1, type=int,
                                  help="Specifies the number of cores to use for parallel simulations. If save_results "
