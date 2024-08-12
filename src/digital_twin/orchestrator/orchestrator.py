@@ -10,7 +10,7 @@ from src.preprocessing.schema import read_yaml
 from src.preprocessing.data_preparation import validate_parameters_unit
 from src.digital_twin.orchestrator import DataLoader
 from src.digital_twin.orchestrator import DataWriter
-from src.digital_twin.orchestrator.simulation import BaseSimulator
+from src.digital_twin.orchestrator.simulation.base_simulator import BaseSimulator
 
 logger = logging.getLogger('ErNESTO-DT')
 
@@ -49,8 +49,8 @@ class DTOrchestrator:
         
         # Output results and postprocessing
         self._results = None
-        self._save_results = kwargs['save_results']
-        self._save_metrics = kwargs['save_metrics']
+        #self._save_results = kwargs['save_results']
+        #self._save_metrics = kwargs['save_metrics']
         
         # Entities useful for the simulation
         self._data_loader = DataLoader.get_instance(mode=kwargs['mode'])(self._settings)

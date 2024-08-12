@@ -1,6 +1,5 @@
 from src.preprocessing.data_preparation import load_data_from_csv, sync_data_with_step
 from src.preprocessing.schedule.schedule import Schedule
-from queue import Queue
 import logging
 
 logger = logging.getLogger('ErNESTO-DT')
@@ -117,7 +116,7 @@ class DrivenLoader(DataLoader):
             
             # Extend the input data for the number of cycles, the other variables are dropped
             self._data[self._input_var] = self._data[self._input_var] * config['input']['cycle_for']
-            self._data['time'].extend([t + self._duration * i for t in self._data['time'] for i in range(1, config['input']['cycle_for'])])
+            self._data['time'].extend([t + self._duration * i for i in range(1, config['input']['cycle_for']) for t in self._data['time']])
             
             self._data = {self._input_var: self._data[self._input_var], 'time': self._data['time']}
             self._duration = self._duration * config['input']['cycle_for']

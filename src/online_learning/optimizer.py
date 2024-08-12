@@ -2,9 +2,10 @@ import numpy as np
 from scipy.optimize import minimize
 from src.digital_twin.bess import BatteryEnergyStorageSystem
 
-class Optimizer():
+
+class Optimizer:
     def __init__(self, models_config, battery_options, load_var, init_info,
-                 bounds, scale_factor,options , temperature_loss=False):
+                 bounds, scale_factor, options, temperature_loss=False):
         # battery attributes
         # TODO: passa l'inizio della window precedente passata dal simulatore!!
         self._temp_battery = BatteryEnergyStorageSystem(models_config=models_config,
@@ -50,29 +51,14 @@ class Optimizer():
         self._temp_battery._electrical_model.rc.capacity = theta[2]
 
     def lhs(self):
-
         n = 1
         d = len(self.bounds)
         samples = np.zeros((n, d))
-
         for i in range(d):
             samples[:, i] = np.random.uniform(low=self.bounds[i][0], high=self.bounds[i][1], size=n)
-
         for i in range(d):
             np.random.shuffle(samples[:, i])
-
         return samples.flatten()
-
-    def finite_diff(self, x):
-        h = 1e-5  # Step size for finite differences
-        gradients = []
-        for i in range(len(x)):
-            x_plus_h = np.copy(x)
-            x_plus_h[i] += h
-            loss_plus_h = self._loss_function(x_plus_h)
-            gradient_i = (loss_plus_h - self.best_loss) / h
-            gradients.append(gradient_i)
-        return gradients
 
     def _battery_load(self, theta):
         # filtro ro, rc, c
@@ -90,13 +76,6 @@ class Optimizer():
             self._temp_battery.step(load=load, dt=self.dt, k=k)
             self._temp_battery.t_series.append(elapsed_time)
             elapsed_time += self.dt
-
-    def _callback(self, xk):
-        print("THETA", xk)
-        gradient = self.finite_diff(xk)
-        self.gradient_history.append(gradient)
-        print("the gradient is :", gradient)
-        #print("LOSS VALUE:", self.loss_history[-1])
 
     def _loss_function(self, theta):
         self._battery_load(theta)
@@ -119,7 +98,7 @@ class Optimizer():
 
         if loss < self.best_loss:
             self.best_loss = loss
-            #self.loss_history.append(self.best_loss)
+            # self.loss_history.append(self.best_loss)
 
         return loss
 
@@ -140,11 +119,10 @@ class Optimizer():
         for ii in range(self.number_of_restarts):
             print("restart number :", ii)
             initial_guess = np.array([np.random.uniform(low, high) for low, high in self.bounds])
-            #initial_guess = self.lhs()
+            # initial_guess = self.lhs()
 
             result = minimize(self._loss_function, initial_guess,
-                              method=optimizer_method, bounds=self.bounds,
-                              callback=self._callback, options=self.options)
+                              method=optimizer_method, bounds=self.bounds, options=self.options)
 
             if result.fun < best_value:
                 best_result = result
@@ -155,4 +133,3 @@ class Optimizer():
         return {'r0': best_result.x[0] * self.scale_factor[0],
                 'rc': best_result.x[1] * self.scale_factor[1],
                 'c': best_result.x[2] * self.scale_factor[2]}
-

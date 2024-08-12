@@ -67,14 +67,14 @@ def get_args():
         main_parser.add_argument("--aging_model", nargs=1, choices=aging_choices,
                                  help="Specifies the name of the aging model that has to be used.")
 
-        main_parser.add_argument("--save_results", action="store_true",
-                                 help="Specifies if save computed results at the end of the experiment.")
+        #main_parser.add_argument("--save_results", action="store_true",
+        #                         help="Specifies if save computed results at the end of the experiment.")
 
-        main_parser.add_argument("--save_metrics", action="store_true",
-                                 help="Specifies if save computed metrics at the end of the experiment.")
+        #main_parser.add_argument("--save_metrics", action="store_true",
+        #                         help="Specifies if save computed metrics at the end of the experiment.")
 
-        main_parser.add_argument("--plot", action="store_true",
-                                 help="Specifies if plot computed results at the end of the experiment.")
+        #main_parser.add_argument("--plot", action="store_true",
+        #                         help="Specifies if plot computed results at the end of the experiment.")
 
         main_parser.add_argument("--n_cores", action="store", default=-1, type=int,
                                  help="Specifies the number of cores to use for parallel simulations. If save_results "
@@ -148,13 +148,7 @@ if __name__ == '__main__':
     n_cores = args['n_cores']
     del args['n_cores']
     
-    try:
-        if n_cores == 1:
-            run_experiment(args, parallel_exp_config[0])
-        else:
-            Parallel(n_jobs=n_cores)(delayed(run_experiment)(args, config) for config in parallel_exp_config)
-
-    except Exception as e:
-        logger.error("An error occurred during the simulation. Exiting...")
-        logger.error(e)
-        sys.exit(1)
+    if n_cores == 1:
+        run_experiment(args, parallel_exp_config[0])
+    else:
+        Parallel(n_jobs=n_cores)(delayed(run_experiment)(args, config) for config in parallel_exp_config)
