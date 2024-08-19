@@ -75,15 +75,24 @@ class Cluster:
         except np.linalg.LinAlgError:
             return False  # Covariance matrix is singular
 
-        print("point to test type:", type(np.array(point_to_test)))
-        print("point to test centroid:", type(self.centroid))
-        print(f"Type of point_to_test: {point_to_test.dtype}, Type of centroid: {self.centroid.dtype}")
+        mahalanobis_dist = mahalanobis(point_to_test, self.centroid, inv_covariance)
 
-        mahalanobis_dist = mahalanobis(np.array(point_to_test), self.centroid, inv_covariance)
+        data_points_array = np.array(self.data_points)
 
-        t_statistic, _ = stats.ttest_1samp(np.vstack(self.data_points), point_to_test, axis=0)
+        # Non-parametric test: Wilcoxon signed-rank test
+        p_values = []
+        for i in range(point_to_test.shape[0]):
+            result = stats.wilcoxon(data_points_array[:, i] - point_to_test[i], alternative='two-sided')
+            if isinstance(result, tuple):
+                p_value = result[1]
+            else:
+                p_value = result
+            p_values.append(float(p_value))  # Ensure p_value is treated as a float
 
-        return mahalanobis_dist < np.abs(t_statistic).mean()  # t-tset non param. ?
+        alpha = 0.05
+        is_within_cluster = all(p > alpha for p in p_values)
+
+        return mahalanobis_dist < 1.0 and is_within_cluster
 
     def update(self, point):
         self.add(point)
