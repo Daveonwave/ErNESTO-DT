@@ -54,6 +54,7 @@ class Cluster:
             raise ValueError("Cluster is empty.")
 
     def contains(self, point_to_test):
+        point_to_test = np.array(point_to_test, dtype=float)
 
         if self.covariance is None:
             self.compute_covariance()
@@ -62,17 +63,27 @@ class Cluster:
             self.compute_centroid()
 
         try:
+            inv_covariance = np.linalg.inv(self.covariance)
+        except np.linalg.LinAlgError:
+            # Regularize the covariance matrix if it's singular
+            inv_covariance = np.linalg.inv(self.covariance + np.eye(self.covariance.shape[0]) * 1e-6)
+
+        try:
             det = np.linalg.det(self.covariance)
             if det == 0:
                 return False  # Covariance matrix is singular
         except np.linalg.LinAlgError:
             return False  # Covariance matrix is singular
 
-        mahalanobis_dist = mahalanobis(np.array(point_to_test), self.centroid, np.linalg.inv(self.covariance))
+        print("point to test type:", type(np.array(point_to_test)))
+        print("point to test centroid:", type(self.centroid))
+        print(f"Type of point_to_test: {point_to_test.dtype}, Type of centroid: {self.centroid.dtype}")
+
+        mahalanobis_dist = mahalanobis(np.array(point_to_test), self.centroid, inv_covariance)
 
         t_statistic, _ = stats.ttest_1samp(np.vstack(self.data_points), point_to_test, axis=0)
 
-        return mahalanobis_dist < np.abs(t_statistic).mean()
+        return mahalanobis_dist < np.abs(t_statistic).mean()  # t-tset non param. ?
 
     def update(self, point):
         self.add(point)

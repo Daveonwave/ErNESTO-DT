@@ -17,21 +17,27 @@ def omega_rmm(datapoint, center, radius, p):
 def largest_cluster(centers, epsilon, outliers):
     sets = []
     centers_copied = centers.copy()
+    centers_indices = list(range(len(centers)))
 
     while centers_copied:
         c_j = centers_copied.pop(0)
-        current_set = [centers.index(c_j)]
+        c_j_index = centers_indices.pop(0)
+        current_set = [c_j_index]
         centers_to_remove = []
+        indices_to_remove = []
 
-        for idx, c_h in enumerate(centers_copied):
+        for i, c_h in enumerate(centers_copied):
             if spatio_temporal_distance(c_j, c_h, p=1) <= 2 * epsilon:
-                current_set.append(idx)
+                current_set.append(centers_indices[i])
                 centers_to_remove.append(c_h)
+                indices_to_remove.append(i)
 
-        for c_h in centers_to_remove:
-            centers_copied.remove(c_h)
+        for index in sorted(indices_to_remove, reverse=True):
+            centers_copied.pop(index)
+            centers_indices.pop(index)
 
         sets.append(current_set)
+
 
     clusters = []
     for index_set in sets:
@@ -39,8 +45,7 @@ def largest_cluster(centers, epsilon, outliers):
 
     largest_cluster = max(clusters, key=len)
 
-    for idx, elem in enumerate(largest_cluster):
-        largest_cluster[idx] = np.array(elem)
+    largest_cluster = [arr.reshape((3, 1)) for arr in largest_cluster]
 
     return largest_cluster
 

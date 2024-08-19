@@ -2,6 +2,7 @@ from src.digital_twin.bess import BatteryEnergyStorageSystem
 from src.online_learning.soc_temp_combination import SocTemp
 from src.online_learning.optimizer import Optimizer
 from src.online_learning.change_detection.cluster_estimation import cluster_estimation
+from src.online_learning.utils import save_to_csv, convert_to_dict_list, save_dict_list_to_csv
 import numpy as np
 
 
@@ -26,8 +27,8 @@ class BatteryAdaptation:
         self.dataset = dataset
         self.nominal_clusters = nominal_clusters  # check coherency with the id
         # data structures for the alg.
-        self.history_theta = list()
-        self.outliers_sets = {'0': None, '1': None, '2': None, '3': None}
+        self.history_theta = {0: list(), 1: list(), 2: list(), 3: list()}
+        self.outliers_sets = {0: list(), 1: list(), 2: list(), 3: list()}
         self.v_optimizer = list()
         self.temp_optimizer = list()
         self.phi_hat = None
@@ -58,29 +59,35 @@ class BatteryAdaptation:
         dt = 1
         start = 0
         for k, load in enumerate(self.dataset['i_real']):
+            print("loop number:", k)
             elapsed_time += dt
             battery.t_series.append(elapsed_time)
             dt = self.dataset['time'].iloc[k] - self.dataset['time'].iloc[k - 1] if k > 0 else 1.0
 
-            if (k % self.batch_size == 0 and k != 0) or soc_temp.is_changed(soc, temp):
+            if soc_temp.is_changed(soc, temp):
+                print("the combination soc-temperature is changed, current is:", soc_temp.current)
 
+            if (k % self.batch_size == 0 and k != 0):
+                print("goin' to optimize:")
                 theta = optimizer.step(i_real=self.dataset['i_real'][start:k],
                                        v_real=self.dataset['v_real'][start:k],
                                        t_real=self.dataset['t_real'][start:k],
                                        optimizer_method=self.optimizer_method,
                                        alpha=self.alpha, dt=dt,
                                        number_of_restarts=self.number_of_restarts)
-
+                print("theta is:", theta)
                 start = k
-                self.history_theta.append(theta)
+                theta_values = np.array(list(theta.values()), dtype=float)
+                self.history_theta[soc_temp.current].append(theta_values)
+                print("The len of history_theta[current]: ", self.history_theta[soc_temp.current])
                 self.v_optimizer = self.v_optimizer + optimizer.get_v_hat()
-                self.temp_optimizer = self.temp_optimizer + optimizer.get_t_hat()
+                # self.temp_optimizer = self.temp_optimizer + optimizer.get_t_hat()
 
-                if self.nominal_clusters[soc_temp.current].contains(np.array(list(theta))):
-                    self.nominal_clusters[soc_temp.current].update()
+                if self.nominal_clusters[soc_temp.current].contains(theta_values):
+                    self.nominal_clusters[soc_temp.current].update(theta_values)
 
                 else:
-                    self.outliers_sets[soc_temp.current].append(theta)
+                    self.outliers_sets[soc_temp.current].append(theta_values)
 
                     self.phi_hat = cluster_estimation(
                             cluster_data_points=self.nominal_clusters[soc_temp.current].data_points,
@@ -89,13 +96,74 @@ class BatteryAdaptation:
                     if self.phi_hat is not None:
                         self.nominal_clusters[soc_temp.current] = self.phi_hat
 
-                battery._electrical_model.r0.resistance = self.nominal_clusters[soc_temp.current].centroid[0]
-                battery._electrical_model.rc.resistance = self.nominal_clusters[soc_temp.current].centroid[1]
-                battery._electrical_model.rc.capacity = self.nominal_clusters[soc_temp.current].centroid[2]
+                # battery._electrical_model.r0.resistance = self.nominal_clusters[soc_temp.current].centroid[0]
+                # battery._electrical_model.rc.resistance = self.nominal_clusters[soc_temp.current].centroid[1]
+                # battery._electrical_model.rc.capacity = self.nominal_clusters[soc_temp.current].centroid[2]
 
             battery.step(load, dt, k)
-            soc = battery.soc_series[-1]
-            temp = np.mean(self.dataset['temperature'].value, axis=0)  # don't fall on the edge
+            if len(battery.soc_series) > 1:
+                soc = np.mean(np.array(battery.soc_series))
+            else:
+                soc = battery.soc_series[-1]
+            if len(self.dataset['t_real'][start:k]) > 1:
+                temp = np.mean(self.dataset['t_real'][start:k], axis=0)
+            else:
+                temp = battery._thermal_model.get_temp_series(-1)
 
         if self.save_results:
-            pass
+            print("start savings")
+            save_to_csv(self.v_optimizer, 'v_optimizer.csv', ['v_optimizer']) # ok!
+
+            history_theta_0 = convert_to_dict_list(self.history_theta[0])
+            save_dict_list_to_csv(dict_list=history_theta_0, filename='phi_0_history_theta.csv')
+
+            history_theta_1 = convert_to_dict_list(self.history_theta[1])
+            save_dict_list_to_csv(dict_list=history_theta_1, filename='phi_1_history_theta.csv')
+
+            history_theta_2 = convert_to_dict_list(self.history_theta[2])
+            save_dict_list_to_csv(dict_list=history_theta_2, filename='phi_2_history_theta.csv')
+
+            history_theta_3 = convert_to_dict_list(self.history_theta[3])
+            save_dict_list_to_csv(dict_list=history_theta_3, filename='phi_3_history_theta.csv')
+
+            # save_to_csv(self.history_theta[0], 'phi_0_history_theta.csv', ['history_theta'])
+            # save_to_csv(self.history_theta[1], 'phi_1_history_theta.csv', ['history_theta'])
+            # save_to_csv(self.history_theta[2], 'phi_2_history_theta.csv', ['history_theta'])
+            # save_to_csv(self.history_theta[3], 'phi_3_history_theta.csv', ['history_theta'])
+
+            outliers_sets_0 = convert_to_dict_list(self.outliers_sets[0])
+            save_dict_list_to_csv(dict_list=outliers_sets_0, filename='phi_0_outliers_sets.csv')
+
+            outliers_sets_1 = convert_to_dict_list(self.outliers_sets[1])
+            save_dict_list_to_csv(dict_list=outliers_sets_1, filename='phi_1_outliers_sets.csv')
+
+            outliers_sets_2 = convert_to_dict_list(self.outliers_sets[2])
+            save_dict_list_to_csv(dict_list=outliers_sets_2, filename='phi_2_outliers_sets.csv')
+
+            outliers_sets_3 = convert_to_dict_list(self.outliers_sets[3])
+            save_dict_list_to_csv(dict_list=outliers_sets_3, filename='phi_3_outliers_sets.csv')
+
+            # save_to_csv(self.outliers_sets[0], 'phi_0_outliers_sets.csv', ['Outliers'])
+            # save_to_csv(self.outliers_sets[1], 'phi_1_outliers_sets.csv', ['Outliers'])
+            # save_to_csv(self.outliers_sets[2], 'phi_2_outliers_sets.csv', ['Outliers'])
+            # save_to_csv(self.outliers_sets[3], 'phi_3_outliers_sets.csv', ['Outliers'])
+
+            nominal_cluster_0 = convert_to_dict_list(self.nominal_clusters[0].data_points)
+            save_dict_list_to_csv(dict_list=nominal_cluster_0, filename='phi_0.csv')
+
+            nominal_cluster_1 = convert_to_dict_list(self.nominal_clusters[1].data_points)
+            save_dict_list_to_csv(dict_list=nominal_cluster_1, filename='phi_1.csv')
+
+            nominal_cluster_2 = convert_to_dict_list(self.nominal_clusters[2].data_points)
+            save_dict_list_to_csv(dict_list=nominal_cluster_2, filename='phi_2.csv')
+
+            nominal_cluster_3 = convert_to_dict_list(self.nominal_clusters[3].data_points)
+            save_dict_list_to_csv(dict_list=nominal_cluster_3, filename='phi_3.csv')
+
+            # save_to_csv(self.nominal_clusters[0].data_points, 'phi_0.csv', ['phi_0'])
+            # save_to_csv(self.nominal_clusters[1].data_points, 'phi_1.csv', ['phi_1'])
+            # save_to_csv(self.nominal_clusters[2].data_points, 'phi_2.csv', ['phi_2'])
+            # save_to_csv(self.nominal_clusters[3].data_points, 'phi_3.csv', ['phi_3'])
+
+            # todo: solve since it is useful
+            # save_to_csv(self.temp_optimizer, 'temp_optimizer.csv', ['temp_optimizer'])

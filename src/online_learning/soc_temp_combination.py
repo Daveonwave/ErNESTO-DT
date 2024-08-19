@@ -2,8 +2,8 @@ class SocTemp:
     def __init__(self, ranges, soc, temp):
         self._ranges = ranges
         self._combinations = None
-        self._current = self._equivalent_combination(soc, temp)
         self._create_combinations()
+        self._current = self._equivalent_combination(soc, temp)
 
 
     @property
@@ -36,7 +36,7 @@ class SocTemp:
         self._combinations = combinations
 
     def _equivalent_combination(self, soc, temp):
-        for index, cell in self.combinations.items():
+        for index, cell in self._combinations.items():
             soc_interval = cell["soc_interval"]
             temp_interval = cell["temp_interval"]
             if soc_interval[0] <= soc <= soc_interval[1] and (temp_interval[0] <= temp <= temp_interval[1]):
@@ -44,9 +44,9 @@ class SocTemp:
         return None
 
     def is_changed(self, soc, temp):
-        new = self._eqivalent_combination(soc, temp)
+        new = self._equivalent_combination(soc, temp)
         if self.current == new:
             return False
         else:
-            self.current = new
+            self._current = new
             return True

@@ -11,15 +11,26 @@ def cluster_estimation(cluster_data_points, outliers):
     pca_outliers = PCA(n_components=1)
     principal_component_cluster = pca_cluster.fit_transform(np.array(cluster_data_points))
     principal_component_outliers = pca_outliers.fit_transform(np.array(outliers))
+    print('Len of first PC for cluster datapoints:', len(principal_component_cluster))
+    print('type of datapoints:', type(principal_component_cluster))
+    print('shape of datapoints:', principal_component_cluster.shape)
+    print('Len of first PC for outliers:', len(principal_component_outliers))
+    print('type of outliers:', type(principal_component_outliers))
+    print('shape of outliers:', principal_component_outliers.shape)
+    cluster_flat = principal_component_cluster.flatten()
+    outliers_flat = principal_component_outliers.flatten()
+
+
 
     alpha_c = 0.05
-    ks_value, p_value = stats.ks_2samp(principal_component_cluster, principal_component_outliers)
+    ks_value, p_value = stats.ks_2samp(cluster_flat, outliers_flat)
 
     if p_value < alpha_c:
         print("Reject the null hypothesis: Create a new cluster.")
         centers = mountain_method(outliers=outliers, epsilon=0.001, radius=1, p=1)
         o_tilde = largest_cluster(centers=centers, outliers=outliers, epsilon=0.001)
-        phi = mcv_robust_clustering(o_tilde, support_fraction=0.60)
+        print(o_tilde)
+        phi = mcv_robust_clustering(cluster=o_tilde, minimum_datapoints=5, support_fraction=0.50)
         return phi
     else:
         print("Fail to reject the null hypothesis: No new cluster needed.")

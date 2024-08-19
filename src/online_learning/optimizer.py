@@ -124,12 +124,12 @@ class Optimizer:
             result = minimize(self._loss_function, initial_guess,
                               method=optimizer_method, bounds=self.bounds, options=self.options)
 
-            if result.fun < best_value:
-                best_result = result
-                best_value = result.fun
+            #if result.fun < best_value:
+            #    best_result = result
+            #    best_value = result.fun
 
         self.loss_history.append(self.best_loss)
 
-        return {'r0': best_result.x[0] * self.scale_factor[0],
-                'rc': best_result.x[1] * self.scale_factor[1],
-                'c': best_result.x[2] * self.scale_factor[2]}
+        return {'r0': result.x[0] * self.scale_factor[0],
+                'rc': result.x[1] * self.scale_factor[1],
+                'c': result.x[2] * self.scale_factor[2]}
