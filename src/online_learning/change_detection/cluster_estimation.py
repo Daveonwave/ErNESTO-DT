@@ -29,7 +29,7 @@ def cluster_estimation(cluster_data_points, outliers):
         print("Reject the null hypothesis: Create a new cluster.")
         centers = mountain_method(outliers=outliers, epsilon=0.001, radius=1, p=1)
         o_tilde = largest_cluster(centers=centers, outliers=outliers, epsilon=0.001)
-        print(o_tilde)
+        print('len of o_tilde', len(o_tilde))
         phi = mcv_robust_clustering(cluster=o_tilde, minimum_datapoints=5, support_fraction=0.50)
         return phi
     else:

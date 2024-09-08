@@ -1,6 +1,7 @@
 import seaborn as  sns
 import matplotlib.pyplot as plt
 import scipy.stats as stats
+import pandas as pd
 
 def pairwise_scatter(df):
     sns.pairplot(df)
@@ -9,7 +10,7 @@ def pairwise_scatter(df):
 def threed_scatter(df):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(df['r0'], df['rc'], df['c'])
+    ax.scatter(df['r0'], df['rc'], df['c'], color='yellow')
     ax.set_xlabel('r0')
     ax.set_ylabel('rc')
     ax.set_zlabel('c')

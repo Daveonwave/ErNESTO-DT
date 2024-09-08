@@ -1,13 +1,13 @@
 import numpy as np
 from scipy.spatial.distance import mahalanobis
-from scipy import stats
+from scipy.stats import chi2, f
 
 
 class Cluster:
     def __init__(self):
         self._centroid = None
         self._covariance = None
-        self._data_points = list()
+        self._data_points = []
 
     @property
     def data_points(self):
@@ -55,12 +55,16 @@ class Cluster:
 
     def contains(self, point_to_test):
         point_to_test = np.array(point_to_test, dtype=float)
+        print('point to test ',point_to_test)
 
         if self.covariance is None:
             self.compute_covariance()
 
         if self.centroid is None:
             self.compute_centroid()
+
+        print('mean:', self.centroid)
+        print('cov:', self.covariance)
 
         try:
             inv_covariance = np.linalg.inv(self.covariance)
@@ -75,24 +79,38 @@ class Cluster:
         except np.linalg.LinAlgError:
             return False  # Covariance matrix is singular
 
-        mahalanobis_dist = mahalanobis(point_to_test, self.centroid, inv_covariance)
+        #print("point to test type:", type(np.array(point_to_test)))
+        #print("point to test centroid:", type(self.centroid))
+        #print(f"Type of point_to_test: {point_to_test.dtype}, Type of centroid: {self.centroid.dtype}")
+        #print(f"point_to_test shape: {np.array(point_to_test).shape}")
+        #print("_______________________________________________________")
+        #print("point to test", point_to_test)
 
-        data_points_array = np.array(self.data_points)
+        mahalanobis_dist = mahalanobis(np.array(point_to_test), self.centroid, inv_covariance)
+        print('mahalabolis distance:', mahalanobis_dist)
 
-        # Non-parametric test: Wilcoxon signed-rank test
-        p_values = []
-        for i in range(point_to_test.shape[0]):
-            result = stats.wilcoxon(data_points_array[:, i] - point_to_test[i], alternative='two-sided')
-            if isinstance(result, tuple):
-                p_value = result[1]
-            else:
-                p_value = result
-            p_values.append(float(p_value))  # Ensure p_value is treated as a float
+        #t_statistic, p_value = stats.ttest_1samp(np.vstack(self.data_points), point_to_test, axis=0)
+        #print('t_statistic abs mean', np.abs(t_statistic).mean())
+        #print('p_value abs mean:', np.abs(p_value).mean())
+        #return mahalanobis_dist < np.abs(t_statistic).mean()
+        #return np.abs(p_value).mean() > 0.05
 
-        alpha = 0.05
-        is_within_cluster = all(p > alpha for p in p_values)
+        # Degrees of freedom = number of dimensions (features) in the data
+        #dof = len(self.centroid)
+        # Chi-squared test to check if the distance falls within the critical region
+        #chi2_threshold = chi2.ppf(0.95, dof)  # 95% confidence interval for the chi-squared distribution
 
-        return mahalanobis_dist < 1.0 and is_within_cluster
+        # Degrees of freedom
+        dfn = len(self.centroid)  # Number of features
+        dfd = len(self.data_points) - len(self.centroid)  # Number of samples - number of features
+
+        # F-distribution threshold at 95% confidence level
+        f_threshold = f.ppf(0.95, dfn, dfd)
+
+        # Check if the Mahalanobis distance falls below the threshold
+        return mahalanobis_dist < f_threshold
+
+
 
     def update(self, point):
         self.add(point)

@@ -1,4 +1,4 @@
-from src.online_learning.battery_adaptation import BatteryAdaptation
+from src.online_learning.battery_adaptation_one_outliers_set import BatteryAdaptation
 from src.online_learning.utils import load_from_yaml, load_cluster
 from src.online_learning.cluster import Cluster
 import pandas as pd
@@ -6,7 +6,7 @@ import pandas as pd
 
 if __name__ == "__main__":
 
-    df = pd.read_csv("data/ground/experiment_signals/ground.csv")
+    df = pd.read_csv("data/ground/fault_signals/multiplicative_fault_ground.csv")
     dataset = {'v_real': df['voltage'].values,
                'i_real': df['current'].values,
                't_real': df['temperature'].values,

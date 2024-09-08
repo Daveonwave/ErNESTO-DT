@@ -39,7 +39,13 @@ class SocTemp:
         for index, cell in self._combinations.items():
             soc_interval = cell["soc_interval"]
             temp_interval = cell["temp_interval"]
-            if soc_interval[0] <= soc <= soc_interval[1] and (temp_interval[0] <= temp <= temp_interval[1]):
+            #print("------------------------")
+            #print("soc intervals are:", soc_interval)
+            #print("temp intervals are:", temp_interval)
+            #print("soc to check: ", soc)
+            #print("temp to check :", temp)
+            #print("------------------------")
+            if (soc_interval[0] <= soc <= soc_interval[1]) and (temp_interval[0] <= temp <= temp_interval[1]):
                 return index
         return None
 

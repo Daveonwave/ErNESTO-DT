@@ -2,8 +2,9 @@ from src.digital_twin.bess import BatteryEnergyStorageSystem
 from src.online_learning.soc_temp_combination_kmeans import SocTemp
 from src.online_learning.optimizer import Optimizer
 from src.online_learning.change_detection.cluster_estimation import cluster_estimation
-from src.online_learning.utils import save_to_csv, convert_to_dict_list, save_dict_list_to_csv
+from src.online_learning.utils import save_to_csv
 import numpy as np
+import pandas as pd
 import pickle
 
 
@@ -31,7 +32,7 @@ class BatteryAdaptation:
         self.nominal_clusters = nominal_clusters  # check coherency with the id
         # data structures for the alg.
         self.history_theta = {0: list(), 1: list(), 2: list(), 3: list()}
-        self.outliers_sets = {0: list(), 1: list(), 2: list(), 3: list()}
+        self.outliers_set = list()
         self.v_optimizer = list()
         self.temp_optimizer = list()
         self.phi_hat = None
@@ -74,7 +75,7 @@ class BatteryAdaptation:
                 print("the result of get status table:", battery.get_status_table())
                 print("______________________________________________________________")
                 print("goin' to optimize:")
-                # todo: find a better way of initialize !!!!!
+
                 initial_guess = np.array([np.random.uniform(low, high) for low, high in self.bounds])
                 theta = optimizer.step(i_real=self.dataset['i_real'][start:k],
                                        v_real=self.dataset['v_real'][start:k],
@@ -96,7 +97,6 @@ class BatteryAdaptation:
 
                 start = k
                 theta_values = np.array(list(theta.values()), dtype=float)
-                self.history_theta[soc_temp.current].append(theta_values)  # you can store also the dict version
 
                 self.v_optimizer = self.v_optimizer + optimizer.get_v_hat()
                 # self.temp_optimizer = self.temp_optimizer + optimizer.get_t_hat()
@@ -106,28 +106,11 @@ class BatteryAdaptation:
                     # self.nominal_clusters[soc_temp.current].update(theta_values)
 
                 else:
-                    self.outliers_sets[soc_temp.current].append(theta_values)
-
-                    self.phi_hat = cluster_estimation(
-                            cluster_data_points=self.nominal_clusters[soc_temp.current].data_points,
-                            outliers=self.outliers_sets[soc_temp.current])
-
-                    if self.phi_hat is not None:
-                        with open(f"phi_hat_{soc_temp.current}.pkl", "wb") as f:
-                            pickle.dump(self.phi_hat, f)
-
-                        self.nominal_clusters[soc_temp.current] = self.phi_hat
-                        self.nominal_clusters[soc_temp.current].compute_centroid()
-                        self.nominal_clusters[soc_temp.current].compute_covariance()
-
-                (battery._electrical_model.r0.resistance,
-                 battery._electrical_model.rc.resistance,
-                 battery._electrical_model.rc.capacity) = self.nominal_clusters[soc_temp.current].centroid
+                    self.outliers_set.append(theta)
 
             battery.step(load, dt, k)
 
             soc = battery.soc_series[-1]  # The mean gave me problems
-
             if len(self.dataset['t_real'][start:k]) > 1:
                 temp = np.mean(self.dataset['t_real'][start:k], axis=0)
             else:
@@ -136,46 +119,21 @@ class BatteryAdaptation:
             soc_temp.check_cluster(temp=temp, soc=soc)
             battery_status = battery.get_status_table()
 
+        self.phi_hat = cluster_estimation(
+            # check if it's meaningful to comapre the following two sets
+            cluster_data_points=self.nominal_clusters[soc_temp.current].data_points,
+            outliers=self.outliers_set)
+
+        if self.phi_hat is not None:
+            with open(f"phi_hat_{soc_temp.current}.pkl", "wb") as f:
+                pickle.dump(self.phi_hat, f)
+
         if self.save_results:
             print("start savings")
             save_to_csv(self.v_optimizer, 'v_optimizer.csv', ['v_optimizer'])  # ok!
-            # here I was saving the list of thetas and socs, useful ???
 
-            # history of thetas for each cluster
-            history_theta_0 = convert_to_dict_list(self.history_theta[0])
-            save_dict_list_to_csv(dict_list=history_theta_0, filename='phi_0_history_theta.csv')
+            df_outliers = pd.DataFrame(self.outliers_set)
+            df_outliers.to_csv('outliers.csv', index=False)
 
-            history_theta_1 = convert_to_dict_list(self.history_theta[1])
-            save_dict_list_to_csv(dict_list=history_theta_1, filename='phi_1_history_theta.csv')
-
-            history_theta_2 = convert_to_dict_list(self.history_theta[2])
-            save_dict_list_to_csv(dict_list=history_theta_2, filename='phi_2_history_theta.csv')
-
-            history_theta_3 = convert_to_dict_list(self.history_theta[3])
-            save_dict_list_to_csv(dict_list=history_theta_3, filename='phi_3_history_theta.csv')
-
-            # outliers for each cluster
-            outliers_sets_0 = convert_to_dict_list(self.outliers_sets[0])
-            save_dict_list_to_csv(dict_list=outliers_sets_0, filename='phi_0_outliers_sets.csv')
-
-            outliers_sets_1 = convert_to_dict_list(self.outliers_sets[1])
-            save_dict_list_to_csv(dict_list=outliers_sets_1, filename='phi_1_outliers_sets.csv')
-
-            outliers_sets_2 = convert_to_dict_list(self.outliers_sets[2])
-            save_dict_list_to_csv(dict_list=outliers_sets_2, filename='phi_2_outliers_sets.csv')
-
-            outliers_sets_3 = convert_to_dict_list(self.outliers_sets[3])
-            save_dict_list_to_csv(dict_list=outliers_sets_3, filename='phi_3_outliers_sets.csv')
-
-            # new nominal clusters
-            nominal_cluster_0 = convert_to_dict_list(self.nominal_clusters[0].data_points)
-            save_dict_list_to_csv(dict_list=nominal_cluster_0, filename='phi_0.csv')
-
-            nominal_cluster_1 = convert_to_dict_list(self.nominal_clusters[1].data_points)
-            save_dict_list_to_csv(dict_list=nominal_cluster_1, filename='phi_1.csv')
-
-            nominal_cluster_2 = convert_to_dict_list(self.nominal_clusters[2].data_points)
-            save_dict_list_to_csv(dict_list=nominal_cluster_2, filename='phi_2.csv')
-
-            nominal_cluster_3 = convert_to_dict_list(self.nominal_clusters[3].data_points)
-            save_dict_list_to_csv(dict_list=nominal_cluster_3, filename='phi_3.csv')
+            df = pd.DataFrame( np.vstack(self.phi_hat.data_points), columns=['r0', 'rc', 'c'])
+            df.to_csv('phi_hat.csv', index=False)

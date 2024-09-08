@@ -225,7 +225,7 @@ class BatteryEnergyStorageSystem:
         final_dict = {'time': self.t_series, 'soc': self.soc_series, 'soh': self.soh_series, 'c_max': self.c_max_series}
 
         for model in self.models:
-            final_dict.update(model.get_final_results())
+            final_dict.update(model.get_results())  # before was get_final_results()
 
         deg_dict = {}
 

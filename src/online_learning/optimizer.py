@@ -1,4 +1,5 @@
 import numpy as np
+from joblib import Parallel, delayed
 from scipy.optimize import minimize
 from src.digital_twin.bess import BatteryEnergyStorageSystem
 
@@ -7,7 +8,6 @@ class Optimizer:
     def __init__(self, models_config, battery_options, load_var, init_info,
                  bounds, scale_factor, options, temperature_loss=False):
         # battery attributes
-        # TODO: passa l'inizio della window precedente passata dal simulatore!!
         self._temp_battery = BatteryEnergyStorageSystem(models_config=models_config,
                                                         battery_options=battery_options,
                                                         input_var=load_var)
@@ -68,8 +68,9 @@ class Optimizer:
         self._temp_battery.reset()
         self._temp_battery.init(self.init_info)
 
-        scaled_theta = [theta[0] * self.scale_factor[0], theta[1] * self.scale_factor[1], theta[2] * self.scale_factor[2]]
-        self._set_theta(scaled_theta)
+        #scaled_theta = [theta[0] * self.scale_factor[0], theta[1] * self.scale_factor[1], theta[2] * self.scale_factor[2]]
+        #self._set_theta(scaled_theta)
+        self._set_theta(theta)
 
         elapsed_time = 0
         for k, load in enumerate(self._i_real):
@@ -102,7 +103,15 @@ class Optimizer:
 
         return loss
 
-    def step(self, i_real, v_real, t_real, alpha, optimizer_method, dt, number_of_restarts):
+    def optimize_function(self, initial_guess, optimizer_method):
+        result = minimize(self._loss_function, initial_guess,
+                          method=optimizer_method,
+                          bounds=None,  # before was
+                          options=self.options)
+        return result
+
+
+    def step(self, i_real, v_real, t_real, alpha, optimizer_method, dt, number_of_restarts, starting_theta, init_info):
         self._i_real = i_real
         self._v_real = v_real
         self._t_real = t_real
@@ -110,26 +119,47 @@ class Optimizer:
         self.alpha = alpha
         self.number_of_restarts = number_of_restarts
         self.best_loss = float('inf')
-
         self.loss_history = []
+        # todo: understand how to retrieve right info from battery_status passed as init_info
+        if init_info is not None:
+            self.init_info = init_info
 
         best_value = float('inf')
         best_result = None
 
-        for ii in range(self.number_of_restarts):
-            print("restart number :", ii)
-            initial_guess = np.array([np.random.uniform(low, high) for low, high in self.bounds])
-            # initial_guess = self.lhs()
+        # initial_guess = self.lhs()
+        # initial_guess = starting_theta
+        initial_guesses = []
+        initial_guesses.append(starting_theta)
+        #  for ii in range(self.number_of_restarts):
+        #  initial_guesses.append(np.array([np.random.uniform(low, high) for low, high in self.bounds]))
+        #    initial_guesses.append(self.lhs())
+        #  print("initial_guesses are:", initial_guesses)
 
-            result = minimize(self._loss_function, initial_guess,
-                              method=optimizer_method, bounds=self.bounds, options=self.options)
+        results = Parallel(n_jobs=1)(
+            delayed(self.optimize_function)(initial_guess, optimizer_method)
+            for initial_guess in initial_guesses
+        )
 
-            #if result.fun < best_value:
-            #    best_result = result
-            #    best_value = result.fun
+        print(type(results))
+        print(results)
 
-        self.loss_history.append(self.best_loss)
+        #  result = minimize(self._loss_function, initial_guess,
+        #                  method=optimizer_method, bounds=self.bounds,
+        #                  options=self.options)
 
-        return {'r0': result.x[0] * self.scale_factor[0],
-                'rc': result.x[1] * self.scale_factor[1],
-                'c': result.x[2] * self.scale_factor[2]}
+        for result in results:
+            if result.fun < best_value:
+               best_value = result.fun
+               best_result = result
+
+
+        # self.loss_history.append(self.best_loss)
+
+        #return {'r0': best_result.x[0] * self.scale_factor[0],
+        #        'rc': best_result.x[1] * self.scale_factor[1],
+        #        'c': best_result.x[2] * self.scale_factor[2]}
+        return {'r0': best_result.x[0],
+                'rc': best_result.x[1],
+                'c': best_result.x[2]
+                }

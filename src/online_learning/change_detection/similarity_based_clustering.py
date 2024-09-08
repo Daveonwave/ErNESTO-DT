@@ -45,7 +45,7 @@ def largest_cluster(centers, epsilon, outliers):
 
     largest_cluster = max(clusters, key=len)
 
-    largest_cluster = [arr.reshape((3, 1)) for arr in largest_cluster]
+    #largest_cluster = [arr.reshape((3, 1)) for arr in largest_cluster]
 
     return largest_cluster
 
