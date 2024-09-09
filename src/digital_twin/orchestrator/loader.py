@@ -5,7 +5,6 @@ import logging
 logger = logging.getLogger('ErNESTO-DT')
 
 
-
 class DataLoader:
     """
     Class handling the functions to collect data from input file or stream and provide
@@ -21,7 +20,14 @@ class DataLoader:
         NOTE: this works because of the __init__.py, otherwise the method __subclasses__() cannot find
               subclasses in other not yet loaded modules.
         """
-        return next(c for c in cls.__subclasses__() if mode in c.__name__.lower())
+        if mode == 'schedule':
+            return ScheduledLoader
+        elif mode == 'ground_data':
+            return DrivenLoader
+        elif mode == 'stream':
+            return StreamLoader
+        else:
+            raise KeyError("The chosen input data mode is not existent!")
     
     def __len__(self):
         raise NotImplementedError
@@ -93,7 +99,7 @@ class DrivenLoader(DataLoader):
                 load_data_from_csv(csv_file=config['input']['ground_data']['file'],
                                    vars_to_retrieve=config['input']['ground_data']['vars'],
                                    time_format=config['input']['ground_data']['time_format'],
-                                   iterations=config['iterations'])
+                                   iterations=config['iterations'] if 'iterations' in config else None)
                 )
         
         if 'timestep' in config and config['timestep'] is not None:
@@ -108,18 +114,18 @@ class DrivenLoader(DataLoader):
         self._duration = self._times[-1] - self._times[0]
         
         # If the input data has to be repeated for multiple cycles then the load_var and time are extended
-        if 'cycle_for' in config['input'] and config['input']['cycle_for'] > 1:
+        if 'cycle_for' in config['input']['ground_data'] and config['input']['ground_data']['cycle_for'] > 1:
             if len(self._ground_vars) > 1:
                 logger.warning("If you want to repeat the input data for multiple consequent times, " \
                                 "the variables other than the load one will become meaningless and " \
                                 "will be dropped.")
             
             # Extend the input data for the number of cycles, the other variables are dropped
-            self._data[self._input_var] = self._data[self._input_var] * config['input']['cycle_for']
-            self._data['time'].extend([t + self._duration * i for i in range(1, config['input']['cycle_for']) for t in self._data['time']])
+            self._data[self._input_var] = self._data[self._input_var] * config['input']['ground_data']['cycle_for']
+            self._data['time'].extend([t + self._duration * i for i in range(1, config['input']['ground_data']['cycle_for']) for t in self._data['time']])
             
             self._data = {self._input_var: self._data[self._input_var], 'time': self._data['time']}
-            self._duration = self._duration * config['input']['cycle_for']
+            self._duration = self._duration * config['input']['ground_data']['cycle_for']
         
     @property
     def input_var(self):

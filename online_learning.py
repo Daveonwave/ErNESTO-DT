@@ -37,26 +37,26 @@ if __name__ == "__main__":
                         'ranges': new_clusters,
                         'load_var': 'current'}
 
-    # todo: alpha also to be tuned
-
-    optimizer_settings = {'alpha': 0.00, 'batch_size': 40000,
+    optimizer_settings = {'alpha': 0.00, 
+                          'batch_size': 40000,
                           'optimizer_method': 'BFGS',
-                          'save_results': True, 'number_of_restarts': 1,
+                          'save_results': True, 
+                          'number_of_restarts': 1,
                           'bounds': [(0.013612, 0.034656), (0.013954, 0.07027), (976.466, 15552.53)],
                           # RMK: bounds are used to generate randomly the initial guess for the gradient descent
                           'scale_factors': [1e-6, 1e-6, 1],  # useless since the optimizer doesn't exploit it
                           'options': {
-                                        'disp': True,
-                                        'gtol': 1e-8,
-                                        'eps': 1e-10,
-                                        'maxiter': 1000}
+                              'disp': True,
+                              'gtol': 1e-8,
+                              'eps': 1e-10,
+                              'maxiter': 1000}
                           }
 
     # todo: add here also the hyperparameters of the change detection.
 
     battery_adaptation = BatteryAdaptation(optimizer_settings=optimizer_settings,
-                                           battery_setings=battery_settings,
-                                           dataset=dataset,
-                                           nominal_clusters=nominal_clusters)
+                                            battery_settings=battery_settings,
+                                            dataset=dataset,
+                                            nominal_clusters=nominal_clusters)
 
     battery_adaptation.run_experiment()

@@ -46,7 +46,7 @@ input:
       - var: "power"
         label: "Power(W)"
         unit: "W"
-  cycle_for: 1
+    cycle_for: 1
 
 # Simulation Options
 # ------------------------------------------------------------------------------- #

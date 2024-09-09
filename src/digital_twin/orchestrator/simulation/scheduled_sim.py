@@ -20,7 +20,8 @@ class ScheduledSimulator(BaseSimulator):
                  model_config: dict,
                  sim_config: dict,
                  data_loader: ScheduledLoader,
-                 data_writer: DataWriter
+                 data_writer: DataWriter,
+                **kwargs
                  ):
         """
         Args:
@@ -58,14 +59,26 @@ class ScheduledSimulator(BaseSimulator):
         self._loader = data_loader
         self._writer = data_writer
         
-    def solve(self):
+    def init(self):
         """
-        
+        Initialize the adaptive simulation.
         """
         logger.info("'Scheduled Simulation' started...")
         self._battery.reset()
         self._battery.init()
         self._k = 0
+        
+    def run(self):
+        """
+        TODO: differentiate the run method from the solve method.
+        """
+        self.solve()
+        
+    def solve(self):
+        """
+        
+        """
+        self.init()
 
         pbar = tqdm(total=len(self._loader), position=0, leave=True)
         
@@ -126,6 +139,7 @@ class ScheduledSimulator(BaseSimulator):
         while self._elapsed_time < duration:
             self._sample = {'time': self._elapsed_time, 'load': load, 'value': value}
             self.step()
+            self._store_step()
 
     def _run_until_cond(self, load: str, value: float, cond_var: str, cond_value: float, action: str):
         """
@@ -146,6 +160,7 @@ class ScheduledSimulator(BaseSimulator):
         while op(curr_value(), cond_value):
             self._sample = {'time': self._elapsed_time, 'load': load, 'value': value}
             self.step()
+            self._store_step()
 
     def _run_for_time_or_cond(self, load: str, value: float, cond_var: str, cond_value: float, time: float, action: str):
         """
@@ -168,6 +183,7 @@ class ScheduledSimulator(BaseSimulator):
         while op(curr_value(), cond_value) and self._elapsed_time < duration:
             self._sample = {'time': self._elapsed_time, 'load': load, 'value': value}
             self.step()
+            self._store_step()
             
     def step(self):
         """
@@ -188,15 +204,19 @@ class ScheduledSimulator(BaseSimulator):
         self._battery.t_series.append(self._elapsed_time)
         self._elapsed_time += self._loader.timestep
         self._k += 1
-        
-        self._writer.add_ground_data(self._sample)
-        self._writer.add_simulated_data(self._battery.get_status_table())
             
     def stop(self):
         """
         Pause the interactive simulation.
         """
         pass
+    
+    def store_sample(self):
+        """
+        Add the ground and simulated data to the writer queues.
+        """
+        self._writer.add_ground_data(self._sample)
+        self._writer.add_simulated_data(self._battery.get_snapshot())
     
     def close(self):
         """

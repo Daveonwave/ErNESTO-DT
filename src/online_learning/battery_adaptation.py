@@ -9,7 +9,7 @@ import pickle
 
 
 class BatteryAdaptation:
-    def __init__(self, optimizer_settings, battery_setings, dataset, nominal_clusters):
+    def __init__(self, optimizer_settings, battery_settings, dataset, nominal_clusters):
         # optimizer:
         self.alpha = optimizer_settings['alpha']
         self.batch_size = optimizer_settings['batch_size']
@@ -20,12 +20,12 @@ class BatteryAdaptation:
         self.scale_factors = optimizer_settings['scale_factors']
         self.options = optimizer_settings['options']
         # battery:
-        self.ranges = battery_setings['ranges']
-        self.electrical_params = battery_setings['electrical_params']
-        self.thermal_params = battery_setings['thermal_params']
+        self.ranges = battery_settings['ranges']
+        self.electrical_params = battery_settings['electrical_params']
+        self.thermal_params = battery_settings['thermal_params']
         self.models_config = [self.electrical_params, self.thermal_params]
-        self.battery_options = battery_setings['battery_options']
-        self.load_var = battery_setings['load_var']
+        self.battery_options = battery_settings['battery_options']
+        self.load_var = battery_settings['load_var']
         # inputs for the alg.
         self.dataset = dataset
         self.nominal_clusters = nominal_clusters  # check coherency with the id
@@ -45,7 +45,7 @@ class BatteryAdaptation:
         )
         battery.reset(reset_info={'electricala_params': self.electrical_params,
                                   'thermal_params': self.thermal_params})
-        battery.init({'dissipated_heat': 0})  # check if you can remove it
+        #battery.init({'dissipated_heat': 0})  # check if you can remove it
 
         optimizer = Optimizer(models_config=self.models_config, battery_options=self.battery_options,
                               load_var=self.load_var,

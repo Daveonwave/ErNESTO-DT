@@ -33,7 +33,8 @@ ground_data = Schema(
                     "unit": And(str, unit_pattern)
                 }
             )
-        ]
+        ],
+        Optional("cycle_for"): Or(int, None)
     }
 )
 
@@ -76,6 +77,25 @@ battery = Schema(
     }
 )
 
+optimizer = Schema(
+    {
+        "algorithm": str,
+        "max_iter": Or(int, None),
+        "tol": Or(float, None),
+        "alpha": Or(float, None),
+        "batch_size": Or(int, None),
+        "n_restarts": Or(int, None),
+        "search_bounds": {And(str, label_pattern): bound_param},
+        "scale_factors": {And(str, label_pattern): Or(float, int)},
+    }
+)
+
+adaptation = Schema(
+    {
+        "regions": {And(str, label_pattern): [bound_param]},
+    }
+)
+
 config_schema = Schema(
     {
         # Summary
@@ -88,9 +108,10 @@ config_schema = Schema(
         "input": {
             Optional("ground_data"): ground_data,
             Optional("schedule"): schedule,
-            Optional("cycle_for"): Or(int, None),
         },
         # Simulation options
+        Optional("optimizer"): optimizer,
+        Optional("adaptation"): adaptation,
         Optional("iterations"): Or(int, None),
         Optional("timestep"): Or(int, float, None),
         Optional("check_soh_every"): Or(int, None),
@@ -253,6 +274,7 @@ model_schema = Schema(
 
 schemas['driven'] = config_schema
 schemas['scheduled'] = config_schema
+schemas['adaptive'] = config_schema
 schemas['assets'] = assets_schema
 schemas['model'] = model_schema
 
@@ -281,7 +303,7 @@ def read_yaml(yaml_file: str, yaml_type: str):
     Returns:
 
     """
-    _file_types = ['sim_config', 'whatif_config', 'assets', 'model', 'driven', 'scheduled']
+    _file_types = ['assets', 'model', 'driven', 'scheduled', 'adaptive']
 
     if yaml_type not in _file_types:
         logger.error("The schema type '{}' of file {} is not existing!".format(yaml_type, yaml_file))
