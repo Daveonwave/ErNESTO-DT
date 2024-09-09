@@ -14,12 +14,13 @@ class BatteryEnergyStorageSystem:
                  check_soh_every=None,
                  **kwargs
                  ):
-        """
+        """_summary_
+
         Args:
-            models_config_files (list):
-            battery_options (dict):
-            input_var (str):
-            check_soh_every (int, None):
+            models_config (list): _description_
+            battery_options (dict): _description_
+            input_var (str, optional): _description_. Defaults to 'current'.
+            check_soh_every (_type_, optional): _description_. Defaults to None.
         """
         self.models_settings = models_config
         self._load_var = input_var
@@ -78,7 +79,14 @@ class BatteryEnergyStorageSystem:
     def get_i(self):
         return self._electrical_model.get_i_series(k=-1)
 
-    def get_feasible_current(self, last_soc=None, dt=1):
+    def get_feasible_current(self, last_soc:float=None, dt:float=1):
+        """
+        Get the feasible min and max currents that can be applied to the battery at the current time step.
+        
+        Args:
+            last_soc (float, optional): last value of the SoC. Defaults to None.
+            dt (float, optional): delta of time. Defaults to 1.
+        """
         soc_ = self.soc_series[-1] if last_soc is None else last_soc
         return self._soc_model.get_feasible_current(soc_=soc_, dt=dt)
 
@@ -116,7 +124,10 @@ class BatteryEnergyStorageSystem:
 
     def reset(self, reset_info: dict = {}):
         """
-
+        Reset the battery simulation environment to the initial conditions.
+        
+        Args:
+            reset_info (dict, optional): settings to reset the battery. Defaults to {}.
         """
         self.soc_series = []
         self.soh_series = []
@@ -128,7 +139,10 @@ class BatteryEnergyStorageSystem:
 
     def init(self, init_info: dict = {}):
         """
-        Initialization of the battery simulation environment at t=0.
+        Initialize the battery simulation environment.
+
+        Args:
+            init_info (dict, optional): settings to initialize the battery. Defaults to {}.
         """
         self.t_series.append(-1)
         self.soc_series.append(self._init_conditions['soc'])
@@ -205,7 +219,7 @@ class BatteryEnergyStorageSystem:
         if self._reset_soc_every is not None and k % self._reset_soc_every == 0:
             self.soc_series[-1] = self._soc_model.reset_soc(v=v_out, v_max=self._v_max, v_min=self._v_min)
 
-    def get_status_table(self):
+    def get_snapshot(self):
         """
         Collect the status of the battery and its components at the current time step.
         Used to update the queues of the writer.

@@ -49,16 +49,15 @@ class DTOrchestrator:
         
         # Output results and postprocessing
         self._results = None
-        #self._save_results = kwargs['save_results']
-        #self._save_metrics = kwargs['save_metrics']
         
         # Entities useful for the simulation
-        self._data_loader = DataLoader.get_instance(mode=kwargs['mode'])(self._settings)
+        self._data_loader = DataLoader.get_instance(mode=list(self._settings['input'].keys())[0])(self._settings)
         self._data_writer = DataWriter(output_folder=self._output_folder)
         self._simulator = BaseSimulator.get_instance(mode=kwargs['mode'])(model_config=self._models_configs,
                                                                           sim_config=self._settings,
                                                                           data_loader=self._data_loader,
-                                                                          data_writer=self._data_writer)
+                                                                          data_writer=self._data_writer,
+                                                                          **kwargs)
         self._interactive = kwargs['interactive']
             
     def run(self):
@@ -74,64 +73,13 @@ class DTOrchestrator:
         """
         Run an unstoppable simulation which doesn't provide a user interface to interact with.
         """
-        self._simulator.solve()
+        self._simulator.run()
     
     def _run_interactive(self):
-        #TODO: allow interactive simulation from cli to stop/pause/close simulation
+        #TODO: allow interactive simulation from cli to stop/pause/close simulation with a dedicated thread
         raise NotImplementedError
     
-    def output_metrics(self, res: dict):
-        """
-
-        Args:
-            res ():
-        """
-        if self._save_metrics:
-            try:
-                os.makedirs(self._output_folder, exist_ok=True)
-            except NotADirectoryError as e:
-                logger.error("It's not possible to create directory {}: {}".format(self._output_folder, e.args))
-
-            # Save experiment summary
-            df = pd.DataFrame.from_dict(res)
-            df.to_csv(self._output_folder / "metrics.csv")
-
-        # Print on the console the summary and results
-        else:
-            logger.info("METRICS")
-            print(pretty_repr(res))
-
-    def output_results(self, results: dict, summary: dict):
-        """
-
-        Args:
-            summary (dict):
-        """
-        if self._save_results:
-            try:
-                os.makedirs(self._output_folder, exist_ok=True)
-            except NotADirectoryError as e:
-                logger.error("It's not possible to create directory {}: {}".format(self._output_folder, e.args))
-
-            # Save experiment summary
-            with open(self._output_folder / "summary.txt", 'w') as f:
-                for key, value in summary.items():
-                    f.write('%s: %s\n' % (key, value))
-
-            # Save experiment results
-            pd.DataFrame.from_dict(results['operations']).to_csv(self._output_folder / 'dataset.csv', index=False)
-            if results['ground']:
-                pd.DataFrame.from_dict(results['ground']).to_csv(self._output_folder / 'ground.csv', index=False)
-            if results['aging']:
-                pd.DataFrame.from_dict(results['aging']).to_csv(self._output_folder / 'aging.csv', index=False)
-
-        # Print on the console the summary and results
-        if logger.level == logging.INFO:
-            print('\n')
-            logger.info("SUMMARY")
-            print(pretty_repr(summary))
-            logger.info("RESULTS")
-            print(str(results))
+    
 
 
 

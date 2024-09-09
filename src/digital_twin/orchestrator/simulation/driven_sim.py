@@ -18,7 +18,8 @@ class DrivenSimulator(BaseSimulator):
                  model_config: dict,
                  sim_config: dict,
                  data_loader: DrivenLoader,
-                 data_writer: DataWriter
+                 data_writer: DataWriter,
+                 **kwargs
                  ):
         self._mode = "driven"
         logger.info("Instantiated the {} experiment to simulate a specific profile.".format(self.__class__.__name__))
@@ -40,43 +41,21 @@ class DrivenSimulator(BaseSimulator):
         
         self._loader = data_loader
         self._writer = data_writer
-        
-    def solve(self):
+
+    def init(self):
         """
-        Execute the entire simulation from the start to the end.
+        Initialize the adaptive simulation.
         """
         logger.info("'Driven Simulation' started...")
         self._battery.reset()
         self._battery.init()
         self._battery.load_var = self._loader.input_var
-        
-        k = 0
-        dt = self._loader.timestep if self._loader.timestep is not None else 0
-        prev_time = -1
-        pbar = tqdm(total=int(self._loader.duration), position=0, leave=True)
-        
-        inputs = self._loader.collection()
-        self._sample = next(inputs)
-        
-        # Main loop of the simulation
-        while not self._done:
-            
-            # Make a step in the simulation. If dt == 0 then no progresses have been made.
-            if dt != 0:
-                k, dt = self.step(k=k, dt=dt)
-                pbar.update(dt)
-            
-            # Check if the simulation is over, otherwise get the next sample.
-            if self._elapsed_time < self._loader.duration:
-                prev_time = self._sample['time']
-                self._sample = next(inputs)
-                dt = round(self._sample['time'] - prev_time, 2)
-            else:
-                self._done = True
-            
-        pbar.close()
-        logger.info("'Driven Simulation' ended without errors!")
-        print("'Driven Simulation' ended without errors!")
+    
+    def run(self):
+        """
+        TODO: differentiate the run method from the solve method.
+        """
+        self.solve()
             
     def step(self, k: int, dt: float):
         """
@@ -101,7 +80,7 @@ class DrivenSimulator(BaseSimulator):
             self._elapsed_time += (dt - 1)
             dt = 1
             k += 1
-            self._writer.add_simulated_data(self._battery.get_status_table())
+            self._writer.add_simulated_data(self._battery.get_snapshot())
             
         # Normal operating step of the battery system.
         ground_temp = self._sample['temperature'] if 'temperature' in self._sample else None
@@ -110,9 +89,6 @@ class DrivenSimulator(BaseSimulator):
         self._elapsed_time += dt
         k += 1
         
-        self._writer.add_ground_data(self._sample)
-        self._writer.add_simulated_data(self._battery.get_status_table())
-        
         return k, dt    
     
     def stop(self):
@@ -120,6 +96,49 @@ class DrivenSimulator(BaseSimulator):
         Pause the interactive simulation.
         """
         pass
+    
+    def solve(self):
+        """
+        Execute the entire simulation from the start to the end.
+        """
+        self.init()
+        
+        k = 0
+        dt = self._loader.timestep if self._loader.timestep is not None else 0
+        prev_time = -1
+        pbar = tqdm(total=int(self._loader.duration), position=0, leave=True)
+        
+        inputs = self._loader.collection()
+        self._sample = next(inputs)
+        
+        # Main loop of the simulation
+        while not self._done:
+            
+            # Make a step in the simulation. If dt == 0 then no progresses have been made.
+            if dt != 0:
+                k, dt = self.step(k=k, dt=dt)
+                self.store_sample()
+                pbar.update(dt)
+            
+            # Check if the simulation is over, otherwise get the next sample.
+            if self._elapsed_time < self._loader.duration:
+                prev_time = self._sample['time']
+                self._sample = next(inputs)
+                dt = round(self._sample['time'] - prev_time, 2)
+            else:
+                self._done = True
+            
+        pbar.close()
+        logger.info("'Driven Simulation' ended without errors!")
+        print("'Driven Simulation' ended without errors!")
+        
+    
+    def store_sample(self):
+        """
+        Add the ground and simulated data to the writer queues.
+        """
+        self._writer.add_ground_data(self._sample)
+        self._writer.add_simulated_data(self._battery.get_snapshot())
     
     def close(self):
         """

@@ -15,16 +15,22 @@ class BaseSimulator:
         assert mode in cls.MODES, "The simulation has been stopped because the experiment mode does not exist!"
         return next(c for c in cls.__subclasses__() if mode in c.__name__.lower())
     
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
         pass
-    
-    def solve(self):
-        raise NotImplementedError
     
     def step(self, **kwargs):
         raise NotImplementedError
     
     def stop(self):
+        raise NotImplementedError
+    
+    def run(self):
+        raise NotImplementedError
+    
+    def solve(self):
+        raise NotImplementedError
+    
+    def store_sample(self):
         raise NotImplementedError
         
     def close(self):

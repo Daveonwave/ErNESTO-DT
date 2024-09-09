@@ -37,14 +37,14 @@ class FirstOrderThevenin(ElectricalModel):
         self.rc.reset_data()
         self.ocv_gen.reset_data()
 
-        if 'r0' in kwargs:
-            self.r0.resistance = kwargs['r0']
-        if 'r1' in kwargs:
-            self.rc.resistance = kwargs['r1']
-        if 'c' in kwargs:
-            self.rc.capacity = kwargs['c']
-        if 'v_ocv' in kwargs:
-            self.ocv_gen.ocv_potential = kwargs['v_ocv']
+        # if 'r0' in kwargs:
+        #     self.r0.resistance = kwargs['r0']
+        # if 'r1' in kwargs:
+        #     self.rc.resistance = kwargs['r1']
+        # if 'c' in kwargs:
+        #     self.rc.capacity = kwargs['c']
+        # if 'v_ocv' in kwargs:
+        #     self.ocv_gen.ocv_potential = kwargs['v_ocv']
 
     def init_model(self, **kwargs):
         """
