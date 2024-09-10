@@ -1,6 +1,6 @@
 import pandas as pd
 import logging
-from tqdm import tqdm
+from tqdm.rich import tqdm
 
 from . import BaseSimulator
 from src.digital_twin.orchestrator import DrivenLoader
@@ -28,12 +28,18 @@ class DrivenSimulator(BaseSimulator):
         
         # Simulation variables
         self._sample = None
+        self._inputs = None
         self._get_rest_after = 3600
+        
+        # Time variables
+        self._k = None
+        self._prev_time = None
         self._elapsed_time = 0
         self._done = False
+        self._pbar = None
         
         # Instantiate the BESS environment
-        self. _battery = BatteryEnergyStorageSystem(
+        self._battery = BatteryEnergyStorageSystem(
             models_config=model_config,
             battery_options=sim_config['battery'],
             check_soh_every=sim_config['check_soh_every'] if 'check_soh_every' in sim_config else None
@@ -42,7 +48,11 @@ class DrivenSimulator(BaseSimulator):
         self._loader = data_loader
         self._writer = data_writer
 
-    def init(self):
+    @property
+    def battery(self):
+        return self._battery
+    
+    def _init(self):
         """
         Initialize the adaptive simulation.
         """
@@ -50,14 +60,17 @@ class DrivenSimulator(BaseSimulator):
         self._battery.reset()
         self._battery.init()
         self._battery.load_var = self._loader.input_var
+        self._k = 0
+        self._prev_time = -1
+        self._inputs = self._loader.collection()
     
-    def run(self):
+    def _run(self):
         """
         TODO: differentiate the run method from the solve method.
         """
-        self.solve()
-            
-    def step(self, k: int, dt: float):
+        raise NotImplementedError
+                
+    def _step(self, dt: float):
         """
         Execute a step of the simulation that can have a fixed or variable timestep.
         
@@ -66,81 +79,77 @@ class DrivenSimulator(BaseSimulator):
         for (dt-1) seconds by adding a "fake" instruction to rest the battery.
         
         Otherwise, if the timestep is fixed, the simulation progresses with the provided step size.
-        
         Args:
-            k (int): current iteration of the simulation
             dt (float): delta of time between the current and the previous sample
         """
-        # If the timestep is variable and the dt is too large, then rest the battery.
-        if self._loader.timestep is None and dt > self._get_rest_after:
-            self._battery.load_var = 'current'
-            self._battery.step(load=0, dt=dt-1, k=k)
-            self._battery.load_var = self._loader.input_var
+        if dt != 0:
+            # If dt == 0 then no progresses have been made.
+            if self._loader.timestep is None and dt > self._get_rest_after:
+                self._battery.load_var = 'current'
+                self._battery.step(load=0, dt=dt-1, k=self._k)
+                self._battery.load_var = self._loader.input_var
+                self._battery.t_series.append(self._elapsed_time)
+                self._elapsed_time += (dt - 1)
+                dt = 1
+                self._k += 1
+                self._writer.add_simulated_data(self._battery.get_snapshot())
+                
+            # Normal operating step of the battery system.
+            ground_temp = self._sample['temperature'] if 'temperature' in self._sample else None
+            self._battery.step(load=self._sample[self._loader.input_var], dt=dt, k=self._k, ground_temp=ground_temp)
             self._battery.t_series.append(self._elapsed_time)
-            self._elapsed_time += (dt - 1)
-            dt = 1
-            k += 1
-            self._writer.add_simulated_data(self._battery.get_snapshot())
-            
-        # Normal operating step of the battery system.
-        ground_temp = self._sample['temperature'] if 'temperature' in self._sample else None
-        self._battery.step(load=self._sample[self._loader.input_var], dt=dt, k=k, ground_temp=ground_temp)
-        self._battery.t_series.append(self._elapsed_time)
-        self._elapsed_time += dt
-        k += 1
+            self._elapsed_time += dt
+            self._k += 1
+            self._store_sample()
         
-        return k, dt    
+    def _fetch_next(self):
+        """
+        Check if the simulation is over, otherwise get the next sample.
+        """
+        if self._elapsed_time < self._loader.duration:
+            self._prev_time = self._sample['time']
+            self._sample = next(self._inputs)
+            dt = round(self._sample['time'] - self._prev_time, 2)
+        else:
+            self._done = True
+            dt = 0
+        
+        return dt    
     
-    def stop(self):
+    def _stop(self):
         """
         Pause the interactive simulation.
         """
         pass
     
-    def solve(self):
+    def _solve(self):
         """
         Execute the entire simulation from the start to the end.
         """
         self.init()
         
-        k = 0
         dt = self._loader.timestep if self._loader.timestep is not None else 0
-        prev_time = -1
-        pbar = tqdm(total=int(self._loader.duration), position=0, leave=True)
+        self._sample = next(self._inputs)
         
-        inputs = self._loader.collection()
-        self._sample = next(inputs)
+        self._pbar = tqdm(total=int(self._loader.duration), position=0, leave=True)
         
         # Main loop of the simulation
         while not self._done:
+            self._step(dt=dt)
+            self._pbar.update(dt)
+            dt = self._fetch_next()
             
-            # Make a step in the simulation. If dt == 0 then no progresses have been made.
-            if dt != 0:
-                k, dt = self.step(k=k, dt=dt)
-                self.store_sample()
-                pbar.update(dt)
-            
-            # Check if the simulation is over, otherwise get the next sample.
-            if self._elapsed_time < self._loader.duration:
-                prev_time = self._sample['time']
-                self._sample = next(inputs)
-                dt = round(self._sample['time'] - prev_time, 2)
-            else:
-                self._done = True
-            
-        pbar.close()
-        logger.info("'Driven Simulation' ended without errors!")
-        print("'Driven Simulation' ended without errors!")
-        
+        self._pbar.close()
+        logger.info("'Driven Simulation' solved without errors!")
     
-    def store_sample(self):
+    def _store_sample(self):
         """
         Add the ground and simulated data to the writer queues.
         """
         self._writer.add_ground_data(self._sample)
         self._writer.add_simulated_data(self._battery.get_snapshot())
     
-    def close(self):
+    def _close(self):
         """
         Quit every instance of the current simulation.
         """

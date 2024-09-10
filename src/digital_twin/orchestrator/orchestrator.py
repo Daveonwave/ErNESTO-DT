@@ -73,11 +73,12 @@ class DTOrchestrator:
         """
         Run an unstoppable simulation which doesn't provide a user interface to interact with.
         """
-        self._simulator.run()
+        self._simulator.solve()
     
     def _run_interactive(self):
         #TODO: allow interactive simulation from cli to stop/pause/close simulation with a dedicated thread
-        raise NotImplementedError
+        self._simulator.run()
+        
     
     
 

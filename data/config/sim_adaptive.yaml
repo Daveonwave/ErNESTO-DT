@@ -91,6 +91,12 @@ adaptation:
       - low: 20.
         high: 50.
 
+  nominal_clusters:
+    - "soc_low-temp_low.csv"
+    - "soc_low-temp_high.csv"
+    - "soc_high-temp_low.csv"
+    - "soc_high-temp_high.csv"
+
 # Battery options
 # ------------------------------------------------------------------------------- #
 # sign_convention:

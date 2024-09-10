@@ -18,21 +18,45 @@ class BaseSimulator:
     def __init__(self, **kwargs) -> None:
         pass
     
+    def init(self):
+        self._init()
+        
+    def _init(self):
+        raise NotImplementedError
+    
     def step(self, **kwargs):
+        self._step(kwargs)
+    
+    def _step(self, **kwargs):
         raise NotImplementedError
     
     def stop(self):
+        self._stop()
+    
+    def _stop(self):
         raise NotImplementedError
     
     def run(self):
+        self._run()
+        
+    def _run(self):
         raise NotImplementedError
     
     def solve(self):
+        self._solve()
+    
+    def _solve(self):
         raise NotImplementedError
     
     def store_sample(self):
+        self._store_sample()
+    
+    def _store_sample(self):
         raise NotImplementedError
         
     def close(self):
+        self._close()
+    
+    def _close(self):
         raise NotImplementedError
     
