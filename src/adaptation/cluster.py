@@ -1,15 +1,36 @@
 import numpy as np
+import pandas as pd
 from scipy.spatial.distance import mahalanobis
 from scipy import stats
+
+
+def load_cluster_points(csv_file: str):
+    """
+
+    Args:
+        csv_file (str): _description_
+    """
+    data = pd.read_csv(csv_file)
+    elems = data[['R_0', 'R_1', 'C_1']].to_numpy()
+    data_points = [np.array(row) for row in elems]
+    return data_points
+        
 
 
 class Cluster:
     def __init__(self, 
                  data_points:list=[]
                  ):
+        """_summary_
+
+        Args:
+            data_points (list, optional): _description_. Defaults to [].
+        """
         self._data_points = data_points
         self._centroid = None
         self._covariance = None
+        self.compute_centroid()
+        self.compute_covariance()
 
     @property
     def data_points(self):

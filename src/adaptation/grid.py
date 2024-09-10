@@ -1,26 +1,43 @@
 import numpy as np
 import itertools
 
-from .cluster import Cluster
+from .cluster import Cluster, load_cluster_points
 
 
 class GridRegion:
+    """
+    
+    """
     def __init__(self,
                  idx: int,
                  var_names: list,
                  ranges: list,
                  cluster: Cluster
                  ):
+        """
+        Args:
+            idx (int): _description_
+            var_names (list): _description_
+            ranges (list): _description_
+            cluster (Cluster): _description_
+        """
         self._index = idx
-        self.var_names = var_names
-        self.ranges = ranges
-        self.cluster = cluster
+        self._ranges = ranges
+        self._cluster = cluster
+        self.region_bounds = {var_names[i]: ranges[i] for i in range(len(var_names))}
     
     def is_contained(self, point: dict):
-        pass
+        """
+        Check if the point belong to the region.
+        
+        Args:
+            point (dict): point in the grid that must be checked.
+        """
+        for var, value in point.items():
+            if value < self.region_bounds[var][0] or value > self.region_bounds[var][1]:
+                return False
+        return True
     
-
-
 
 class ParameterSpaceGrid:
     """
@@ -28,63 +45,54 @@ class ParameterSpaceGrid:
     """
     def __init__(self, 
                  regions: dict,
-                 nominal_clusters: dict=None,
-                 ranges=None, 
-                 soc=None, 
-                 temp=None
+                 nominal_clusters: list,
                  ):
+        """
+        Args:
+            regions (dict): _description_
+            nominal_clusters (list): _description_
+        """
         self._dimensions = list(regions.keys())        
         combinations = [element for element in itertools.product(*regions.values())]
-        print(combinations)
         
-        self._regions = [GridRegion(idx=idx, var_names=self._dimensions, ranges=comb) for idx, comb in enumerate(combinations)]
+        assert len(combinations) == len(nominal_clusters), "The number of nominal clusters must be equal to the number of combinations."
         
-        self._ranges = ranges
-        self._combinations = None
-        self._create_combinations()
-        self._current = self._equivalent_combination(soc, temp)
+        self._regions = [GridRegion(idx=idx, var_names=self._dimensions, ranges=comb, cluster=Cluster(load_cluster_points(nominal_clusters[idx]))) 
+                         for idx, comb in enumerate(combinations)]
+        self._cur_region_idx = 0
 
     @property
-    def current(self):
-        return self._current
+    def current_region(self):
+        return self._cur_region_idx
+    
+    @property
+    def cur_ranges(self):
+        return self._regions[self._cur_region_idx].region_bounds
 
-    def _create_combinations(self):
-        combinations = {}
-        soc_intervals = []
-        temp_intervals = []
+    def _check_region(self, point: dict):
+        """
+        Check in which region the point is contained.
+        
+        Args:
+            point (dict): point in the grid that must be checked.
+        """
+        assert point.keys() == self._dimensions, "The dictionary must contain the variables of the grid."
+        for idx, region in enumerate(self._regions):
+            if region.is_contained(point):
+                return idx
+        raise ValueError("The point {} is not contained in any region.".format(point))
 
-        for key, value in self._ranges.items():
-            if key.startswith('soc_interval'):
-                soc_intervals.extend(value)
-        print(soc_intervals)
-
-        for key, value in self._ranges.items():
-            if key.startswith('temp_interval'):
-                temp_intervals.extend(value)
-
-        index = 0
-        for soc_min, soc_max in zip(soc_intervals[::2], soc_intervals[1::2]):
-            for temp_min, temp_max in zip(temp_intervals[::2], temp_intervals[1::2]):
-                combinations[index] = {
-                    "soc_interval": (soc_min, soc_max),
-                    "temp_interval": (temp_min, temp_max)
-                }
-                index += 1
-
-        self._combinations = combinations
-
-    def _equivalent_combination(self, soc, temp):
-        for index, cell in self._combinations.items():
-            soc_interval = cell["soc_interval"]
-            temp_interval = cell["temp_interval"]
-            if soc_interval[0] <= soc <= soc_interval[1] and (temp_interval[0] <= temp <= temp_interval[1]):
-                return index
-        return None
-
-    def is_changed(self, soc, temp):
-        new = self._equivalent_combination(soc, temp)
-        if self.current == new:
-            return False
-        else:
-            self._current = new
+    def is_region_changed(self, point: dict):
+        """
+        Returns True if the region has changed and update the index of the current region, False otherwise.
+        
+        Args:
+            point (dict): point in the grid that must be checked.
+        """
+        assert point.keys() == self._dimensions, "The dictionary must contain the variables of the grid."
+        
+        new_idx = self._check_region(point)
+        if self._cur_region_idx != new_idx:
+            self._cur_region_idx = new_idx
             return True
+        return False
