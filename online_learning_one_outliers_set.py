@@ -6,7 +6,8 @@ import pandas as pd
 
 if __name__ == "__main__":
 
-    df = pd.read_csv("data/ground/fault_signals/multiplicative_fault_ground.csv")
+    signals_file = 'data/ground/experiment_signals/dataset_0_cutted550samples.csv'
+    df = pd.read_csv(f"{signals_file}")
     dataset = {'v_real': df['voltage'].values,
                'i_real': df['current'].values,
                't_real': df['temperature'].values,
@@ -17,6 +18,8 @@ if __name__ == "__main__":
                   "data/ground/nominal_cluster_kmeans/phi_1_kmeans.csv",
                   "data/ground/nominal_cluster_kmeans/phi_2_kmeans.csv",
                   "data/ground/nominal_cluster_kmeans/phi_3_kmeans.csv"]
+
+    input_info = file_names + [signals_file]
 
     for i, file_name in enumerate(file_names):
         nominal_clusters[i] = Cluster()
@@ -38,7 +41,6 @@ if __name__ == "__main__":
                         'load_var': 'current'}
 
     # todo: alpha also to be tuned
-
     optimizer_settings = {'alpha': 0.00, 'batch_size': 40000,
                           'optimizer_method': 'BFGS',
                           'save_results': True, 'number_of_restarts': 1,
@@ -52,11 +54,17 @@ if __name__ == "__main__":
                                         'maxiter': 1000}
                           }
 
-    # todo: add here also the hyperparameters of the change detection.
+    change_detection_settings = {'epsilon': 0.001,
+                                 'radius': 1,
+                                 'p': 1,
+                                 'minimum_data_points': 5,
+                                 'support_fraction': 0.50}
 
     battery_adaptation = BatteryAdaptation(optimizer_settings=optimizer_settings,
                                            battery_setings=battery_settings,
+                                           change_detection_settings=change_detection_settings,
                                            dataset=dataset,
-                                           nominal_clusters=nominal_clusters)
+                                           nominal_clusters=nominal_clusters,
+                                           input_info=input_info)
 
     battery_adaptation.run_experiment()

@@ -69,3 +69,35 @@ def mountain_method(outliers, epsilon, radius, p):
         err = max(distance.euclidean(c_j, c_j_old) for c_j, c_j_old in zipped)
 
     return centers
+
+
+def largest_clusters(centers, epsilon, outliers):
+    sets = []
+    centers_copied = centers.copy()
+    centers_indices = list(range(len(centers)))
+
+    while centers_copied:
+        c_j = centers_copied.pop(0)
+        c_j_index = centers_indices.pop(0)
+        current_set = [c_j_index]
+        centers_to_remove = []
+        indices_to_remove = []
+
+        for i, c_h in enumerate(centers_copied):
+            if spatio_temporal_distance(c_j, c_h, p=1) <= 2 * epsilon:
+                current_set.append(centers_indices[i])
+                centers_to_remove.append(c_h)
+                indices_to_remove.append(i)
+
+        for index in sorted(indices_to_remove, reverse=True):
+            centers_copied.pop(index)
+            centers_indices.pop(index)
+
+        sets.append(current_set)
+
+    clusters = []
+    for index_set in sets:
+        clusters.append([outliers[idx] for idx in index_set])
+    # largest_cluster = [arr.reshape((3, 1)) for arr in largest_cluster]
+
+    return clusters

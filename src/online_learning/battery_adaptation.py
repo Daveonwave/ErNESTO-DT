@@ -3,6 +3,7 @@ from src.online_learning.soc_temp_combination_kmeans import SocTemp
 from src.online_learning.optimizer import Optimizer
 from src.online_learning.change_detection.cluster_estimation import cluster_estimation
 from src.online_learning.utils import save_to_csv, convert_to_dict_list, save_dict_list_to_csv
+from tqdm import tqdm
 import numpy as np
 import pickle
 
@@ -63,7 +64,7 @@ class BatteryAdaptation:
         elapsed_time = 0
         dt = 1
         start = 0
-        for k, load in enumerate(self.dataset['i_real']):
+        for k, load in tqdm(enumerate(self.dataset['i_real'])):
             print("loop number:", k)
             elapsed_time += dt
             battery.t_series.append(elapsed_time)

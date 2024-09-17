@@ -2,15 +2,16 @@ from src.digital_twin.bess import BatteryEnergyStorageSystem
 from src.online_learning.soc_temp_combination_kmeans import SocTemp
 from src.online_learning.optimizer import Optimizer
 from src.online_learning.change_detection.cluster_estimation import cluster_estimation
-from src.online_learning.utils import save_to_csv
+from src.online_learning.utils import save_to_csv, convert_to_dict_list, save_dict_list_to_csv
+from datetime import datetime
+import os
 import numpy as np
 import pandas as pd
-import pickle
-
 
 
 class BatteryAdaptation:
-    def __init__(self, optimizer_settings, battery_setings, dataset, nominal_clusters):
+    def __init__(self, optimizer_settings, battery_setings, change_detection_settings,
+                 dataset, nominal_clusters, input_info):
         # optimizer:
         self.alpha = optimizer_settings['alpha']
         self.batch_size = optimizer_settings['batch_size']
@@ -28,14 +29,24 @@ class BatteryAdaptation:
         self.battery_options = battery_setings['battery_options']
         self.load_var = battery_setings['load_var']
         # inputs for the alg.
+        self.input_info = input_info
         self.dataset = dataset
         self.nominal_clusters = nominal_clusters  # check coherency with the id
         # data structures for the alg.
-        self.history_theta = {0: list(), 1: list(), 2: list(), 3: list()}
+        self.change_cell_history = list()
+        self.history_theta_good = {0: list(), 1: list(), 2: list(), 3: list()}
+        self.temp_history = list()
+        self.soc_history = list()
         self.outliers_set = list()
         self.v_optimizer = list()
         self.temp_optimizer = list()
-        self.phi_hat = None
+        self.phi_hat_list = list()
+        # change detection hyperparameters
+        self.epsilon = change_detection_settings['epsilon']
+        self.radius = change_detection_settings['radius']
+        self.p = change_detection_settings['p']
+        self.minimum_data_points = change_detection_settings['minimum_data_points']
+        self.support_fraction = change_detection_settings['support_fraction']
 
     def run_experiment(self):
 
@@ -44,9 +55,8 @@ class BatteryAdaptation:
             battery_options=self.battery_options,
             input_var=self.load_var
         )
-        battery.reset(reset_info={'electricala_params': self.electrical_params,
-                                  'thermal_params': self.thermal_params})
-        battery.init({'dissipated_heat': 0})  # check if you can remove it
+        battery.reset()
+        battery.init()
 
         optimizer = Optimizer(models_config=self.models_config, battery_options=self.battery_options,
                               load_var=self.load_var,
@@ -60,23 +70,26 @@ class BatteryAdaptation:
         battery_status = battery.get_status_table()
         soc_temp = SocTemp(self.ranges)
         soc_temp.check_cluster(temp=temp, soc=soc)
+        current_cell = soc_temp.current
 
         elapsed_time = 0
         dt = 1
         start = 0
         for k, load in enumerate(self.dataset['i_real']):
-            print("loop number:", k)
+            print('loop number:', k)
             elapsed_time += dt
             battery.t_series.append(elapsed_time)
             dt = self.dataset['time'].iloc[k] - self.dataset['time'].iloc[k - 1] if k > 0 else 1.0
 
-            if (k % self.batch_size == 0 and k != 0):
+            if k % self.batch_size == 0 and k != 0:
                 print("______________________________________________________________")
                 print("the result of get status table:", battery.get_status_table())
                 print("______________________________________________________________")
-                print("goin' to optimize:")
 
-                initial_guess = np.array([np.random.uniform(low, high) for low, high in self.bounds])
+                self.nominal_clusters[soc_temp.current].compute_centroid()
+                initial_guess = self.nominal_clusters[soc_temp.current].centroid
+                # initial_guess = np.array([np.random.uniform(low, high) for low, high in self.bounds])
+
                 theta = optimizer.step(i_real=self.dataset['i_real'][start:k],
                                        v_real=self.dataset['v_real'][start:k],
                                        t_real=self.dataset['t_real'][start:k],
@@ -89,9 +102,9 @@ class BatteryAdaptation:
                 r0 = battery._electrical_model.r0.resistance
                 rc = battery._electrical_model.rc.resistance
                 c = battery._electrical_model.rc.capacity
-                actual_digital_twin_theta = {'r0': r0, 'rc': rc, 'c': c}
+
                 print("______________________________________________________________")
-                print("theta of the dt, i.e. the previous one is:", actual_digital_twin_theta)
+                print("theta of the dt, i.e. the previous one is:", {'r0': r0, 'rc': rc, 'c': c})
                 print("theta_hat is:", theta)
                 print("______________________________________________________________")
 
@@ -102,38 +115,109 @@ class BatteryAdaptation:
                 # self.temp_optimizer = self.temp_optimizer + optimizer.get_t_hat()
 
                 if self.nominal_clusters[soc_temp.current].contains(theta_values):
+                    self.history_theta_good[soc_temp.current].append(theta_values)
                     pass  # discussed with prof. maybe it could bring to problems
                     # self.nominal_clusters[soc_temp.current].update(theta_values)
 
                 else:
-                    self.outliers_set.append(theta)
+                    self.outliers_set.append(theta_values)
+
+            (battery._electrical_model.r0.resistance,
+             battery._electrical_model.rc.resistance,
+             battery._electrical_model.rc.capacity) = self.nominal_clusters[soc_temp.current].centroid
 
             battery.step(load, dt, k)
-
             soc = battery.soc_series[-1]  # The mean gave me problems
+            self.soc_history.append(soc)
+
             if len(self.dataset['t_real'][start:k]) > 1:
                 temp = np.mean(self.dataset['t_real'][start:k], axis=0)
+                self.temp_history.append(temp)
             else:
-                temp = battery._thermal_model.get_temp_series(-1)
+                temp = battery._thermal_model.get_temp_series(-1)  # it should take the first of the real dataset
+                self.temp_history.append(temp)
 
             soc_temp.check_cluster(temp=temp, soc=soc)
+            next_cell = soc_temp.current
+            if next_cell != current_cell:
+                self.change_cell_history.append(k)
+                current_cell = next_cell
+
             battery_status = battery.get_status_table()
 
-        self.phi_hat = cluster_estimation(
-            # check if it's meaningful to comapre the following two sets
-            cluster_data_points=self.nominal_clusters[soc_temp.current].data_points,
-            outliers=self.outliers_set)
-
-        if self.phi_hat is not None:
-            with open(f"phi_hat_{soc_temp.current}.pkl", "wb") as f:
-                pickle.dump(self.phi_hat, f)
+        if len(self.outliers_set) >= self.minimum_data_points:
+            self.phi_hat_list = cluster_estimation(
+                # check if it's meaningful to comapare the following two sets
+                cluster_data_points=self.nominal_clusters[soc_temp.current].data_points,
+                outliers=self.outliers_set, epsilon=self.epsilon, radius=self.radius,
+                p=self.p, minimum_data_points=self.minimum_data_points, support_fraction=self.support_fraction)
 
         if self.save_results:
-            print("start savings")
-            save_to_csv(self.v_optimizer, 'v_optimizer.csv', ['v_optimizer'])  # ok!
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            os.makedirs(timestamp, exist_ok=True)
 
-            df_outliers = pd.DataFrame(self.outliers_set)
-            df_outliers.to_csv('outliers.csv', index=False)
+            # v_hat
+            print("saving the v_hat from the optimizer")
+            save_to_csv(self.v_optimizer, f'{timestamp}/v_optimizer.csv', ['v_optimizer'])  # ok!
 
-            df = pd.DataFrame( np.vstack(self.phi_hat.data_points), columns=['r0', 'rc', 'c'])
-            df.to_csv('phi_hat.csv', index=False)
+            # outliers
+            print("saving the outliers")
+            outliers_set = convert_to_dict_list(self.outliers_set)
+            save_dict_list_to_csv(dict_list=outliers_set, filename=f'{timestamp}/outliers_set.csv')
+
+            # thetas that are contained whitin the clusters
+            print("saving the history theta good for each cluster")
+            history_theta_good_0 = convert_to_dict_list(self.history_theta_good[0])
+            save_dict_list_to_csv(dict_list=history_theta_good_0, filename=f'{timestamp}/history_theta_good_0.csv')
+
+            history_theta_good_1 = convert_to_dict_list(self.history_theta_good[1])
+            save_dict_list_to_csv(dict_list=history_theta_good_1, filename=f'{timestamp}/history_theta_good_1.csv')
+
+            history_theta_good_2 = convert_to_dict_list(self.history_theta_good[2])
+            save_dict_list_to_csv(dict_list=history_theta_good_2, filename=f'{timestamp}/history_theta_good_2.csv')
+
+            history_theta_good_3 = convert_to_dict_list(self.history_theta_good[3])
+            save_dict_list_to_csv(dict_list=history_theta_good_3, filename=f'{timestamp}/history_theta_good_3.csv')
+
+            # faulty clusters
+            print("saving the faulty clusters")
+            for i, phi_hat in enumerate(self.phi_hat_list):
+                if phi_hat is not None:
+                    faulty = convert_to_dict_list(phi_hat.data_points)
+                    save_dict_list_to_csv(dict_list=faulty, filename=f'{timestamp}/phi_{i}.csv')
+
+            # temp series
+            print("saving the soc,temp and change cell series")
+            df_temp_history = pd.DataFrame({'temperature': self.temp_history})
+            df_temp_history.to_csv(f'{timestamp}/temp_history.csv', index=False)
+
+            # soc series
+            df_soc_history = pd.DataFrame({'soc': self.soc_history})
+            df_soc_history.to_csv(f'{timestamp}/soc_history.csv', index=False)
+
+            # k_step of change cell series
+            df_k_step_series = pd.DataFrame({'k_step': self.change_cell_history})
+            df_k_step_series.to_csv(f'{timestamp}/change_cell_history.csv', index=False)
+
+            print("saving settings and info")
+            # optimizer hyperparams
+            with open(f'{timestamp}/info_and_settings.txt', 'w') as file:
+                file.write('optimizer settings: \n')
+                file.write(f'alpha: {self.alpha}\n')
+                file.write(f'batchsize: {self.batch_size}\n')
+                file.write(f'optimizer_method: {self.optimizer_method}\n')
+                file.write(f'save_results: {self.save_results}\n')
+                file.write(f'number_of_restarts: {self.number_of_restarts}\n')
+                file.write(f'options: {self.options}\n')
+                file.write(f'bounds: {self.bounds}\n')
+                file.write('\n')
+                file.write('change detection settings: \n')
+                file.write(f'epsilon: {self.epsilon}\n')
+                file.write(f'radius: {self.radius}\n')
+                file.write(f'p: {self.p}\n')
+                file.write(f'minimum_data_points: {self.minimum_data_points}\n')
+                file.write(f'support_fraction: {self.support_fraction}\n')
+                file.write('\n')
+                file.write('input_info: \n')
+                for i, elem in enumerate(self.input_info):
+                    file.write(f'{i}: {elem}\n')
