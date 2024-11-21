@@ -1,6 +1,6 @@
 python ernesto.py \
-    --battery_model first_order_thevenin \
-    --thermal_model r2c_thermal \
-    --aging_model bolun_dropflow \
+    --electrical thevenin_1-rc_dummy \
+    --thermal r2c_cell_paper \
+    --aging bolun_dropflow \
     --verbose \
     driven --config_files ./data/config/sim_config_example2.yaml

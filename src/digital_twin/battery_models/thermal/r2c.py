@@ -14,7 +14,7 @@ class R2CThermal(ThermalModel):
         self._c_term = self._init_components['c_term']
         self._r_cond = self._init_components['r_cond']
         self._r_conv = self._init_components['r_conv']
-        self._dv_dT = self._init_components['dv_dT']
+        self._dVoc_dT = self._init_components['dVoc_dT']
         self._soc = None
 
     @property
@@ -61,17 +61,17 @@ class R2CThermal(ThermalModel):
         return self._r_conv.get_value(input_vars=input_vars)
 
     @property
-    def dv_dT(self):
+    def dVoc_dT(self):
         input_vars = {}
 
-        if not isinstance(self._dv_dT, Scalar):
+        if not isinstance(self._dVoc_dT, Scalar):
             try:
-                input_vars = {name: getattr(self, name) for name in self._dv_dT.x_names}
+                input_vars = {name: getattr(self, name) for name in self._dVoc_dT.x_names}
             except:
                 raise Exception(
                     "Cannot retrieve required input variables to compute entropic coefficient!")
 
-        return self._dv_dT.get_value(input_vars=input_vars)
+        return self._dVoc_dT.get_value(input_vars=input_vars)
 
     def reset_model(self, **kwargs):
         self._temp_series = []
@@ -105,7 +105,7 @@ class R2CThermal(ThermalModel):
         """
         term_1 = self.c_term / dt * self.get_temp_series(k=k)
         term_2 = T_amb / (self.r_cond + self.r_conv)
-        denominator = self.c_term / dt + 1 / (self.r_cond + self.r_conv) - self.dv_dT * i
+        denominator = self.c_term / dt + 1 / (self.r_cond + self.r_conv) - self.dVoc_dT * i
 
         t_core = (term_1 + term_2 + q) / denominator
 

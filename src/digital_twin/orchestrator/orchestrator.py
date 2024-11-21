@@ -42,9 +42,8 @@ class DTOrchestrator:
         
         # Get models config files
         self._models_configs = []
-        for model in kwargs['models']:
-            model_file = (Path(self._assets['models_path']) / self._assets['models'][model]['category'] /
-                          self._assets['models'][model]['file'])
+        for key, model in kwargs['models'].items():
+            model_file = (Path("./models/{}/{}.yaml".format(key, model)))
             self._models_configs.append(read_yaml(yaml_file=self._config_folder / model_file, yaml_type='model'))
         
         # Output results and postprocessing

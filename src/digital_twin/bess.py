@@ -44,7 +44,7 @@ class BatteryEnergyStorageSystem:
             if 'nominal_voltage' in battery_options['params'].keys() else None
         self._v_max = battery_options['params']['v_max']
         self._v_min = battery_options['params']['v_min']
-        #self._temp_ambient = battery_options['params']['temp_ambient']
+        self.temp_amb = battery_options['params']['temp_ambient']
         
         # Bounds of operating conditions of the battery
         self.soc_min = battery_options['bounds']['soc']['low'] if 'bounds' in battery_options.keys() else 0.
@@ -194,6 +194,7 @@ class BatteryEnergyStorageSystem:
 
         self._thermal_model.update_temp(value=curr_temp)
         self._thermal_model.update_heat(value=dissipated_heat)
+        self._thermal_model.update_t_amb(value=t_amb)
         self.soc_series.append(curr_soc)
 
         # Compute SoH of the system if a model has been selected, SoH=constant otherwise

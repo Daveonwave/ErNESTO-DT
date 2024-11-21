@@ -28,10 +28,6 @@ class DrivenSimulator(BaseSimulator):
         
         # Simulation variables
         self._sample = None
-<<<<<<< HEAD
-        self._get_rest_after = sim_config['get_rest_after'] if 'get_rest_after' in sim_config and sim_config['get_rest_after'] is not None else 3600
-        self._elapsed_time = -1
-=======
         self._inputs = None
         self._get_rest_after = 2
         
@@ -43,8 +39,7 @@ class DrivenSimulator(BaseSimulator):
         self._k = None          
         # Number of iterations simulated
         # self._iterations = 0    
-        
->>>>>>> online_learning
+
         self._done = False
         self._pbar = None
         self._clear_collections_every = sim_config['clear_collections_every'] if 'clear_collections_every' in sim_config else 50000
@@ -55,7 +50,7 @@ class DrivenSimulator(BaseSimulator):
             battery_options=sim_config['battery'],
             check_soh_every=sim_config['check_soh_every'] if 'check_soh_every' in sim_config else None
         )
-        
+                
         self._loader = data_loader
         self._writer = data_writer
 
@@ -79,19 +74,10 @@ class DrivenSimulator(BaseSimulator):
         self._battery.reset()
         self._battery.init()
         self._battery.load_var = self._loader.input_var
-<<<<<<< HEAD
-        self._writer.add_simulated_data(self._battery.get_status_table())
-
-        k = 0
-        dt = self._loader.timestep if self._loader.timestep is not None else 1
-        prev_time = -1
-        pbar = tqdm(total=int(self._loader.duration), position=0, leave=True)
-=======
         
         self._k = 0
         self._prev_time = -1
         self._writer.add_simulated_data(self._battery.get_snapshot())
->>>>>>> online_learning
         
     def init_loader(self):
         """
@@ -113,32 +99,7 @@ class DrivenSimulator(BaseSimulator):
             self._step(dt=dt)
             dt = self._fetch_next()
         
-<<<<<<< HEAD
-        # Main loop of the simulation
-        while not self._done:
-            
-            # Make a step in the simulation. If dt == 0 then no progresses have been made.
-            if dt != 0:
-                k, dt = self.step(k=k, dt=dt)    
-                pbar.update(dt)
-            
-            #print(self._sample['time'], self._battery.t_series[-1], dt, self._elapsed_time)
-            
-            # Check if the simulation is over, otherwise get the next sample.
-            if self._elapsed_time < self._loader.duration:
-                prev_time = self._sample['time']
-                self._sample = next(inputs)
-                dt = round(self._sample['time'] - prev_time, 2)
-            else:
-                self._done = True
-            
-        pbar.close()
-        logger.info("'Driven Simulation' ended without errors!")
-            
-    def step(self, k: int, dt: float):
-=======
     def _step(self, dt: float, sample: dict, input_var: str, timestep: float):
->>>>>>> online_learning
         """
         Execute a step of the simulation that can have a fixed or variable timestep.
         
@@ -153,28 +114,6 @@ class DrivenSimulator(BaseSimulator):
             input_var (str): key of the input variable in the sample dictionary
             timestep (float): fixed timestep of the simulation imposed by configuration file
         """
-<<<<<<< HEAD
-        # If the timestep is variable and the dt is too large, then rest the battery.
-        if self._loader.timestep is None and dt > self._get_rest_after:
-            self._battery.load_var = 'current'
-            self._battery.step(load=0, dt=dt-1, k=k)
-            self._battery.load_var = self._loader.input_var
-            
-            self._elapsed_time += (dt - 1)
-            self._battery.t_series.append(self._elapsed_time)
-            dt = 1
-            k += 1
-            
-            self._writer.add_simulated_data(self._battery.get_status_table())
-            
-        # Normal operating step of the battery system.
-        ground_temp = self._sample['temperature'] if 'temperature' in self._sample else None
-        self._battery.step(load=self._sample[self._loader.input_var], dt=dt, k=k, ground_temp=ground_temp)
-        
-        self._elapsed_time += dt
-        self._battery.t_series.append(self._elapsed_time)
-        k += 1
-=======
         if dt != 0:
             # If dt == 0 then no progresses have been made.
             if timestep is None and dt > self._get_rest_after:
@@ -189,12 +128,13 @@ class DrivenSimulator(BaseSimulator):
                 
             # Normal operating step of the battery system.
             ground_temp = sample['temperature'] if 'temperature' in sample else None
-            self._battery.step(load=sample[input_var], dt=dt, k=self._k, t_amb=sample['t_amb'], ground_temp=ground_temp)
+            t_amb = sample['t_amb'] if 't_amb' in sample else self.battery.temp_amb
+            
+            self._battery.step(load=sample[input_var], dt=dt, k=self._k, t_amb=t_amb, ground_temp=ground_temp)
             self._battery.t_series.append(self._elapsed_time)
             self._elapsed_time += dt
             self._k += 1
             self._store_sample()
->>>>>>> online_learning
         
     def _fetch_next(self):
         """

@@ -7,8 +7,6 @@ from .driven_sim import DrivenSimulator
 from src.digital_twin.orchestrator import DrivenLoader
 from src.digital_twin.orchestrator import DataWriter
 from src.digital_twin.bess import BatteryEnergyStorageSystem
-from src.adaptation.optimizer import Optimizer
-from src.adaptation.grid import ParameterSpaceGrid
 
 logger = logging.getLogger('ErNESTO-DT')
 

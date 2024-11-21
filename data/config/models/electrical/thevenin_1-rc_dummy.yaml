@@ -20,21 +20,15 @@ class_name: FirstOrderThevenin
 # ----------------------------------------------------------------------------
 components:
   r0:
-    selected_type: scalar
+    selected_type: lookup
 
-    scalar: 0.003415
+    scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "r0_crafted_lookup_10cells.csv"
+      table: "r0_table.csv"
       inputs:
-        - var: "temperature"
-          label: "temp"
-          unit: "degC"
         - var: "soc"
           label: "soc"
-          unit: null
-        - var: "soh"
-          label: "soh"
           unit: null
       output:
         var: "resistance"
@@ -42,21 +36,15 @@ components:
         unit: "ohm"
 
   r1:
-    selected_type: scalar
+    selected_type: lookup
 
-    scalar: 0.004790
+    scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "r1_crafted_lookup_10cells.csv"
+      table: "r1_table.csv"
       inputs:
-        - var: "temperature"
-          label: "temp"
-          unit: "degC"
         - var: "soc"
           label: "soc"
-          unit: null
-        - var: "soh"
-          label: "soh"
           unit: null
       output:
         var: "resistance"
@@ -64,21 +52,15 @@ components:
         unit: "ohm"
 
   c:
-    selected_type: scalar
+    selected_type: lookup
 
-    scalar: 33339.962429
+    scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "c_crafted_lookup_10cells.csv"
+      table: "c1_table.csv"
       inputs:
-        - var: "temperature"
-          label: "temp"
-          unit: "degC"
         - var: "soc"
           label: "soc"
-          unit: null
-        - var: "soh"
-          label: "soh"
           unit: null
       output:
         var: "capacity"
@@ -91,7 +73,7 @@ components:
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "voc_crafted_lookup_10cells.csv"
+      table: "voc_table.csv"
       inputs:
         - var: "temperature"
           label: "temp"

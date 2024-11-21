@@ -1,6 +1,7 @@
 import argparse
 import logging
 import sys
+import os
 from joblib import Parallel, delayed
 from src.utils.logger import CustomFormatter
 from src.digital_twin.orchestrator.orchestrator import DTOrchestrator
@@ -63,6 +64,10 @@ def get_args():
         """
         Arguments of the main parser that can be useful to all the kind of modes
         """
+        electrical_choices = [os.path.splitext(file)[0] for file in os.listdir('./data/config/models/electrical')]
+        thermal_choices = [os.path.splitext(file)[0] for file in os.listdir('./data/config/models/thermal')]
+        aging_choices = [os.path.splitext(file)[0] for file in os.listdir('./data/config/models/aging')]
+        
         main_parser.add_argument("--config_folder", action="store", default="./data/config", type=str,
                                  help="Specifies the folder which we retrieve preprocessing from.")
 
@@ -75,17 +80,17 @@ def get_args():
         main_parser.add_argument("--assets", action="store", default="./data/config/assets.yaml",
                                  type=str, help="Specifies the file containing parameters useful for the experiment.")
 
-        electrical_choices = ['first_order_thevenin', 'second_order_thevenin']
-        main_parser.add_argument("--battery_model", nargs=1, choices=electrical_choices, default=['first_order_thevenin'],
-                                 help="Specifies the name of the core model of the battery, electrical or data driven.")
+        main_parser.add_argument("--electrical", nargs=1, choices=electrical_choices,
+                                 help="Specifies the name of the mandatory (electrical) model of the battery. \
+                                     It can be also a data-driven model. Models are stored in the folder 'models/electrical'.")
 
-        thermal_choices = ['rc_thermal', 'r2c_thermal', 'dummy_thermal', 'mlp_thermal']
-        main_parser.add_argument("--thermal_model", nargs=1, choices=thermal_choices, default=['r2c_thermal'],
-                                 help="Specifies the name of the thermal model that has to be used.")
+        main_parser.add_argument("--thermal", nargs=1, choices=thermal_choices,
+                                 help="Specifies the name of the optional thermal model of the battery. \
+                                     It can be also a data-driven model. Models are stored in the folder 'models/thermal'.")
 
-        aging_choices = ['bolun', 'bolun_dropflow']
-        main_parser.add_argument("--aging_model", nargs=1, choices=aging_choices,
-                                 help="Specifies the name of the aging model that has to be used.")
+        main_parser.add_argument("--aging", nargs=1, choices=aging_choices,
+                                 help="Specifies the name of the optional aging model of the battery. \
+                                     Models are stored in the folder 'models/aging'.")
 
         main_parser.add_argument("--n_cores", action="store", default=-1, type=int,
                                  help="Specifies the number of cores to use for parallel simulations. If save_results "
@@ -134,19 +139,21 @@ if __name__ == '__main__':
     logger.addHandler(ch)
 
     # Parsing of models employed in the current experiment
-    args['models'] = []
-    if args['battery_model']:
-        args['models'].extend(args['battery_model'])
-        del args['battery_model']
+    
+    args['models'] = {}
+    if args['electrical']:
+        args['models']['electrical'] = args['electrical'][0]
+        del args['electrical']
 
-    if args['thermal_model']:
-        args['models'].extend(args['thermal_model'])
-        del args['thermal_model']
+    if args['thermal']:
+        args['models']['thermal'] = args['thermal'][0]
+        del args['thermal']
 
-    if args['aging_model']:
-        args['models'].extend(args['aging_model'])
-        del args['aging_model']
-
+    if args['aging']:
+        args['models']['aging'] = args['aging'][0]
+        del args['aging'] 
+    
+    # Parallel execution of the experiments
     parallel_exp_config = args['config_files']
     del args['config_files']
 
