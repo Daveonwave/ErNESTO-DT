@@ -33,6 +33,10 @@ class GenericModel(metaclass=ABCMeta):
     @abc.abstractmethod
     def get_results(self, **kwargs):
         raise NotImplementedError
+    
+    @abc.abstractmethod
+    def clear_collections(self, **kwargs):
+        raise NotImplementedError
 
 
 class ElectricalModel(GenericModel):
@@ -45,7 +49,6 @@ class ElectricalModel(GenericModel):
         self._v_load_series = []
         self._i_load_series = []
         self._power_series = []
-        # self._times = []
 
     @property
     def name(self):
@@ -54,6 +57,12 @@ class ElectricalModel(GenericModel):
     @property
     def param_names(self):
         return self._params
+    
+    @property
+    def collections_map(self):
+        return {'voltage': self.get_v_series,
+                'current': self.get_i_series,
+                'power': self.get_power_series}
     
     def reset_model(self, **kwargs):
         pass
@@ -77,7 +86,18 @@ class ElectricalModel(GenericModel):
         pass
 
     def get_results(self, **kwargs):
-        pass
+        """
+        Returns a dictionary with results
+        """
+        results = {}
+        k = kwargs['k'] if 'k' in kwargs else None
+        var_names = kwargs['var_names'] if 'var_names' in kwargs else None
+
+        for key, func in self.collections_map.items():
+            if var_names is not None and key in var_names:
+                results[key] = func(k=k)
+            
+        return results
 
     def get_v_series(self, k=None):
         """
@@ -129,12 +149,11 @@ class ElectricalModel(GenericModel):
 
     def update_power(self, value: float):
         self._power_series.append(value)
-
-    # def update_times(self, value:int):
-    #     if self.units_checker:
-    #         self._times.append(check_data_unit(value, Unit.SECOND))
-    #     else:
-    #         self._times.append(value)
+    
+    def clear_collections(self, **kwargs):
+        self._v_load_series = [self._v_load_series[-1]]
+        self._i_load_series = [self._i_load_series[-1]] 
+        self._power_series = [self._power_series[-1]]
 
 
 class ThermalModel(GenericModel):
@@ -145,11 +164,17 @@ class ThermalModel(GenericModel):
         self._name = name
         self._temp_series = []
         self._heat_series = []
-        # self._times = []
+        self._temp_amb_series = []
 
     @property
     def name(self):
         return self._name
+    
+    @property
+    def collections_map(self):
+        return {'temperature': self.get_temp_series,
+                'heat': self.get_heat_series,
+                't_amb': self.get_t_amb_series}
 
     def reset_model(self, **kwargs):
         pass
@@ -167,10 +192,16 @@ class ThermalModel(GenericModel):
         """
         Returns a dictionary with all final results
         """
+        results = {}
         k = kwargs['k'] if 'k' in kwargs else None
-        return {'temperature': self.get_temp_series(k=k),
-                'heat': self.get_heat_series(k=k)}
-
+        var_names = kwargs['var_names'] if 'var_names' in kwargs else None
+        
+        for key, func in self.collections_map.items():
+            if var_names is not None and key not in var_names:
+                continue
+            results[key] = func(k=k)
+        
+        return results
 
     def get_temp_series(self, k=None):
         """
@@ -199,12 +230,37 @@ class ThermalModel(GenericModel):
             else:
                 raise IndexError("Dissipated heat of thermal model at step K not computed yet")
         return self._heat_series
+    
+    def get_t_amb_series(self, k=None):
+        """
+        Getter of the specific value at step K, if specified, otherwise of the entire collection
+        """
+        if k is not None:
+            assert type(k) == int, \
+                "Cannot retrieve ambient temperature at step K, since it has to be an integer"
+
+            if len(self._temp_series) > k:
+                return self._temp_series[k]
+            else:
+                raise IndexError("Ambient temperature at step K not computed yet")
+        return self._temp_series
 
     def update_temp(self, value: float):
         self._temp_series.append(value)
 
     def update_heat(self, value: float):
         self._heat_series.append(value)
+        
+    def update_t_amb(self, value: float):
+        self._temp_amb_series.append(value)
+        
+    def clear_collections(self, **kwargs):
+        """
+        Clear data collections of the thermal model
+        """
+        self._heat_series = [self._heat_series[-1]]
+        self._temp_series = [self._temp_series[-1]] 
+        self._t_amb_series = [self._t_amb_series[-1]]
 
 
 class AgingModel(GenericModel):
@@ -218,6 +274,10 @@ class AgingModel(GenericModel):
     @property
     def name(self):
         return self._name
+    
+    @property
+    def collections_map(self):
+        return {'degradation': self.get_deg_series}
 
     def reset_model(self, **kwargs):
         pass
@@ -250,5 +310,8 @@ class AgingModel(GenericModel):
 
     def update_deg(self, value: float):
         self._deg_series.append(value)
+        
+    def clear_collections(self, **kwargs):
+        self._deg_series = [self._deg_series[-1]]
 
 

@@ -10,65 +10,71 @@ class GridRegion:
     """
     def __init__(self,
                  idx: int,
-                 var_names: list,
-                 ranges: list,
+                 region: list,
                  cluster: Cluster
                  ):
         """
         Args:
             idx (int): _description_
-            var_names (list): _description_
-            ranges (list): _description_
+            region (dict): _description_
             cluster (Cluster): _description_
         """
         self._index = idx
-        self._ranges = ranges
+        self._dimensions = list(region.keys())
+        self._ranges = [list(region[dim].values()) for dim in self._dimensions]
         self._cluster = cluster
-        self.region_bounds = {var_names[i]: ranges[i] for i in range(len(var_names))}
+        self._outliers = []
+        
+    def mean(self):
+        return self._cluster.centroid
     
-    def is_contained(self, point: dict):
+    def covariance(self):
+        return self._cluster.covariance
+    
+    def contains(self, point: dict):
         """
         Check if the point belong to the region.
         
         Args:
             point (dict): point in the grid that must be checked.
         """
+        print(point)
+        
         for var, value in point.items():
-            if value < self.region_bounds[var][0] or value > self.region_bounds[var][1]:
+            if value < self._ranges[self._dimensions.index(var)][0] or \
+                value > self._ranges[self._dimensions.index(var)][1]:
                 return False
         return True
     
 
 class ParameterSpaceGrid:
     """
-    
+    Class that defines the grid of the parameter space.
     """
     def __init__(self, 
-                 regions: dict,
-                 nominal_clusters: list,
+                 grid_config: list,
+                 clusters_folder: str
                  ):
         """
         Args:
-            regions (dict): _description_
-            nominal_clusters (list): _description_
+            settings (dict): _description_
         """
-        self._dimensions = list(regions.keys())        
-        combinations = [element for element in itertools.product(*regions.values())]
+        self._dimensions = list(grid_config[0]['region'].keys())
         
-        assert len(combinations) == len(nominal_clusters), "The number of nominal clusters must be equal to the number of combinations."
+        assert any([elem['region'].keys() for elem in grid_config]) != self._dimensions, \
+            "The dimensions of regions within the grid should be the same."
+                        
+        self._regions = [GridRegion(idx=idx, 
+                                    region=elem['region'], 
+                                    cluster=Cluster(load_cluster_points(clusters_folder + elem['cluster']))) 
+                         for idx, elem in enumerate(grid_config)]
         
-        self._regions = [GridRegion(idx=idx, var_names=self._dimensions, ranges=comb, cluster=Cluster(load_cluster_points(nominal_clusters[idx]))) 
-                         for idx, comb in enumerate(combinations)]
         self._cur_region_idx = 0
 
     @property
     def current_region(self):
-        return self._cur_region_idx
+        return self._regions[self._cur_region_idx]
     
-    @property
-    def cur_ranges(self):
-        return self._regions[self._cur_region_idx].region_bounds
-
     def _check_region(self, point: dict):
         """
         Check in which region the point is contained.
@@ -76,9 +82,8 @@ class ParameterSpaceGrid:
         Args:
             point (dict): point in the grid that must be checked.
         """
-        assert point.keys() == self._dimensions, "The dictionary must contain the variables of the grid."
         for idx, region in enumerate(self._regions):
-            if region.is_contained(point):
+            if region.contains(point):
                 return idx
         raise ValueError("The point {} is not contained in any region.".format(point))
 
@@ -89,7 +94,8 @@ class ParameterSpaceGrid:
         Args:
             point (dict): point in the grid that must be checked.
         """
-        assert point.keys() == self._dimensions, "The dictionary must contain the variables of the grid."
+        assert list(point.keys()) == self._dimensions, \
+            "{} must be {}. The dictionary must contain the variables of the grid.".format(list(point.keys()), self._dimensions)
         
         new_idx = self._check_region(point)
         if self._cur_region_idx != new_idx:

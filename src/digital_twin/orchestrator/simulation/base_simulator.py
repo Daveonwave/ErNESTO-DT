@@ -25,7 +25,7 @@ class BaseSimulator:
         raise NotImplementedError
     
     def step(self, **kwargs):
-        self._step(kwargs)
+        self._step(**kwargs)
     
     def _step(self, **kwargs):
         raise NotImplementedError
@@ -36,8 +36,8 @@ class BaseSimulator:
     def _stop(self):
         raise NotImplementedError
     
-    def run(self):
-        self._run()
+    def run(self, **kwargs):
+        self._run(kwargs)
         
     def _run(self):
         raise NotImplementedError

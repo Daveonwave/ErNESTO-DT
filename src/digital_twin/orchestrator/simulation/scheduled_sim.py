@@ -59,7 +59,7 @@ class ScheduledSimulator(BaseSimulator):
         self._loader = data_loader
         self._writer = data_writer
         
-    def init(self):
+    def _init(self):
         """
         Initialize the adaptive simulation.
         """
@@ -68,13 +68,13 @@ class ScheduledSimulator(BaseSimulator):
         self._battery.init()
         self._k = 0
         
-    def run(self):
+    def _run(self):
         """
         TODO: differentiate the run method from the solve method.
         """
         self.solve()
         
-    def solve(self):
+    def _solve(self):
         """
         
         """
@@ -185,7 +185,7 @@ class ScheduledSimulator(BaseSimulator):
             self.step()
             self._store_step()
             
-    def step(self):
+    def _step(self):
         """
         Execute a step of the simulation that can have a fixed or variable timestep.
         
@@ -205,20 +205,20 @@ class ScheduledSimulator(BaseSimulator):
         self._elapsed_time += self._loader.timestep
         self._k += 1
             
-    def stop(self):
+    def _stop(self):
         """
         Pause the interactive simulation.
         """
         pass
     
-    def store_sample(self):
+    def _store_sample(self):
         """
         Add the ground and simulated data to the writer queues.
         """
         self._writer.add_ground_data(self._sample)
         self._writer.add_simulated_data(self._battery.get_snapshot())
     
-    def close(self):
+    def _close(self):
         """
         Quit every instance of the current simulation.
         """

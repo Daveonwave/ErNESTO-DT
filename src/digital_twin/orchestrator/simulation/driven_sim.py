@@ -29,14 +29,20 @@ class DrivenSimulator(BaseSimulator):
         # Simulation variables
         self._sample = None
         self._inputs = None
-        self._get_rest_after = 3600
+        self._get_rest_after = 2
         
         # Time variables
-        self._k = None
         self._prev_time = None
         self._elapsed_time = 0
+        
+        # Index of the data collections
+        self._k = None          
+        # Number of iterations simulated
+        # self._iterations = 0    
+        
         self._done = False
         self._pbar = None
+        self._clear_collections_every = sim_config['clear_collections_every'] if 'clear_collections_every' in sim_config else 50000
         
         # Instantiate the BESS environment
         self._battery = BatteryEnergyStorageSystem(
@@ -52,6 +58,14 @@ class DrivenSimulator(BaseSimulator):
     def battery(self):
         return self._battery
     
+    @property
+    def sample(self):
+        return self._sample
+    
+    @property
+    def done(self):
+        return self._done
+    
     def _init(self):
         """
         Initialize the adaptive simulation.
@@ -60,17 +74,32 @@ class DrivenSimulator(BaseSimulator):
         self._battery.reset()
         self._battery.init()
         self._battery.load_var = self._loader.input_var
+        
         self._k = 0
         self._prev_time = -1
+        self._writer.add_simulated_data(self._battery.get_snapshot())
+        
+    def init_loader(self):
+        """
+        Initializa the generator of the input samples.
+        """
         self._inputs = self._loader.collection()
     
-    def _run(self):
+    def load_sample(self):
+        """
+        Load the next sample from the loader.
+        """
+        self._sample = next(self._inputs)
+    
+    def _run(self, iterations: int, dt: float):
         """
         TODO: differentiate the run method from the solve method.
         """
-        raise NotImplementedError
-                
-    def _step(self, dt: float):
+        for _ in range(iterations):
+            self._step(dt=dt)
+            dt = self._fetch_next()
+        
+    def _step(self, dt: float, sample: dict, input_var: str, timestep: float):
         """
         Execute a step of the simulation that can have a fixed or variable timestep.
         
@@ -81,13 +110,16 @@ class DrivenSimulator(BaseSimulator):
         Otherwise, if the timestep is fixed, the simulation progresses with the provided step size.
         Args:
             dt (float): delta of time between the current and the previous sample
+            sample (dict): dictionary containing the current sample
+            input_var (str): key of the input variable in the sample dictionary
+            timestep (float): fixed timestep of the simulation imposed by configuration file
         """
         if dt != 0:
             # If dt == 0 then no progresses have been made.
-            if self._loader.timestep is None and dt > self._get_rest_after:
+            if timestep is None and dt > self._get_rest_after:
                 self._battery.load_var = 'current'
                 self._battery.step(load=0, dt=dt-1, k=self._k)
-                self._battery.load_var = self._loader.input_var
+                self._battery.load_var = input_var
                 self._battery.t_series.append(self._elapsed_time)
                 self._elapsed_time += (dt - 1)
                 dt = 1
@@ -95,8 +127,8 @@ class DrivenSimulator(BaseSimulator):
                 self._writer.add_simulated_data(self._battery.get_snapshot())
                 
             # Normal operating step of the battery system.
-            ground_temp = self._sample['temperature'] if 'temperature' in self._sample else None
-            self._battery.step(load=self._sample[self._loader.input_var], dt=dt, k=self._k, ground_temp=ground_temp)
+            ground_temp = sample['temperature'] if 'temperature' in sample else None
+            self._battery.step(load=sample[input_var], dt=dt, k=self._k, t_amb=sample['t_amb'], ground_temp=ground_temp)
             self._battery.t_series.append(self._elapsed_time)
             self._elapsed_time += dt
             self._k += 1
@@ -108,13 +140,15 @@ class DrivenSimulator(BaseSimulator):
         """
         if self._elapsed_time < self._loader.duration:
             self._prev_time = self._sample['time']
-            self._sample = next(self._inputs)
+            self.load_sample()
             dt = round(self._sample['time'] - self._prev_time, 2)
         else:
             self._done = True
             dt = 0
-        
-        return dt    
+        return dt
+    
+    def fetch_next(self):
+        return self._fetch_next()    
     
     def _stop(self):
         """
@@ -125,19 +159,23 @@ class DrivenSimulator(BaseSimulator):
     def _solve(self):
         """
         Execute the entire simulation from the start to the end.
+        NOTE: to execute the simulation from outside, keep in mind the following structure.
         """
         self.init()
+        self.init_loader()
+        self.load_sample()
         
-        dt = self._loader.timestep if self._loader.timestep is not None else 0
-        self._sample = next(self._inputs)
-        
+        dt = self._loader.timestep if self._loader.timestep is not None else 1
         self._pbar = tqdm(total=int(self._loader.duration), position=0, leave=True)
         
         # Main loop of the simulation
-        while not self._done:
-            self._step(dt=dt)
+        while not self._done:            
+            self._step(dt=dt, sample=self._sample, input_var=self._loader.input_var, timestep=self._loader.timestep)
             self._pbar.update(dt)
             dt = self._fetch_next()
+            
+            if self._k == self._clear_collections_every:
+                self.clear()                
             
         self._pbar.close()
         logger.info("'Driven Simulation' solved without errors!")
@@ -148,6 +186,9 @@ class DrivenSimulator(BaseSimulator):
         """
         self._writer.add_ground_data(self._sample)
         self._writer.add_simulated_data(self._battery.get_snapshot())
+    
+    def clear(self):
+        self._battery.clear_collections()
     
     def _close(self):
         """

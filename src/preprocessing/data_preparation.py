@@ -16,6 +16,7 @@ internal_units = dict(
     resistance=['ohm', '\u03A9', ureg.ohm],
     capacity=['faraday', 'F', ureg.faraday],
     temperature=['kelvin', 'K', ureg.kelvin],
+    temp_amb=['kelvin', 'K', ureg.kelvin],
     time=['seconds', 's', ureg.s],
     soc=[None, None, None],
     soh=[None, None, None]
@@ -45,7 +46,10 @@ def load_data_from_csv(csv_file: Path, vars_to_retrieve: [dict], **kwargs):
 
     # Retrieve and convert timestamps to list of seconds (format: YYYY/MM/DD hh:mm:ss)
     if kwargs['time_format'] == 'seconds':
-        timestamps = df['Time']
+        try:
+            timestamps = df['Time']
+        except KeyError:
+            raise KeyError("The column 'Time' is not present in the csv file or it is just misspelled.")
     else:
         timestamps = pd.to_datetime(df['Time'], format="%Y/%m/%d %H:%M:%S").values.astype(float) // 10 ** 9
     vars_data = {}

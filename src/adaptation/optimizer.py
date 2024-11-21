@@ -1,4 +1,5 @@
 import numpy as np
+from joblib import Parallel, delayed
 from scipy.optimize import minimize
 from src.digital_twin.bess import BatteryEnergyStorageSystem
 
@@ -11,9 +12,10 @@ class Optimizer:
                  batch_size: int,
                  n_restarts: int,
                  bounds: dict, 
-                 scale_factor: dict, 
+                 scale_factors: dict, 
                  options: dict = None, 
-                 temperature_loss=False
+                 temperature_loss=False,
+                 **kwargs
                  ):
         # battery attributes
         # TODO: passa l'inizio della window precedente passata dal simulatore!!
@@ -25,16 +27,11 @@ class Optimizer:
         self._n_restarts = n_restarts
         
         self._bounds = bounds
-        self.scale_factor = scale_factor
+        self.scale_factor = scale_factors
 
         # optimization attributes:
-        self.initial_guess = None
         self.v_hat = None
-        self.t_hat = None
-        self._v_real = None
-        self._i_real = None
-        self._t_real = None
-        self.dt = None
+        
         self.loss_history = []
         self.best_loss = None
         self.gradient_history = []
@@ -110,27 +107,34 @@ class Optimizer:
 
         return loss
 
-    def step(self, i_real, v_real, t_real, alpha, optimizer_method, dt, number_of_restarts):
-        self._i_real = i_real
-        self._v_real = v_real
-        self._t_real = t_real
-        self.dt = dt
-        self.alpha = alpha
-        self.number_of_restarts = number_of_restarts
+    def step(self, init_state: dict, input_batch: dict):
+        """_summary_
+
+        Args:
+            init_state (dict): _description_
+            input_batch (dict): _description_
+
+        Returns:
+            _type_: _description_
+        """
         self.best_loss = float('inf')
 
         self.loss_history = []
 
         best_value = float('inf')
         best_result = None
+        initial_guesses = [np.array([np.random.uniform(low, high) for low, high in self.bounds]) for _ in range(self._n_restarts)]
 
-        for ii in range(self.number_of_restarts):
-            print("restart number :", ii)
-            initial_guess = np.array([np.random.uniform(low, high) for low, high in self.bounds])
-            # initial_guess = self.lhs()
-
-            result = minimize(self._loss_function, initial_guess,
-                              method=optimizer_method, bounds=self.bounds, options=self.options)
+        results = Parallel(n_jobs=self._n_restarts)(
+            delayed(minimize(self._loss_function, 
+                          initial_guess,
+                          method=self._alg, 
+                          bounds=self.bounds, 
+                          options=self.options)
+            for initial_guess in initial_guesses
+        ))
+        
+        result = results
 
             #if result.fun < best_value:
             #    best_result = result
