@@ -23,28 +23,34 @@ class FirstOrderThevenin(ElectricalModel):
         """
         super().__init__(name='First Order Thevenin')
         self._sign_convention = sign_convention
-
+        
         self._init_components = instantiate_variables(components_settings)
 
         self.r0 = Resistor(name='R0', resistance=self._init_components['r0'])
         self.rc = ResistorCapacitorParallel(name='RC', resistance=self._init_components['r1'], capacity=self._init_components['c'])
         self.ocv_gen = OCVGenerator(name='OCV', ocv_potential=self._init_components['v_ocv'])
-
+    
+    @property
+    def collections_map(self):
+        return {'voltage': self.get_v_series,
+                'current': self.get_i_series,
+                'power': self.get_power_series,
+                'v_oc': self.ocv_gen.get_v_series,
+                'r0': self.r0.get_r0_series,
+                'r1': self.rc.get_r_series,
+                'c': self.rc.get_c_series,
+                'v_r0': self.r0.get_v_series,
+                'v_rc': self.rc.get_v_series,
+                'i_r1': self.rc.get_i_r_series,
+                'i_c': self.rc.get_i_c_series
+                }
+    
     def reset_model(self, **kwargs):
         self._v_load_series = []
         self._i_load_series = []
         self.r0.reset_data()
         self.rc.reset_data()
         self.ocv_gen.reset_data()
-
-        # if 'r0' in kwargs:
-        #     self.r0.resistance = kwargs['r0']
-        # if 'r1' in kwargs:
-        #     self.rc.resistance = kwargs['r1']
-        # if 'c' in kwargs:
-        #     self.rc.capacity = kwargs['c']
-        # if 'v_ocv' in kwargs:
-        #     self.ocv_gen.ocv_potential = kwargs['v_ocv']
 
     def init_model(self, **kwargs):
         """
@@ -80,9 +86,6 @@ class FirstOrderThevenin(ElectricalModel):
                 component.soc = soc
             if soh is not None:
                 component.soh = soh
-
-        # self.r0.soc(value=soc) -> I'll probably need to do this one day
-        # self.rc.soc(value=soc)
 
     def step_voltage_driven(self, v_load, dt, k):
         """
@@ -191,23 +194,30 @@ class FirstOrderThevenin(ElectricalModel):
         return self.r0.get_r0_series(k=k) * self.get_i_series(k=k)**2 + \
             self.rc.get_r_series(k=k) * self.rc.get_i_r_series(k=k)**2
         # return self.r0.get_r0_series(k=k) * self.get_i_series(k=k) ** 2
-
+        
     def get_results(self, **kwargs):
         """
         Returns a dictionary with results
         """
+        results = {}
         k = kwargs['k'] if 'k' in kwargs else None
+        var_names = kwargs['var_names'] if 'var_names' in kwargs else None
 
-        return {'voltage': self.get_v_series(k=k),
-                'current': self.get_i_series(k=k),
-                'power': self.get_power_series(k=k),
-                'v_oc': self.ocv_gen.get_v_series(k=k),
-                'r0': self.r0.get_r0_series(k=k),
-                'r1': self.rc.get_r_series(k=k),
-                'c': self.rc.get_c_series(k=k),
-                'v_r0': self.r0.get_v_series(k=k),
-                'v_rc': self.rc.get_v_series(k=k)
-                }
+        for key, func in self.collections_map.items():
+            if var_names is not None and key not in var_names:
+                continue
+            results[key] = func(k=k)
+            
+        return results
+    
+    def clear_collections(self, **kwargs):
+        """
+        Clear data collected during the simulation
+        """
+        super().clear_collections(**kwargs)
+        self.r0.clear_collections()
+        self.rc.clear_collections()
+        self.ocv_gen.clear_collections()
 
 
 class SecondOrderThevenin(ElectricalModel):
@@ -236,6 +246,22 @@ class SecondOrderThevenin(ElectricalModel):
         self.rc2 = ResistorCapacitorParallel(name='RC2', resistance=self._init_components['r2'], capacity=self._init_components['c2'])
         self.ocv_gen = OCVGenerator(name='OCV', ocv_potential=self._init_components['v_ocv'])
 
+    @property
+    def collections_map(self):
+        return {'voltage': self.get_v_series,
+                'current': self.get_i_series,
+                'power': self.get_power_series,
+                'v_oc': self.ocv_gen.get_v_series,
+                'r0': self.r0.get_r0_series,
+                'r1': self.rc1.get_r_series,
+                'c1': self.rc1.get_c_series,
+                'r2': self.rc2.get_r_series,
+                'c2': self.rc2.get_c_series,
+                'v_r0': self.r0.get_v_series,
+                'v_rc1': self.rc1.get_v_series,
+                'v_rc2': self.rc2.get_v_series
+                }
+    
     def reset_model(self, **kwargs):
         self._v_load_series = []
         self._i_load_series = []
@@ -243,19 +269,6 @@ class SecondOrderThevenin(ElectricalModel):
         self.rc1.reset_data()
         self.rc2.reset_data()
         self.ocv_gen.reset_data()
-
-        if 'r0' in kwargs:
-            self.r0.resistance = kwargs['r0']
-        if 'r1' in kwargs:
-            self.rc1.resistance = kwargs['r1']
-        if 'c' in kwargs:
-            self.rc1.capacity = kwargs['c1']
-        if 'r2' in kwargs:
-            self.rc1.resistance = kwargs['r2']
-        if 'c2' in kwargs:
-            self.rc1.capacity = kwargs['c2']
-        if 'v_ocv' in kwargs:
-            self.ocv_gen.ocv_potential = kwargs['v_ocv']
 
     def init_model(self, **kwargs):
         """
@@ -422,24 +435,28 @@ class SecondOrderThevenin(ElectricalModel):
             self.rc1.get_r_series(k=k) * self.rc1.get_i_r_series(k=k)**2 + \
             self.rc2.get_r_series(k=k) * self.rc2.get_i_r_series(k=k)**2
         # return self.r0.get_r0_series(k=k) * self.get_i_series(k=k) ** 2
-
+        
     def get_results(self, **kwargs):
         """
-        Returns a dictionary with all final results
-        TODO: selection of results by label from config file?
+        Returns a dictionary with results
         """
+        results = {}
         k = kwargs['k'] if 'k' in kwargs else None
+        var_names = kwargs['var_names']
 
-        return {'voltage': self.get_v_series(k=k),
-                'current': self.get_i_series(k=k),
-                'power': self.get_power_series(k=k),
-                'v_oc': self.ocv_gen.get_v_series(k=k),
-                'r0': self.r0.get_r0_series(k=k),
-                'r1': self.rc1.get_r_series(k=k),
-                'c1': self.rc1.get_c_series(k=k),
-                'r2': self.rc2.get_r_series(k=k),
-                'c2': self.rc2.get_c_series(k=k),
-                'v_r0': self.r0.get_v_series(k=k),
-                'v_rc1': self.rc1.get_v_series(k=k),
-                'v_rc2': self.rc2.get_v_series(k=k)
-                }
+        for key, func in self.collections_map.items():
+            if var_names is not None and key in var_names:
+                results[key] = func(k=k)
+            
+        return results
+    
+    def clear_collections(self, **kwargs):
+        """
+        Clear data collected during the simulation
+        """
+        super().clear_collections(**kwargs)
+        self.r0.clear_collections()
+        self.rc1.clear_collections()
+        self.rc2.clear_collections()
+        self.ocv_gen.clear_collections()
+    

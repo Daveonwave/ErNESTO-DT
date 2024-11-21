@@ -44,7 +44,7 @@ class BatteryEnergyStorageSystem:
             if 'nominal_voltage' in battery_options['params'].keys() else None
         self._v_max = battery_options['params']['v_max']
         self._v_min = battery_options['params']['v_min']
-        self._temp_ambient = battery_options['params']['temp_ambient']
+        #self._temp_ambient = battery_options['params']['temp_ambient']
         
         # Bounds of operating conditions of the battery
         self.soc_min = battery_options['bounds']['soc']['low']
@@ -156,7 +156,7 @@ class BatteryEnergyStorageSystem:
 
             model.init_model(**self._init_conditions)
 
-    def step(self, load: float, dt: float, k: int, ground_temp: float = None):
+    def step(self, load: float, dt: float, k: int, t_amb: float = None, ground_temp: float = None):
         """
         Perform a step of the simulation by applying the load to the battery and updating the state of the system.
 
@@ -170,16 +170,16 @@ class BatteryEnergyStorageSystem:
             Exception: if the provided battery simulation mode doesn't exist or is just not implemented.
         """
         if self._load_var == 'current':
-            v_out, _ = self._electrical_model.step_current_driven(i_load=load, dt=dt, k=k)
+            v_out, _ = self._electrical_model.step_current_driven(i_load=load, dt=dt, k=-1)
             i = load
 
         elif self._load_var == 'voltage':
-            _, i_out = self._electrical_model.step_voltage_driven(v_load=load, dt=dt, k=k)
+            _, i_out = self._electrical_model.step_voltage_driven(v_load=load, dt=dt, k=-1)
             i = i_out
             v_out = load
 
         elif self._load_var == 'power':
-            v_out, i_out = self._electrical_model.step_power_driven(p_load=load, dt=dt, k=k)
+            v_out, i_out = self._electrical_model.step_power_driven(p_load=load, dt=dt, k=-1)
             i = i_out
 
         else:
@@ -189,7 +189,7 @@ class BatteryEnergyStorageSystem:
         # Compute the SoC through the SoC estimator and update the state of the circuit
         dissipated_heat = self._electrical_model.compute_generated_heat()
 
-        curr_temp = self._thermal_model.compute_temp(q=dissipated_heat, i=i, T_amb=self._temp_ambient, dt=dt, k=k, ground_temp=ground_temp)
+        curr_temp = self._thermal_model.compute_temp(q=dissipated_heat, i=i, T_amb=t_amb, dt=dt, k=-1, ground_temp=ground_temp)
         curr_soc = self._soc_model.compute_soc(soc_=self.soc_series[-1], i=i, dt=dt)
 
         self._thermal_model.update_temp(value=curr_temp)
@@ -198,12 +198,23 @@ class BatteryEnergyStorageSystem:
 
         # Compute SoH of the system if a model has been selected, SoH=constant otherwise
         curr_soh = self.soh_series[-1]
-        if self._aging_model is not None and k % self._check_soh_every == 0:
-            print("Aging step")
-            curr_soh = self.soh_series[0] - self._aging_model.compute_degradation(soc_history=self.soc_series,
-                                                                                  temp_history=self._thermal_model.get_temp_series(),
-                                                                                  elapsed_time=self.t_series[-1],
-                                                                                  k=k)
+        if self._aging_model is not None and self._aging_model.name == 'Bolun':
+            if k % self._check_soh_every == 0:
+                curr_soh = self.soh_series[0] - \
+                    self._aging_model.compute_degradation(soc_history=self.soc_series,
+                                                          temp_history=self._thermal_model.get_temp_series(),
+                                                          elapsed_time=self.t_series[-1],
+                                                          k=k)
+        
+        # BOLUN DROPFLOW MODEL
+        if self._aging_model is not None and self._aging_model.name == 'BolunDropflow':
+            curr_soh = self.soh_series[0] - \
+                self._aging_model.compute_degradation(soc=self.soc_series[-1],
+                                                      temp=self._thermal_model.get_temp_series(k=-1),
+                                                      elapsed_time=self.t_series[-1],
+                                                      k=k,
+                                                      do_check=(k % self._check_soh_every == 0))
+                        
         self.soh_series.append(curr_soh)
         
         # Update the maximum capacity of the battery and the SoC model since the battery capacity fades with SoH
@@ -231,27 +242,39 @@ class BatteryEnergyStorageSystem:
 
         return status_dict
 
-    def build_results_table(self):
+    def get_collections(self, var_names: list = None):
         """
         Collct results of the entire simulation and return them in a dictionary.
         NOTE: No more used since we have the writer to collect data by queues updated at each step.
         """
-        final_dict = {'time': self.t_series, 'soc': self.soc_series, 'soh': self.soh_series, 'c_max': self.c_max_series}
+        available_vars = {
+            'time': self.t_series,
+            'soc': self.soc_series,
+            'soh': self.soh_series,
+            'c_max': self.c_max_series
+        }
+
+        # Collect requested variables or all if var_names is None
+        battery_dict = {var: available_vars[var] for var in var_names if var in available_vars} if var_names is not None else available_vars.copy()
+        info_dict = {'var_names': var_names} if var_names is not None else {}
 
         for model in self.models:
-            final_dict.update(model.get_results())  # before was get_final_results()
+            battery_dict.update(model.get_results(**info_dict)) 
 
-        deg_dict = {}
-
-        # Create results of degradation (sparser than other results)
-        if self._aging_model is not None:
-            deg_keys = ['iteration', 'cyclic_aging', 'calendar_aging', 'degradation']
-            deg_dict = {key: value for key, value in final_dict.items() if key in deg_keys}
-            for key in deg_keys:
-                del final_dict[key]
-
-        return {'operations': final_dict, 'aging': deg_dict}
-
+        return battery_dict
+    
+    def clear_collections(self):
+        """
+        Clear the collections of the battery simulation.
+        """
+        self.soh_series = [self.soh_series[-1]]
+        self.t_series = [self.t_series[-1]]
+        self.c_max_series = [self.c_max_series[-1]]
+        self.soc_series = [self.soc_series[-1]]
+        
+        for model in self.models:
+            model.clear_collections()
+            
 
 
 

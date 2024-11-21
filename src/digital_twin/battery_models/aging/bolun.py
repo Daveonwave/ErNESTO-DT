@@ -13,7 +13,7 @@ class BolunModel(AgingModel):
     def __init__(self,
                  components_settings: dict,
                  stress_models: dict,
-                 init_soc: int = 1
+                 init_soc: float = 1.
                  ):
         """
         Args:
@@ -42,6 +42,13 @@ class BolunModel(AgingModel):
 
         if self._cycle_counting_mode == 'streamflow':
             self._streamflow = self.Streamflow(init_soc=init_soc)
+            
+    @property
+    def collections_map(self):
+        return {'calendar_aging': self.get_f_cal_series,
+                'cyclic_aging': self.get_f_cyc_series,
+                'degradation': self.get_deg_series,
+                'aging_iteration': self.get_k_iter_series}
 
     def get_f_cal_series(self, k=None):
         """
@@ -70,18 +77,41 @@ class BolunModel(AgingModel):
             else:
                 raise IndexError("Cyclic aging at step K not computed yet")
         return self._f_cyc_series
+    
+    def get_k_iter_series(self, k=None):
+        """
+        Getter of the specific value at step K, if specified, otherwise of the entire collection
+        """
+        if k is not None:
+            assert type(k) == int, \
+                "Cannot retrieve aging iteration at step K, since it has to be an integer"
+
+            if len(self._k_iters) > k:
+                return self._k_iters[k]
+            else:
+                raise IndexError("Aging iteration at step K not computed yet")
+        return self._k_iters
 
     def _update_f_cal_series(self, value: float):
         self._f_cal_series.append(value)
 
     def _update_f_cyc_series(self, value: float):
         self._f_cyc_series.append(value)
+    
+    def _update_k_iter_series(self, value: int):
+        self._k_iters.append(value)
+        
+    def reset_model(self, **kwargs):
+        self._f_cyc_series = []
+        self._f_cal_series = []
+        self._k_iters = []
+        self._deg_series = []
 
     def init_model(self, **kwargs):
         self.update_deg(0)
         self._update_f_cyc_series(0)
         self._update_f_cal_series(0)
-        self._k_iters.append(0)
+        self._update_k_iter_series(0)
 
     def compute_degradation(self, soc_history, temp_history, elapsed_time, k):
         """
@@ -108,8 +138,9 @@ class BolunModel(AgingModel):
         # Compute degradation considering the SEI film factor
         deg = np.clip(1 - self._alpha_sei * np.exp(-self._beta_sei * f_d) - (1 - self._alpha_sei) * np.exp(-f_d),
                       a_min=0., a_max=1.)
+        
         self.update_deg(deg)
-        self._k_iters.append(k)
+        self._update_k_iter_series(k)
         return deg
 
     def _compute_calendar_aging(self, curr_time, avg_temp, avg_soc):
@@ -149,14 +180,15 @@ class BolunModel(AgingModel):
 
     def _aging_step(self, soc_history, temp_history, t):
         """
-        Compute the battery aging due to a single step of simulation with Streamflow method.
+        Compute the battery aging due a single step with Streamflow algorithm.
 
         Args:
-            soc ():
-            temp ():
-            t ():
+            soc_history (_type_): _description_
+            temp_history (_type_): _description_
+            t (_type_): _description_
 
-        Returns: the sum of both cyclic and calendar aging  for the given period
+        Returns:
+            _type_: _description_
         """
         f_cal = self._compute_calendar_aging(curr_time=t,
                                              avg_soc=np.mean(soc_history),
@@ -217,6 +249,9 @@ class BolunModel(AgingModel):
 
         Returns: the sum of both cyclic and calendar aging  for the given period
         """
+        #print("len_soc: ", len(soc_history))
+        #print("len_temp: ", len(temp_history))
+        
         # Compute the calendar aging
         f_cal = self._compute_calendar_aging(curr_time=elapsed_time,
                                              avg_soc=np.mean(soc_history),
@@ -285,13 +320,22 @@ class BolunModel(AgingModel):
         Returns a dictionary with all final results
         TODO: selection of results by label from config file?
         """
+        results = {}
         k = kwargs['k'] if 'k' in kwargs else None
+        var_names = kwargs['var_names'] if 'var_names' in kwargs else None
         
-        return {'aging_iteration': self._k_iters[k] if k is not None else self._k_iters,
-                'cyclic_aging': self.get_f_cyc_series(k=k),
-                'calendar_aging': self.get_f_cal_series(k=k),
-                'degradation': self.get_deg_series(k=k)
-                }
+        for key, func in self.collections_map.items():
+            if var_names is not None and key not in var_names:
+                continue
+            results[key] = func(k=k)
+        
+        return results
+    
+    def clear_collections(self, **kwargs):
+        super().clear_collections(**kwargs)
+        self._f_cyc_series = [self._f_cyc_series[-1]]
+        self._f_cal_series = [self._f_cal_series[-1]]
+        self._k_iters = [self._k_iters[-1]]
 
     class Streamflow:
         """

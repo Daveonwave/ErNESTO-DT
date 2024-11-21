@@ -82,7 +82,7 @@ components:
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "voc_table_ceell(divideby7).csv"
+      table: "voc_table.csv"
       inputs:
         - var: "temperature"
           label: "temp"

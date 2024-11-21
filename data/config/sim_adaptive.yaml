@@ -43,7 +43,7 @@ input:
       - var: "temperature"
         label: "Temperature"
         unit: "degC"
-    cycle_for: 50
+    cycle_for: 1
 
 # Simulation Options
 # ------------------------------------------------------------------------------- #
@@ -79,23 +79,42 @@ optimizer:
     c1: 1000
 
 adaptation:
-  regions:
-    soc:
-      - low: 0.
-        high: 0.5
-      - low: 0.5
-        high: 1.
-    temperature:
-      - low: 0.
-        high: 20.
-      - low: 20.
-        high: 50.
+  grid:
+    - cluster: "nominal_cluster_0.csv"
+      region:
+        soc:
+          low: 0.
+          high: 0.5
+        temperature:
+          low: 273.15
+          high: 293.15
 
-  nominal_clusters:
-    - "soc_low-temp_low.csv"
-    - "soc_low-temp_high.csv"
-    - "soc_high-temp_low.csv"
-    - "soc_high-temp_high.csv"
+    - cluster: "nominal_cluster_1.csv"
+      region:
+        soc:
+          low: 0.
+          high: 0.5
+        temperature:
+          low: 293.15
+          high: 323.15
+
+    - cluster: "nominal_cluster_2.csv"
+      region:
+        soc:
+          low: 0.5
+          high: 1.
+        temperature:
+          low: 273.15
+          high: 293.15
+
+    - cluster: "nominal_cluster_3.csv"
+      region:
+        soc:
+          low: 0.5
+          high: 1.
+        temperature:
+          low: 293.15
+          high: 323.15
 
 # Battery options
 # ------------------------------------------------------------------------------- #

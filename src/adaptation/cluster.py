@@ -11,10 +11,9 @@ def load_cluster_points(csv_file: str):
         csv_file (str): _description_
     """
     data = pd.read_csv(csv_file)
-    elems = data[['R_0', 'R_1', 'C_1']].to_numpy()
+    elems = data[['r0', 'r1', 'c']].to_numpy()
     data_points = [np.array(row) for row in elems]
     return data_points
-        
 
 
 class Cluster:
@@ -27,10 +26,8 @@ class Cluster:
             data_points (list, optional): _description_. Defaults to [].
         """
         self._data_points = data_points
-        self._centroid = None
-        self._covariance = None
-        self.compute_centroid()
-        self.compute_covariance()
+        self._centroid = self.compute_centroid()
+        self._covariance = self.compute_covariance()
 
     @property
     def data_points(self):
@@ -66,7 +63,7 @@ class Cluster:
         Compute the centroid of the cluster.
         """
         if len(self._data_points) > 0:
-            self._centroid = np.mean(np.array(self._data_points), axis=0)
+            return np.mean(np.array(self._data_points), axis=0)
 
     def compute_covariance(self):
         """

@@ -61,7 +61,7 @@ if __name__ == "__main__":
         dt = df['time'].iloc[k] - df['time'].iloc[k - 1] if k > 0 else 1.0
         battery.step(load, dt, k)
 
-    results = battery.build_results_table()
+    results = battery.get_collections()
     # print(results['operations'])
     results = results['operations']
     v = results['voltage']

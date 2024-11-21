@@ -112,3 +112,6 @@ class Resistor(ECMComponent):
         self._update_r0_series(r0)
         self.update_v(v_r0)
 
+    def clear_collections(self, **kwargs):
+        self._r0_series = [self._r0_series[-1]]
+        super().clear_collections(**kwargs)

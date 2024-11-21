@@ -93,8 +93,6 @@ class DrivenLoader(DataLoader):
             "with the simulator settings."
         self._ground_vars = [item['var'] for item in config['input']['ground_data']['vars']]
         
-        
-
         self._times, self._data = (
                 load_data_from_csv(csv_file=config['input']['ground_data']['file'],
                                    vars_to_retrieve=config['input']['ground_data']['vars'],
@@ -110,8 +108,11 @@ class DrivenLoader(DataLoader):
         else:
             self._timestep = None
         
+        self._cycle_for = config['input']['ground_data']['cycle_for'] if 'cycle_for' in config['input']['ground_data'] else 1
+        
         self._data['time'] = [t - self._times[0] for t in self._times]
-        self._duration = self._times[-1] - self._times[0]
+        self._cycle_duration = (self._times[-1] - self._times[0]) 
+        self._duration = self._cycle_duration * self._cycle_for
         
         # If the input data has to be repeated for multiple cycles then the load_var and time are extended
         if 'cycle_for' in config['input']['ground_data'] and config['input']['ground_data']['cycle_for'] > 1:
@@ -121,11 +122,8 @@ class DrivenLoader(DataLoader):
                                 "will be dropped.")
             
             # Extend the input data for the number of cycles, the other variables are dropped
-            self._data[self._input_var] = self._data[self._input_var] * config['input']['ground_data']['cycle_for']
-            self._data['time'].extend([t + self._duration * i for i in range(1, config['input']['ground_data']['cycle_for']) for t in self._data['time']])
-            
+            #self._data[self._input_var] = self._data[self._input_var] * config['input']['ground_data']['cycle_for']
             self._data = {self._input_var: self._data[self._input_var], 'time': self._data['time']}
-            self._duration = self._duration * config['input']['ground_data']['cycle_for']
         
     @property
     def input_var(self):
@@ -154,11 +152,20 @@ class DrivenLoader(DataLoader):
     
     def collection(self):
         """
-        Yields i-th time instant and data read from csv
+        Yields i-th time instant and data read from csv.
+        Data and times are repeated for the number of cycles specified in the configuration.
         """
-        for i in range(len(self._data[self._input_var])):
-            yield {key: self._data[key][i] for key in self._data.keys()}
-
+        if self._cycle_for > 1:        
+            for i in range(len(self._data[self._input_var]) * self._cycle_for):
+                idx = i % len(self._data[self._input_var])
+                cycle = i // len(self._data[self._input_var])
+                time = self._data['time'][idx] + self._cycle_duration * cycle
+                
+                yield {self._input_var: self._data[self._input_var][idx], 'time': time}
+        else:
+            for i in range(len(self._data[self._input_var])):
+                yield {key: self._data[key][i] for key in self._data.keys()}
+        
     def get_all_data(self):
         return self._data
     

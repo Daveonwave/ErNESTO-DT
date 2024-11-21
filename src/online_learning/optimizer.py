@@ -5,22 +5,31 @@ from src.digital_twin.bess import BatteryEnergyStorageSystem
 
 
 class Optimizer:
-    def __init__(self, models_config, battery_options, load_var, init_info,
-                 bounds, scale_factor, options, temperature_loss=False):
+    def __init__(self, 
+                 battery: BatteryEnergyStorageSystem,
+                 alg: str,
+                 alpha: float,
+                 batch_size: int,
+                 n_restarts: int,
+                 bounds: dict, 
+                 scale_factors: dict, 
+                 options: dict = None, 
+                 temperature_loss=False
+                 ):
         # battery attributes
-        self._temp_battery = BatteryEnergyStorageSystem(models_config=models_config,
-                                                        battery_options=battery_options,
-                                                        input_var=load_var)
-        self.init_info = init_info
-        self._temp_battery.init(init_info)
-        self._temp_battery.reset()
-        self.bounds = bounds
-        self.scale_factor = scale_factor
+        # TODO: passa l'inizio della window precedente passata dal simulatore!!
+        self._battery = battery
+        
+        self._alg = alg
+        self._alpha = alpha    
+        self._batch_size = batch_size
+        self._n_restarts = n_restarts
+        
+        self._bounds = bounds
+        self._scale_factors = scale_factors
 
         # optimization attributes:
         self.initial_guess = None
-        self.number_of_restarts = None
-        self.alpha = None
         self.v_hat = None
         self.t_hat = None
         self._v_real = None
@@ -46,9 +55,9 @@ class Optimizer:
         return self.gradient_history
 
     def _set_theta(self, theta):
-        self._temp_battery._electrical_model.r0.resistance = theta[0]
-        self._temp_battery._electrical_model.rc.resistance = theta[1]
-        self._temp_battery._electrical_model.rc.capacity = theta[2]
+        self._battery._electrical_model.r0.resistance = theta[0]
+        self._battery._electrical_model.rc.resistance = theta[1]
+        self._battery._electrical_model.rc.capacity = theta[2]
 
     def lhs(self):
         n = 1
@@ -65,8 +74,8 @@ class Optimizer:
         # tenere i,v,t,soc !!!
         # keys = list['key']
         # dict = {key: keys[key] for key in keys}
-        self._temp_battery.reset()
-        self._temp_battery.init(self.init_info)
+        self._battery.reset()
+        self._battery.init(self.init_info)
 
         #scaled_theta = [theta[0] * self.scale_factor[0], theta[1] * self.scale_factor[1], theta[2] * self.scale_factor[2]]
         #self._set_theta(scaled_theta)
@@ -74,21 +83,21 @@ class Optimizer:
 
         elapsed_time = 0
         for k, load in enumerate(self._i_real):
-            self._temp_battery.step(load=load, dt=self.dt, k=k)
-            self._temp_battery.t_series.append(elapsed_time)
+            self._battery.step(load=load, dt=self.dt, k=k)
+            self._battery.t_series.append(elapsed_time)
             elapsed_time += self.dt
 
     def _loss_function(self, theta):
         self._battery_load(theta)
 
-        self.v_hat = self._temp_battery._electrical_model.get_v_series()
+        self.v_hat = self._battery._electrical_model.get_v_series()
         self.v_hat = self.v_hat[1: len(self._v_real) + 1]
         voltage_diff = self.v_hat - self._v_real
         voltage_loss = np.sum(voltage_diff ** 2)
 
         temperature_loss = 0
         if self.temperature_loss:
-           self.t_hat = self._temp_battery._thermal_model.get_temp_series()
+           self.t_hat = self._battery._thermal_model.get_temp_series()
            self.t_hat = self.t_hat[1: len(self._t_real) + 1]  # Adjusting for alignment
            temperature_diff = self.t_hat - self._t_real
            temperature_loss = np.sum(temperature_diff ** 2)

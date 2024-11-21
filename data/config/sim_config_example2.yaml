@@ -11,7 +11,7 @@ description: "Example experiment"
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "example"
+destination_folder: "example_PV"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
@@ -30,7 +30,7 @@ destination_folder: "example"
 # # ------------------------------------------------------------------------------- #
 input:
   ground_data:
-    file: "ground_checkup20.csv"
+    file: "ground_PV.csv"
     load: "current"
     time_format: "timestamp"
     vars:
@@ -42,6 +42,9 @@ input:
         unit: "V"
       - var: "temperature"
         label: "Temperature"
+        unit: "degC"
+      - var: "temp_amb"
+        label: "T_amb"
         unit: "degC"
       - var: "power"
         label: "Power(W)"
@@ -57,7 +60,8 @@ input:
 # ------------------------------------------------------------------------------- #
 iterations: null
 timestep: null
-check_soh_every: 3600
+check_soh_every: 1
+clear_collections_every: 500
 # todo: interp_ground_data: null
 
 # Battery options

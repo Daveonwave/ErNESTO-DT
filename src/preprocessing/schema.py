@@ -2,13 +2,13 @@ from schema import Schema, SchemaError, Regex, And, Or, Optional, Use
 import yaml
 import logging
 
-logger = logging.getLogger('DT_ernesto')
+logger = logging.getLogger('ErNESTO-DT')
 
 schemas = {}
 
 string_pattern = Regex(r'^[a-zA-Z0-9_. ]+$',
                        error="Error in string '{}': it can only have a-z, A-Z, 0-9, and _.")
-path_pattern = Regex(r'^[a-zA-Z0-9_./]+$',
+path_pattern = Regex(r'^[a-zA-Z0-9_\-./]+$',
                      error="Error in path '{}': it can only have a-z, A-Z, 0-9, ., / and _.")
 class_pattern = Regex(r'^[a-zA-Z0-9]+$',
                       error="Error in class name '{}': it can only have a-z, A-Z and 0-9.")
@@ -91,8 +91,13 @@ optimizer = Schema(
 )
 
 adaptation = Schema(
-    {
-        "regions": {And(str, label_pattern): [bound_param]},
+    {   
+        "grid": [{
+            "cluster": And(str, path_pattern),
+            "region" : {
+                And(str, var_pattern): bound_param},    
+        }]
+        
     }
 )
 
@@ -115,6 +120,7 @@ config_schema = Schema(
         Optional("iterations"): Or(int, None),
         Optional("timestep"): Or(int, float, None),
         Optional("check_soh_every"): Or(int, None),
+        Optional("clear_collections_every"): Or(int, None),
         # Battery parameters
         "battery": battery,
     }

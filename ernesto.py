@@ -44,6 +44,9 @@ def get_args():
         adaptive_parser.add_argument("--config_files", nargs='*', default=["./data/config/sim_adaptive.yaml"],
                                      help="Specifies the list of files containing parameters for each parallel experiment.")
         
+        adaptive_parser.add_argument("--clusters_folder", default="./data/config/clusters/", type=str,
+                                     help="Specifies the folder containing the clusters.")
+        
         adaptive_parser.add_argument("--alpha", default=0.18, type=float,
                                   help="Specifies the regularization term of the loss function.")
         
@@ -80,7 +83,7 @@ def get_args():
         main_parser.add_argument("--thermal_model", nargs=1, choices=thermal_choices, default=['r2c_thermal'],
                                  help="Specifies the name of the thermal model that has to be used.")
 
-        aging_choices = ['bolun']
+        aging_choices = ['bolun', 'bolun_dropflow']
         main_parser.add_argument("--aging_model", nargs=1, choices=aging_choices,
                                  help="Specifies the name of the aging model that has to be used.")
 
