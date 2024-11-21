@@ -6,12 +6,12 @@
 # ------------------------------------------------------------------------------- #
 
 # Summary of the experiment
-experiment_name: "Compared Simulation"
-description: "Experiment for paper"
+experiment_name: "Driven Simulation"
+description: "Example experiment"
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "30C_check_up"
+destination_folder: "faulty_voltage_2"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
@@ -28,23 +28,20 @@ destination_folder: "30C_check_up"
 # # ------------------------------------------------------------------------------- #
 input:
   ground_data:
-    file: "ground_checkup30.csv"
+    file: "ground_with_faulty_voltage_2.csv"
     load: "current"
-    time_format: "timestamp"
+    time_format: "seconds" #seconds
     vars:
       - var: "current"
-        label: "Current(A)"
+        label: "current"
         unit: "A"
       - var: "voltage"
-        label: "Voltage(V)"
+        label: "voltage"
         unit: "V"
       - var: "temperature"
-        label: "Temperature"
-        unit: "degC"
-      - var: "power"
-        label: "Power(W)"
-        unit: "W"
-
+        label: "temperature"
+        unit: "K"
+    cycle_for: 1
 # Simulation Options
 # ------------------------------------------------------------------------------- #
 # iterations:
@@ -52,9 +49,10 @@ input:
 # timestep:
 #   the timestep of the simulator in seconds.
 # ------------------------------------------------------------------------------- #
-iterations: null
+iterations: null # before was null
 timestep: null
-get_rest_after: 120
+check_soh_every: 10000
+clear_collections_every: 500000
 
 # Battery options
 # ------------------------------------------------------------------------------- #
@@ -67,12 +65,13 @@ get_rest_after: 120
 #   - 'unit' specifies the unit of the parameter that will be transformed to
 #      Digital Twin internal default units.
 # ------------------------------------------------------------------------------- #
+
 battery:
   sign_convention: "passive"
   params:
     nominal_capacity:
       var: "capacity"
-      value: 19.8596
+      value: 20.
       unit: "F"
     v_max:
       var: "voltage"
@@ -84,24 +83,17 @@ battery:
       unit: "V"
     temp_ambient:
       var: "temperature"
-      value: 307.65
+      value: 298.15
       unit: "K"
+
+  bounds:
+    soc:
+      low: 0.
+      high: 1.
+
   init:
     voltage: 4.15
     current: 0.
-    temperature: 307.65 # 34.5 degC
-    soc: 1.
+    temperature: 298.15 # 25 C°
+    soc: 0.86 # the starting soc is high
     soh: 1.
-# Plot options: how to use it?
-# --------------------------------------------------------------------------------
-#
-# Among 'vars' are enlisted the variables that the user desires to plot:
-#   - 'var' has to be a string among [current, voltage, power, temperature]
-# --------------------------------------------------------------------------------
-#plot_options:
-#    plots:
-#        - type: 'compared'
-#          vars:
-#            - 'voltage'
-#            - 'temperature'
-#            - 'power'

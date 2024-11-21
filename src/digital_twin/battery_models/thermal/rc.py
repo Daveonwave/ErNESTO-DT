@@ -40,6 +40,8 @@ class RCThermal(ThermalModel):
 
     def reset_model(self, **kwargs):
         self._temp_series = []
+        self._heat_series = []
+        self._t_amb_series = []
 
     def init_model(self, **kwargs):
         """
@@ -47,9 +49,11 @@ class RCThermal(ThermalModel):
         """
         temp = kwargs['temperature'] if 'temperature' in kwargs else 298.15
         heat = kwargs['dissipated_heat'] if 'dissipated_heat' in kwargs else 0
+        t_amb = kwargs['t_amb'] if 't_amb' in kwargs else 298.15
 
         self.update_temp(temp)
         self.update_heat(heat)
+        self.update_t_amb(t_amb)
 
     def compute_temp(self, q, T_amb, dt, k=-1, i=None, **kwargs):
         """

@@ -6,18 +6,19 @@
 # ------------------------------------------------------------------------------- #
 
 # Summary of the experiment
-experiment_name: "Compared Simulation"
-description: "Experiment for paper"
+experiment_name: "Driven Simulation"
+description: "Example experiment"
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "paper"
+destination_folder: "ground_for_ol"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
 # 1. specify the .csv file from which we have to read real-world data
 # 2. specify variables used as input and output (for validation)
-# 3. specify for all the variables:
+# 3. specify the format of 'Time' column ('seconds' or 'timestamp')
+# 4. specify for all the variables:
 #   - 'var' has to be a variable among [current, voltage, power, temperature].
 #   - 'label' is the column name of the variable inside the csv file.
 #      Example: {'Voltage [V]', 'Current [A]', 'Power [W]'}
@@ -25,23 +26,16 @@ destination_folder: "paper"
 #    - 'unit' specifies the unit of input and output preprocessing that will be
 #       transformed to Digital Twin internal default units.
 # # ------------------------------------------------------------------------------- #
-ground_data:
-    file: 'ground_silvia_20C.csv'
-    load: 'current'
+input:
+  ground_data:
+    file: "ol_ground_single_cycle.csv"
+    load: "current"
+    time_format: "timestamp" #seconds
     vars:
-    - var: 'current'
-      label: 'Current(A)'
-      unit: 'A'
-    - var: 'voltage'
-      label: 'Voltage(V)'
-      unit: 'V'
-    - var: 'temperature'
-      label: 'Temperature'
-      unit: 'degC'
-    - var: 'power'
-      label: 'Power(W)'
-      unit: 'W'
-
+      - var: "current"
+        label: "Current [A]"
+        unit: "A"
+    cycle_for: 10
 # Simulation Options
 # ------------------------------------------------------------------------------- #
 # iterations:
@@ -49,8 +43,9 @@ ground_data:
 # timestep:
 #   the timestep of the simulator in seconds.
 # ------------------------------------------------------------------------------- #
-iterations: null
-timestep: 1
+iterations: null # before was null
+timestep: null
+check_soh_every: 50000
 
 # Battery options
 # ------------------------------------------------------------------------------- #
@@ -63,32 +58,38 @@ timestep: 1
 #   - 'unit' specifies the unit of the parameter that will be transformed to
 #      Digital Twin internal default units.
 # ------------------------------------------------------------------------------- #
-battery:
-    sign_convention: 'passive'
-    params:
-        nominal_capacity:
-            var: 'capacity'
-            value: 20.
-            unit: 'F'
-        v_max:
-            var: 'voltage'
-            value: 4.15
-            unit: 'V'
-        v_min:
-            var: 'voltage'
-            value: 3.
-            unit: 'V'
-        temp_ambient:
-            var: 'temperature'
-            value: 296.15
-            unit: 'K'
-    init:
-        voltage: 4.15
-        current: 0.
-        temperature: 296.15 # 23 degC
-        soc: 1.
-        soh: 1.
 
+battery:
+  sign_convention: "passive"
+  params:
+    nominal_capacity:
+      var: "capacity"
+      value: 40.
+      unit: "F"
+    v_max:
+      var: "voltage"
+      value: 29.05
+      unit: "V"
+    v_min:
+      var: "voltage"
+      value: 21.
+      unit: "V"
+    temp_ambient:
+      var: "temperature"
+      value: 298.15
+      unit: "K"
+
+  bounds:
+    soc:
+      low: 0.
+      high: 1.
+
+  init:
+    voltage: 25.025
+    current: 0.
+    temperature: 298.15 # 25 C°
+    soc: 0.86 # the starting soc is high
+    soh: 1.
 # Plot options: how to use it?
 # --------------------------------------------------------------------------------
 #

@@ -17,6 +17,10 @@ def ernesto_plotter(dfs: list,
                     line_styles: list,
                     plot_type: str = 'line',
                     title: str = '',
+<<<<<<< HEAD
+=======
+                    sampling_rate: int = 1,
+>>>>>>> online_learning
                     colors: list = None,
                     events: list = None,
                     save_fig: bool = False,
@@ -42,6 +46,10 @@ def ernesto_plotter(dfs: list,
         line_styles (list): list of line styles for the plot.
         plot_type (str): type of plot (scatter or line).
         title (str): title of the plot.
+<<<<<<< HEAD
+=======
+        sampling_rate (int): sampling rate of the data.
+>>>>>>> online_learning
         colors (list, optional): list of colors for the plot. Defaults to None.
         events (list, optional): list of events to highlight in the plot. Defaults to None.
         save_fig (bool, optional): flag to save the figure or not. Defaults to False.
@@ -73,9 +81,15 @@ def ernesto_plotter(dfs: list,
 
         for j, df in enumerate(dfs):
             if plot_type == 'scatter':
+<<<<<<< HEAD
                 ax.scatter(df[x_axes[i]], df[var], label=labels[j], color=colors[j], s=0.1, rasterized=True)
             else:
                 ax.plot(df[x_axes[i]], df[var], label=labels[j], color=colors[j], marker=markers[j], markevery=3000, linestyle=line_styles[j])
+=======
+                ax.scatter(df[x_axes[i]][::sampling_rate], df[var][::sampling_rate], label=labels[j], color=colors[j], s=0.1, rasterized=True)
+            else:
+                ax.plot(df[x_axes[i]][::sampling_rate], df[var][::sampling_rate], label=labels[j], color=colors[j], marker=markers[j], markevery=3000, linestyle=line_styles[j])
+>>>>>>> online_learning
         
         ax.tick_params(labelsize=tick_font_size)
         ax.set_xlabel(x_labels[i], size=label_font_size)
@@ -117,6 +131,10 @@ def plot_separate_vars(df: pd.DataFrame,
                        x_ax: list,
                        x_label: str,
                        y_labels: str,
+<<<<<<< HEAD
+=======
+                       sampling_rate: int = 1,
+>>>>>>> online_learning
                        colors: list = None,
                        events: list = None,
                        save_fig: bool = False,
@@ -137,6 +155,10 @@ def plot_separate_vars(df: pd.DataFrame,
         x_ax (list): list of x axes for the plot.
         x_label (str): x label.
         y_labels (str): y label of each subplot.
+<<<<<<< HEAD
+=======
+        sampling_rate (int): sampling rate of the data.
+>>>>>>> online_learning
         titles (str): title of each subplot.
         colors (list, optional): list of colors for the plot. Defaults to None.
         events (list, optional): list of events to highlight in the plot. Defaults to None.
@@ -161,7 +183,11 @@ def plot_separate_vars(df: pd.DataFrame,
         ax.minorticks_on()
         ax.grid(visible=True, which='minor', color='beige', alpha=0.5, ls='-', lw=1)
 
+<<<<<<< HEAD
         ax.plot(df[x_ax], df[var], label=labels[i], color=colors[i])
+=======
+        ax.plot(df[x_ax][::sampling_rate], df[var][::sampling_rate], label=labels[i], color=colors[i])
+>>>>>>> online_learning
         
         ax.tick_params(labelsize=tick_font_size)
         ax.set_xlabel(x_label, size=label_font_size)

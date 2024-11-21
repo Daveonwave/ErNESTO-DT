@@ -35,7 +35,7 @@ class ResistorCapacitorParallel(ECMComponent):
         self._r_series = []
         self._c_series = []
         self._tau_series = []
-
+    
     @property
     def resistance(self):
         """
@@ -207,7 +207,7 @@ class ResistorCapacitorParallel(ECMComponent):
 
     def compute_tau(self):
         """
-        Compute the
+        Compute the derivative time of the RC parallel circuit, given the resistance R1 and the capacity C.
         """
         tau = self.resistance * self.capacity
         return tau
@@ -234,3 +234,12 @@ class ResistorCapacitorParallel(ECMComponent):
         self._update_i_r_series(i_r)
         self._update_i_c_series(i_c)
 
+    def clear_collections(self, **kwargs):
+        """
+        Clear data collections of the component
+        """
+        self._i_r_series = [self._i_r_series[-1]]
+        self._i_c_series = [self._i_c_series[-1]]
+        self._r_series = [self._r_series[-1]]
+        self._c_series = [self._c_series[-1]]
+        super().clear_collections(**kwargs)

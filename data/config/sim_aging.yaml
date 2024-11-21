@@ -13,7 +13,7 @@ goal: "GOAL"
 # Folder where the results will be saved
 destination_folder: "aging_1"
 
-# Ground Data (input and validation)
+# Ground data (input and validation)
 # ------------------------------------------------------------------------------- #
 # 1. specify the .csv file from which we have to read real-world data
 # 2. specify variables used as input and output (for validation)

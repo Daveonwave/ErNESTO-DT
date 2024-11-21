@@ -57,7 +57,7 @@ components:
         - 0.004250213
 
   r1:
-    selected_type: lookup
+    selected_type: scalar
     scalar: 10
     #        function:
     #            coefficients:
@@ -94,7 +94,7 @@ components:
         - 0.005274097
 
   c:
-    selected_type: lookup
+    selected_type: scalar
     scalar: 10
     #        function:
     #            coefficients:

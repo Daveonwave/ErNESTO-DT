@@ -10,7 +10,7 @@ from src.preprocessing.schema import read_yaml
 from src.preprocessing.data_preparation import validate_parameters_unit
 from src.digital_twin.orchestrator import DataLoader
 from src.digital_twin.orchestrator import DataWriter
-from src.digital_twin.orchestrator.simulation import BaseSimulator
+from src.digital_twin.orchestrator.simulation.base_simulator import BaseSimulator
 
 logger = logging.getLogger('ErNESTO-DT')
 
@@ -51,12 +51,13 @@ class DTOrchestrator:
         self._results = None
         
         # Entities useful for the simulation
-        self._data_loader = DataLoader.get_instance(mode=kwargs['mode'])(self._settings)
+        self._data_loader = DataLoader.get_instance(mode=list(self._settings['input'].keys())[0])(self._settings)
         self._data_writer = DataWriter(output_folder=self._output_folder)
         self._simulator = BaseSimulator.get_instance(mode=kwargs['mode'])(model_config=self._models_configs,
                                                                           sim_config=self._settings,
                                                                           data_loader=self._data_loader,
-                                                                          data_writer=self._data_writer)
+                                                                          data_writer=self._data_writer,
+                                                                          **kwargs)
         self._interactive = kwargs['interactive']
             
     def run(self):
@@ -75,26 +76,11 @@ class DTOrchestrator:
         self._simulator.solve()
     
     def _run_interactive(self):
-        #TODO: allow interactive simulation from cli to stop/pause/close simulation
-        raise NotImplementedError
+        #TODO: allow interactive simulation from cli to stop/pause/close simulation with a dedicated thread
+        self._simulator.run()
+        
     
-    def output_metrics(self, res: dict):
-        """
+    
 
-        Args:
-            res ():
-        """
-        if self._save_metrics:
-            try:
-                os.makedirs(self._output_folder, exist_ok=True)
-            except NotADirectoryError as e:
-                logger.error("It's not possible to create directory {}: {}".format(self._output_folder, e.args))
 
-            # Save experiment summary
-            df = pd.DataFrame.from_dict(res)
-            df.to_csv(self._output_folder / "metrics.csv")
 
-        # Print on the console the summary and results
-        else:
-            logger.info("METRICS")
-            print(pretty_repr(res))

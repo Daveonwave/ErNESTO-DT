@@ -43,7 +43,7 @@ class ECMComponent:
     @property
     def soh(self):
         return self._soh
-
+    
     @temp.setter
     def temp(self, value: float):
         self._temp = value
@@ -84,5 +84,6 @@ class ECMComponent:
 
     def update_v(self, value: float):
         self._v_series.append(value)
-
-
+        
+    def clear_collections(self, **kwargs):
+        self._v_series = [self._v_series[-1]]

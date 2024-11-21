@@ -8,7 +8,7 @@ models_path: "./models/"
 models:
   first_order_thevenin:
     category: electrical
-    file: thevenin_silvia.yaml
+    file: thevenin_OL_baseline.yaml #thevenin_nicola.yaml
   second_order_thevenin:
     category: electrical
     file: thevenin_2exp.yaml
@@ -20,13 +20,16 @@ models:
     file: rc_thermal.yaml
   r2c_thermal:
     category: thermal
-    file: r2c_thermal.yaml
+    file: r2c_thermal_cell.yaml
   mlp_thermal:
     category: thermal
     file: mlp_thermal.yaml
   bolun:
     category: aging
     file: bolun.yaml
+  bolun_dropflow:
+    category: aging
+    file: bolun_dropflow.yaml
   data_driven:
     category: data
     file: null

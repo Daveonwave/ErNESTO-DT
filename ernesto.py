@@ -6,6 +6,13 @@ from src.utils.logger import CustomFormatter
 from src.digital_twin.orchestrator.orchestrator import DTOrchestrator
 
 
+def run_experiment(args, config_file):
+    args['config'] = config_file
+    orchestrator = DTOrchestrator(**args)
+    orchestrator.run()
+    #orchestrator.evaluate()
+    
+
 def get_args():
     main_parser = argparse.ArgumentParser(description="Digital Twin of a Battery Energy Storage System (RSE)",
                                           formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -23,8 +30,10 @@ def get_args():
         """
         schedule_parser.add_argument("--config_files", nargs='*', default=["./data/config/scheduled_config.yaml"],
                                      help="Specifies the list of files containing parameters for each parallel experiment.")
+        
         schedule_parser.add_argument("--iterations", default=500, type=int,
                                    help="Specifies the number of iterations of the entire experiment.")
+        
         schedule_parser.add_argument("--timestep", default=1., type=float,
                                    help="Specifies the timestep of the simulator in seconds.")
 
@@ -32,12 +41,23 @@ def get_args():
         """
         Parser of arguments for ADAPTIVE SIMULATION mode
         """
-        adaptive_parser.add_argument("--config_files", nargs='*', default=["./data/config/adaptive_config.yaml"],
+        adaptive_parser.add_argument("--config_files", nargs='*', default=["./data/config/sim_adaptive.yaml"],
                                      help="Specifies the list of files containing parameters for each parallel experiment.")
-        adaptive_parser.add_argument("--iterations", default=500, type=int,
-                                  help="Specifies the number of iterations of the entire experiment.")
-        adaptive_parser.add_argument("--timestep", default=1., type=float,
-                                  help="Specifies the timestep of the simulator in seconds.")
+        
+        adaptive_parser.add_argument("--clusters_folder", default="./data/config/clusters/", type=str,
+                                     help="Specifies the folder containing the clusters.")
+        
+        adaptive_parser.add_argument("--alpha", default=0.18, type=float,
+                                  help="Specifies the regularization term of the loss function.")
+        
+        adaptive_parser.add_argument("--batch_size", default=10000, type=int,
+                                  help="Specifies the size of the batch (window) used to perform an optimization of parameters.")
+        
+        adaptive_parser.add_argument("--alg", default='L-BFGS-B', type=str,
+                                     help="Specifies the optimizer algorithm adopted.")
+        
+        adaptive_parser.add_argument("--n_restarts", default=1, type=int,
+                                  help="Specifies the number of restarts for each optimization step.")
 
     def get_generic_args():
         """
@@ -63,18 +83,9 @@ def get_args():
         main_parser.add_argument("--thermal_model", nargs=1, choices=thermal_choices, default=['r2c_thermal'],
                                  help="Specifies the name of the thermal model that has to be used.")
 
-        aging_choices = ['bolun']
+        aging_choices = ['bolun', 'bolun_dropflow']
         main_parser.add_argument("--aging_model", nargs=1, choices=aging_choices,
                                  help="Specifies the name of the aging model that has to be used.")
-
-        #main_parser.add_argument("--save_results", action="store_true",
-        #                         help="Specifies if save computed results at the end of the experiment.")
-
-        #main_parser.add_argument("--save_metrics", action="store_true",
-        #                         help="Specifies if save computed metrics at the end of the experiment.")
-
-        #main_parser.add_argument("--plot", action="store_true",
-        #                         help="Specifies if plot computed results at the end of the experiment.")
 
         main_parser.add_argument("--n_cores", action="store", default=-1, type=int,
                                  help="Specifies the number of cores to use for parallel simulations. If save_results "
@@ -136,25 +147,14 @@ if __name__ == '__main__':
         args['models'].extend(args['aging_model'])
         del args['aging_model']
 
-    def run_experiment(args, config_file):
-        args['config'] = config_file
-        orchestrator = DTOrchestrator(**args)
-        orchestrator.run()
-        #orchestrator.evaluate()
-
     parallel_exp_config = args['config_files']
     del args['config_files']
 
     n_cores = args['n_cores']
     del args['n_cores']
     
-    try:
-        if n_cores == 1:
-            run_experiment(args, parallel_exp_config[0])
-        else:
-            Parallel(n_jobs=n_cores)(delayed(run_experiment)(args, config) for config in parallel_exp_config)
+    if n_cores == 1:
+        run_experiment(args, parallel_exp_config[0])
+    else:
+        Parallel(n_jobs=n_cores)(delayed(run_experiment)(args, config) for config in parallel_exp_config)
 
-    except Exception as e:
-        logger.error("An error occurred during the simulation. Exiting...")
-        logger.error(e)
-        sys.exit(1)

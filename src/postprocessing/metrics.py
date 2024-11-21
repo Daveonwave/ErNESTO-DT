@@ -8,7 +8,11 @@ def _mse(ground: list, simulated: list):
     Args:
         ground (list): true values
         simulated (list): simulated values
+<<<<<<< HEAD
     """
+=======
+    """    
+>>>>>>> online_learning
     assert len(ground) == len(simulated), ("MSE: ground and simulated data have different lengths ({}, {})".
                                            format(len(ground), len(simulated)))
     return sum([(y - x)**2 for x, y in zip(simulated, ground)]) / len(simulated)
@@ -53,7 +57,7 @@ def _mape(ground: list, simulated: list):
     return sum([abs(y - x) / y for x, y in zip(simulated, ground) if y != 0]) * 100 / len(simulated)
 
 
-def compute_metrics(ground: dict, simulated: dict, vars: list, metrics=None, steps=None):
+def compute_metrics(ground: dict, simulated: dict, vars: list, metrics:list=None, steps=None):
     """
     Method to compute metrics between ground truth and simulated data. 
     The metrics that can be computed are: Mean Squared Error (MSE), Mean Absolute Error (MAE),
