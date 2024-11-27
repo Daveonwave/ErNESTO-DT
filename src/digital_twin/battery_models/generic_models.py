@@ -164,7 +164,7 @@ class ThermalModel(GenericModel):
         self._name = name
         self._temp_series = []
         self._heat_series = []
-        self._temp_amb_series = []
+        self._t_amb_series = []
 
     @property
     def name(self):
@@ -252,7 +252,7 @@ class ThermalModel(GenericModel):
         self._heat_series.append(value)
         
     def update_t_amb(self, value: float):
-        self._temp_amb_series.append(value)
+        self._t_amb_series.append(value)
         
     def clear_collections(self, **kwargs):
         """

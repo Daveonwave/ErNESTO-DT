@@ -35,7 +35,7 @@ def _max_abs_err(ground: list, simulated: list):
         ground (list): true values
         simulated (list): simulated values
     """
-    assert len(ground) == len(simulated), ("MAE: ground and simulated data have different lengths ({}, {})".
+    assert len(ground) == len(simulated), ("MaAE: ground and simulated data have different lengths ({}, {})".
                                            format(len(ground), len(simulated)))
     return max([abs(y - x) for x, y in zip(simulated, ground)])
 

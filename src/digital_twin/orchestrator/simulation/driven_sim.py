@@ -39,7 +39,7 @@ class DrivenSimulator(BaseSimulator):
         self._k = None          
         # Number of iterations simulated
         # self._iterations = 0    
-        
+
         self._done = False
         self._pbar = None
         self._clear_collections_every = sim_config['clear_collections_every'] if 'clear_collections_every' in sim_config else 50000
@@ -50,7 +50,7 @@ class DrivenSimulator(BaseSimulator):
             battery_options=sim_config['battery'],
             check_soh_every=sim_config['check_soh_every'] if 'check_soh_every' in sim_config else None
         )
-        
+                
         self._loader = data_loader
         self._writer = data_writer
 
@@ -128,7 +128,9 @@ class DrivenSimulator(BaseSimulator):
                 
             # Normal operating step of the battery system.
             ground_temp = sample['temperature'] if 'temperature' in sample else None
-            self._battery.step(load=sample[input_var], dt=dt, k=self._k, t_amb=sample['t_amb'], ground_temp=ground_temp)
+            t_amb = sample['t_amb'] if 't_amb' in sample else self.battery.temp_amb
+            
+            self._battery.step(load=sample[input_var], dt=dt, k=self._k, t_amb=t_amb, ground_temp=ground_temp)
             self._battery.t_series.append(self._elapsed_time)
             self._elapsed_time += dt
             self._k += 1

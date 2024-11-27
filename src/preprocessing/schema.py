@@ -12,12 +12,15 @@ path_pattern = Regex(r'^[a-zA-Z0-9_\-./]+$',
                      error="Error in path '{}': it can only have a-z, A-Z, 0-9, ., / and _.")
 class_pattern = Regex(r'^[a-zA-Z0-9]+$',
                       error="Error in class name '{}': it can only have a-z, A-Z and 0-9.")
-var_pattern = Regex(r'^[a-z_]+$',
+var_pattern = Regex(r'^[a-zA-Z_]+$',
                     error="Error in variable '{}': it can only have a-z and _.")
 label_pattern = Regex(r'^[a-zA-Z0-9_\[\]() ]+$',
                       error="Error in label '{}': it can only have a-z, A-Z, [,], and _.")
 unit_pattern = Regex(r'^[a-zA-Z_]+$',
                      error="Error in unit identifier '{}': it can only have a-z, A-Z.")
+
+absolute_value = Or(float, And(int, Use(float)))
+percentage_value = Or(float, And(int, Use(float)), lambda n: 0 <= n <= 1)
 
 ground_data = Schema(
     {
@@ -64,15 +67,8 @@ battery = Schema(
     {
         "sign_convention": Or('active', 'passive'),
         "params": {And(str, var_pattern): battery_param},
-        "bounds": {And(str, var_pattern): bound_param},
-        "init":
-            {
-                Optional('voltage'): Or(float, And(int, Use(float))),
-                Optional('current'): Or(float, And(int, Use(float))),
-                'temperature': Or(float, And(int, Use(float))),
-                "soc": And(Or(float, And(int, Use(float))), lambda n: 0 <= n <= 1),
-                "soh": And(Or(float, And(int, Use(float))), lambda n: 0 <= n <= 1),
-            },
+        Optional("bounds"): {And(str, var_pattern): bound_param},
+        "init": {And(str, var_pattern): Or(absolute_value, percentage_value)},
         Optional("reset_soc_every"): Or(int, None)
     }
 )
@@ -142,22 +138,18 @@ assets_schema = Schema(
     }
 )
 
-single_comp_hardcoded_lookup = Schema(
+hardcoded_lookup = Schema(
     {
         "selected_type": Or('scalar', 'lookup'),
         Optional("scalar"): Or(float, And(int, Use(float))),
         Optional("lookup"): {
-            "inputs": {
-                Optional('temp'): [Or(float, int)],
-                Optional('soc'): [And(Or(float, And(int, Use(float))), lambda n: 0 <= n <= 1)],
-                Optional('soh'): [And(Or(float, And(int, Use(float))), lambda n: 0 <= n <= 1)],
-            },
-            "output": [Or(float, And(int, Use(float)))]
+            "inputs": Or(absolute_value, percentage_value),
+            "output": absolute_value
         }
     },
 )
 
-single_comp_csv_lookup = Schema(
+csv_lookup = Schema(
     {
         "selected_type": Or('scalar', 'lookup'),
         Optional("scalar"): Or(float, And(int, Use(float))),
@@ -177,54 +169,11 @@ single_comp_csv_lookup = Schema(
     },
 )
 
-first_order_thevenin = Schema(
-    {   # First Order Thevenin
-        "r0": Or(single_comp_csv_lookup, single_comp_hardcoded_lookup),
-        "r1": Or(single_comp_csv_lookup, single_comp_hardcoded_lookup),
-        "c": Or(single_comp_csv_lookup, single_comp_hardcoded_lookup),
-        "v_ocv": Or(single_comp_csv_lookup, single_comp_hardcoded_lookup)
-    }
-)
-
-second_order_thevenin = Schema(
-    {   # Second Order Thevenin
-        "r0": Or(single_comp_csv_lookup, single_comp_hardcoded_lookup),
-        "r1": Or(single_comp_csv_lookup, single_comp_hardcoded_lookup),
-        "c1": Or(single_comp_csv_lookup, single_comp_hardcoded_lookup),
-        "r2": Or(single_comp_csv_lookup, single_comp_hardcoded_lookup),
-        "c2": Or(single_comp_csv_lookup, single_comp_hardcoded_lookup),
-        "v_ocv": Or(single_comp_csv_lookup, single_comp_hardcoded_lookup)
-    }
-)
-
-rc_thermal = Schema(
-    {  # RC_thermal
-        "r_term": Or(single_comp_csv_lookup, single_comp_hardcoded_lookup),
-        "c_term": Or(single_comp_csv_lookup, single_comp_hardcoded_lookup),
-    }
-)
-
-r2c_thermal = Schema(
-    {
-        Optional("lambda"): single_comp_hardcoded_lookup,
-        Optional("length"): single_comp_hardcoded_lookup,
-        Optional("area_int"): single_comp_hardcoded_lookup,
-        Optional("area_surf"): single_comp_hardcoded_lookup,
-        Optional("h"): single_comp_hardcoded_lookup,
-        Optional("mass"): single_comp_hardcoded_lookup,
-        Optional("cp"): single_comp_hardcoded_lookup,
-        "c_term": single_comp_hardcoded_lookup,
-        "r_cond": single_comp_hardcoded_lookup,
-        "r_conv": single_comp_hardcoded_lookup,
-        "dv_dT": single_comp_hardcoded_lookup
-    }
-)
-
 mlp_thermal = Schema(
     {  # RC_thermal
-        "input_size": And(int),
-        "hidden_size": And(int),
-        "output_size": And(int),
+        "input_size": int,
+        "hidden_size": int,
+        "output_size": int,
         "model_state": And(str, path_pattern),
         "scaler": And(str, path_pattern),
         "cuda": Or(False, True)
@@ -269,11 +218,14 @@ stress_model_schema = Schema(
     }
 )
 
+physical_model = Schema({And(str, label_pattern): Or(csv_lookup, hardcoded_lookup)})
+data_driven_model = Schema({And(str, label_pattern): mlp_thermal})
+
 model_schema = Schema(
     {
         "type": And(str, var_pattern),
         "class_name": And(str, class_pattern),
-        Optional("components"): Or(first_order_thevenin, second_order_thevenin, rc_thermal, r2c_thermal, mlp_thermal, bolun),
+        Optional("components"): Or(physical_model, data_driven_model, bolun),
         Optional("stress_models"): stress_model_schema
     }
 )

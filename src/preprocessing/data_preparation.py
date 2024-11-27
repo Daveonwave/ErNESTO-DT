@@ -19,7 +19,8 @@ internal_units = dict(
     temp_amb=['kelvin', 'K', ureg.kelvin],
     time=['seconds', 's', ureg.s],
     soc=[None, None, None],
-    soh=[None, None, None]
+    soh=[None, None, None],
+    dVoc_dT=[None, None, None],
 )
 
 
@@ -123,7 +124,7 @@ def sync_data_with_step(times: list, data: dict, sim_step: float, interp: bool =
     return sync_times, sync_data
 
 
-def _validate_data_unit(data_list, var_name, unit):
+def _validate_data_unit(data_list: list, var_name: str, unit: str):
     """
     Function to validate and adapt preprocessing unit to internal simulator units.
 
@@ -135,7 +136,7 @@ def _validate_data_unit(data_list, var_name, unit):
     # Unit employed is already compliant with internal simulator units
     if unit == internal_units[var_name][1]:
         return data_list
-
+    
     try:
         tmp_data = data_list * ureg.parse_units(unit)
         transformed_data = tmp_data.to(internal_units[var_name][2])
