@@ -442,11 +442,12 @@ class SecondOrderThevenin(ElectricalModel):
         """
         results = {}
         k = kwargs['k'] if 'k' in kwargs else None
-        var_names = kwargs['var_names']
+        var_names = kwargs['var_names'] if 'var_names' in kwargs else None
 
         for key, func in self.collections_map.items():
-            if var_names is not None and key in var_names:
-                results[key] = func(k=k)
+            if var_names is not None and key not in var_names:
+                continue
+            results[key] = func(k=k)
             
         return results
     

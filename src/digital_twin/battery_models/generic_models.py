@@ -239,20 +239,28 @@ class ThermalModel(GenericModel):
             assert type(k) == int, \
                 "Cannot retrieve ambient temperature at step K, since it has to be an integer"
 
-            if len(self._temp_series) > k:
-                return self._temp_series[k]
+            if len(self._t_amb_series) > k:
+                return self._t_amb_series[k]
             else:
                 raise IndexError("Ambient temperature at step K not computed yet")
-        return self._temp_series
+        return self._t_amb_series
 
-    def update_temp(self, value: float):
+    def _update_temp(self, value: float):
         self._temp_series.append(value)
 
-    def update_heat(self, value: float):
+    def _update_heat(self, value: float):
         self._heat_series.append(value)
         
-    def update_t_amb(self, value: float):
+    def _update_t_amb(self, value: float):
         self._t_amb_series.append(value)
+        
+    def update(self, **kwargs):
+        """
+        Update the thermal model with new values
+        """
+        self._update_temp(kwargs['temp']) if 'temp' in kwargs else None
+        self._update_heat(kwargs['heat']) if 'heat' in kwargs else None
+        self._update_t_amb(kwargs['t_amb']) if 't_amb' in kwargs else None
         
     def clear_collections(self, **kwargs):
         """

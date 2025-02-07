@@ -118,8 +118,6 @@ class AdaptiveSimulator(BaseSimulator):
         dt = self._loader.timestep if self._loader.timestep is not None else 1
         #self._pbar = tqdm(total=int(self._loader.duration), position=0, leave=True)
         
-        print(self._init_state)
-        
         # Check the initial point in the grid
         grid_point = {dim: self._init_state[dim] for dim in self._grid._dimensions}
         self._grid.is_region_changed(point=grid_point)

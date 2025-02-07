@@ -1,7 +1,7 @@
 import matplotlib
 import matplotlib.pyplot as plt
 from pathlib import Path
-
+import seaborn as sns
 import pandas as pd
 
 plot_types = ['scatter', 'line']
@@ -27,7 +27,10 @@ def ernesto_plotter(dfs: list,
                     figsize: tuple =(15, 5),
                     tick_font_size: int = 16,
                     label_font_size: int = 18,
-                    legend_font_size: int = 14
+                    legend_font_size: int = 14,
+                    legend_loc: str = 'best',
+                    legend_bbox: tuple = None,
+                    legend_ncol: int = 4
                     ):
     """
     Plot the data of multiple dataframes in the same figure for comparison.
@@ -54,9 +57,15 @@ def ernesto_plotter(dfs: list,
         tick_font_size (int, optional): font size of the ticks. Defaults to 16.
         label_font_size (int, optional): font size of the labels. Defaults to 18.
         legend_font_size (int, optional): font size of the legend. Defaults to 14.
+        legend_loc (str, optional): location of the legend. Defaults to 'upper center'.
+        legend_bbox (tuple, optional): bounding box of the legend. Defaults to (0.5, -0.05).
+        legend_ncol (int, optional): number of columns of the legend. Defaults to 4.
     """
     if not colors:
         colors = ['violet', 'cyan', 'purple', 'magenta']
+    
+    if len(dfs) > len(colors):
+        colors = sns.color_palette(None, len(dfs))
     
     assert plot_type in plot_types, "The plot type must be either 'scatter' or 'line'."
 
@@ -84,9 +93,9 @@ def ernesto_plotter(dfs: list,
         ax.set_ylabel(y_labels[i], size=label_font_size)
         
         if plot_type == 'scatter':
-            ax.legend(markerscale=5, scatterpoints=5, fontsize=legend_font_size)
+            ax.legend(markerscale=5, scatterpoints=5, fontsize=legend_font_size, loc=legend_loc, bbox_to_anchor=legend_bbox, ncol=legend_ncol)
         else:
-            ax.legend(fontsize=legend_font_size)
+            ax.legend(fontsize=legend_font_size, loc=legend_loc, bbox_to_anchor=legend_bbox, ncol=legend_ncol)
 
         if events:
             for j, event in enumerate(events):
@@ -110,6 +119,8 @@ def ernesto_plotter(dfs: list,
             extent = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
             fig.savefig(file_path, format=pic_format, transparent=True, dpi=200, bbox_inches=extent.expanded(2, 2))
 
+    fig.tight_layout()
+    
     plt.show()
     
 

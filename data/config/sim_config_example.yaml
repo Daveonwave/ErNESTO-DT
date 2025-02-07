@@ -11,7 +11,7 @@ description: "Example experiment"
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "example_PV"
+destination_folder: "range_soc_per_ampiezza_corrente/amp0_6_low"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
@@ -30,26 +30,20 @@ destination_folder: "example_PV"
 # # ------------------------------------------------------------------------------- #
 input:
   ground_data:
-    file: "ground_PV.csv"
+    file: "ol_ground_single_cycle_cell.csv"
     load: "current"
     time_format: "timestamp"
     vars:
       - var: "current"
-        label: "Current(A)"
+        label: "Current [A]"
         unit: "A"
       - var: "voltage"
-        label: "Voltage(V)"
+        label: "Voltage [V]"
         unit: "V"
-      - var: "temperature"
-        label: "Temperature"
-        unit: "degC"
       #- var: "temp_amb"
       #  label: "T_amb"
       #  unit: "degC"
-      - var: "power"
-        label: "Power(W)"
-        unit: "W"
-    cycle_for: 1
+    cycle_for: 10
 
 # Simulation Options
 # ------------------------------------------------------------------------------- #
@@ -61,7 +55,7 @@ input:
 iterations: null
 timestep: null
 check_soh_every: 1
-clear_collections_every: 500
+clear_collections_every: 50000
 # todo: interp_ground_data: null
 
 # Battery options
@@ -102,10 +96,10 @@ battery:
       high: 1.
 
   init:
-    voltage: 4.15
+    voltage: 3.115
     current: 0.
     temperature: 296.15 # 23 degC
-    soc: 1.
+    soc: 0.1
     soh: 1.
 # Plot options: how to use it?
 # --------------------------------------------------------------------------------

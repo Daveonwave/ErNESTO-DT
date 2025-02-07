@@ -25,7 +25,7 @@ components:
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "r0_table.csv"
+      table: "lookup_cell_1exp.csv"
       inputs:
         - var: "temperature"
           label: "temp"
@@ -44,7 +44,7 @@ components:
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "r1_table.csv"
+      table: "lookup_cell_1exp.csv"
       inputs:
         - var: "temperature"
           label: "temp"
@@ -63,7 +63,7 @@ components:
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "c1_table.csv"
+      table: "lookup_cell_1exp.csv"
       inputs:
         - var: "temperature"
           label: "temp"
@@ -73,7 +73,7 @@ components:
           unit: null
       output:
         var: "capacity"
-        label: "c"
+        label: "c1"
         unit: "F"
 
   v_ocv:
@@ -82,7 +82,7 @@ components:
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "voc_table.csv"
+      table: "lookup_cell_1exp.csv"
       inputs:
         - var: "temperature"
           label: "temp"

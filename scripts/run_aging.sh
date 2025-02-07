@@ -1,7 +1,5 @@
 python ernesto.py \
-    --battery_model first_order_thevenin \
-    --thermal_model mlp_thermal \
-    --aging_model bolun \
-    --save_results \
-    --save_metrics \
-    simulation --config_files ./data/config/sim_aging2.yaml
+    --electrical thevenin_2-rc_aging \
+    --thermal  dummy_thermal \
+    --aging bolun_dropflow_no_SEI \
+    driven --config_files ./data/config/sim_invecchiamento.yaml

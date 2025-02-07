@@ -16,7 +16,7 @@ internal_units = dict(
     resistance=['ohm', '\u03A9', ureg.ohm],
     capacity=['faraday', 'F', ureg.faraday],
     temperature=['kelvin', 'K', ureg.kelvin],
-    temp_amb=['kelvin', 'K', ureg.kelvin],
+    t_amb=['kelvin', 'K', ureg.kelvin],
     time=['seconds', 's', ureg.s],
     soc=[None, None, None],
     soh=[None, None, None],
@@ -24,7 +24,7 @@ internal_units = dict(
 )
 
 
-def load_data_from_csv(csv_file: Path, vars_to_retrieve: [dict], **kwargs):
+def load_data_from_csv(csv_file: Path, vars_to_retrieve: [{dict}], **kwargs):
     """
     Function to preprocess preprocessing that need to be read from a csv table.
 
@@ -51,8 +51,10 @@ def load_data_from_csv(csv_file: Path, vars_to_retrieve: [dict], **kwargs):
             timestamps = df['Time']
         except KeyError:
             raise KeyError("The column 'Time' is not present in the csv file or it is just misspelled.")
+    elif kwargs['time_format'] == 'timestamp':
+        timestamps = pd.to_datetime(df['Time'], format="%Y/%m/%d %H:%M:%S.%f").values.astype(float) // 10 ** 9
     else:
-        timestamps = pd.to_datetime(df['Time'], format="%Y/%m/%d %H:%M:%S").values.astype(float) // 10 ** 9
+        raise ValueError("The time format specified is not valid.")
     vars_data = {}
 
     # We first check if the variable column label exists
@@ -62,6 +64,12 @@ def load_data_from_csv(csv_file: Path, vars_to_retrieve: [dict], **kwargs):
         else:
             vars_data[var['var']] = _validate_data_unit(df[var['label']].values.tolist(), var['var'], var['unit'])
 
+    # If a starting point is specified, we slice the data from that point
+    if 'start_at' in kwargs:
+        timestamps = timestamps[kwargs['start_at']:]
+        for key in vars_data.keys():
+            vars_data[key] = vars_data[key][kwargs['start_at']:]
+    
     return timestamps.tolist(), vars_data
 
 

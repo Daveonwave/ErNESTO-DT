@@ -34,35 +34,19 @@ components:
     scalar: 2.73
     #scalar: 10
 
-  dv_dT:
+  dVoc_dT:
     selected_type: lookup
     scalar: 0.1
     lookup:
+      table: "dVoc_dT_old.csv"
       inputs:
-        soc:
-          - 1
-          - 0.9
-          - 0.8
-          - 0.7
-          - 0.6
-          - 0.5
-          - 0.4
-          - 0.3
-          - 0.2
-          - 0.1
-          - 0.
+        - var: "soc"
+          label: "soc"
+          unit: null
       output:
-        - 0.00008
-        - 0.00006
-        - 0.00008
-        - 0.00005
-        - 0.0001
-        - 0.00018
-        - 0.00016
-        - 0.00008
-        - -0.00005
-        - -0.00016
-        - -0.0007
+        var: "dVoc_dT"
+        label: "dVoc_dT"
+        unit: null #[V/K]
 #   We retrieved the variables above from these measures:
 #
 #    lambda: # thermal conductivity coefficient [W/m * K]

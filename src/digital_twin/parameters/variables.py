@@ -87,7 +87,6 @@ class LookupTableFunction(GenericVariable):
     """
 
     """
-
     def __init__(self, name: str, y_values: list, x_names: list, x_values: list):
         super().__init__(name)
         self.y_values = y_values
@@ -107,7 +106,12 @@ class LookupTableFunction(GenericVariable):
 
         else:
             raise Exception("Too many variables to interpolate, not implemented yet!")
+        
+        print(self)
 
+    def __repr__(self):
+        return "LookupTableFunction(name={}, x_names={})".format(self.name, self.x_names)
+    
     def get_value(self, input_vars: dict):
         """
 
@@ -185,7 +189,6 @@ def instantiate_variables(var_dict: dict) -> dict:
                                                   unit=var['unit'])
                               for var in var_dict[var]['lookup']['inputs']]
                 )
-
         else:
             raise Exception("The chosen 'type' for the variable '{}' is wrong or nonexistent! Try to select another"
                             " option among this list: ['scalar', 'function', 'lookup'].".format(var))

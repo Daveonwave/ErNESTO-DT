@@ -26,12 +26,17 @@ class DummyThermal(ThermalModel):
         """
         temp = kwargs['temperature'] if 'temperature' in kwargs else 298.15
         heat = kwargs['dissipated_heat'] if 'dissipated_heat' in kwargs else 0
+        t_amb = kwargs['t_amb'] if 't_amb' in kwargs else 298.15
 
-        self.update_temp(temp)
-        self.update_heat(heat)
+        super()._update_temp(temp)
+        super()._update_heat(heat)
+        super()._update_t_amb(t_amb)
 
     def compute_temp(self, **kwargs):
         assert kwargs['ground_temp'] is not None, "The '{}' model needs the ground temperature to compute " \
             "the battery temperature. If you are running a scheduled simulation or a cyclic " \
             "driven simulation, you should adopt a different thermal model.".format(self.name)
         return kwargs['ground_temp']
+    
+    def update(self, **kwargs):
+        return super().update(**kwargs)

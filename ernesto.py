@@ -5,13 +5,42 @@ import os
 from joblib import Parallel, delayed
 from src.utils.logger import CustomFormatter
 from src.digital_twin.orchestrator.orchestrator import DTOrchestrator
+import cProfile, pstats, functools
 
 
 def run_experiment(args, config_file):
+    
+    if args['profiler']:
+        profiler = cProfile.Profile()
+        profiler.enable()
+    
     args['config'] = config_file
     orchestrator = DTOrchestrator(**args)
     orchestrator.run()
     #orchestrator.evaluate()
+
+    if args['profiler']:
+        profiler.disable()
+        stats = pstats.Stats(profiler).sort_stats('cumulative')
+        stats.dump_stats('ernesto.prof')
+    
+    
+     
+def parse_submodels(args):
+    # Parsing of models employed in the current experiment
+    args['models'] = {}
+    if args['electrical']:
+        args['models']['electrical'] = args['electrical'][0]
+        del args['electrical']
+
+    if args['thermal']:
+        args['models']['thermal'] = args['thermal'][0]
+        del args['thermal']
+
+    if args['aging']:
+        args['models']['aging'] = args['aging'][0]
+        del args['aging']
+    return args    
     
 
 def get_args():
@@ -24,6 +53,9 @@ def get_args():
         """
         driven_parser.add_argument("--config_files", nargs='*', default=["./data/config/sim_config_example2.yaml"],
                                    help="Specifies the list of files containing parameters for each parallel experiment.")
+        
+        driven_parser.add_argument("--profiler", action='store_true', default=False,
+                                   help="Specifies if the profiler is enabled.")
 
     def get_schedule_args():
         """
@@ -33,10 +65,10 @@ def get_args():
                                      help="Specifies the list of files containing parameters for each parallel experiment.")
         
         schedule_parser.add_argument("--iterations", default=500, type=int,
-                                   help="Specifies the number of iterations of the entire experiment.")
+                                     help="Specifies the number of iterations of the entire experiment.")
         
         schedule_parser.add_argument("--timestep", default=1., type=float,
-                                   help="Specifies the timestep of the simulator in seconds.")
+                                     help="Specifies the timestep of the simulator in seconds.")
 
     def get_adaptive_args():
         """
@@ -49,16 +81,19 @@ def get_args():
                                      help="Specifies the folder containing the clusters.")
         
         adaptive_parser.add_argument("--alpha", default=0.18, type=float,
-                                  help="Specifies the regularization term of the loss function.")
+                                     help="Specifies the regularization term of the loss function.")
         
         adaptive_parser.add_argument("--batch_size", default=10000, type=int,
-                                  help="Specifies the size of the batch (window) used to perform an optimization of parameters.")
+                                     help="Specifies the size of the batch (window) used to perform an optimization of parameters.")
         
-        adaptive_parser.add_argument("--alg", default='L-BFGS-B', type=str,
+        adaptive_parser.add_argument("--alg", default='BFGS', type=str,
                                      help="Specifies the optimizer algorithm adopted.")
         
         adaptive_parser.add_argument("--n_restarts", default=1, type=int,
-                                  help="Specifies the number of restarts for each optimization step.")
+                                     help="Specifies the number of restarts for each optimization step.")
+        
+        adaptive_parser.add_argument("--enable_adaptation", action='store_true', 
+                                     help="Specifies if the adaptation of the model is enabled.")
 
     def get_generic_args():
         """
@@ -125,6 +160,7 @@ def get_args():
 
 if __name__ == '__main__':
     args = get_args()
+    parse_submodels(args)
 
     # Setup logger
     logging.basicConfig(format='%(asctime)s | %(name)s-%(levelname)s: %(message)s')
@@ -138,26 +174,10 @@ if __name__ == '__main__':
     ch.setFormatter(CustomFormatter())
     logger.addHandler(ch)
 
-    # Parsing of models employed in the current experiment
-    
-    args['models'] = {}
-    if args['electrical']:
-        args['models']['electrical'] = args['electrical'][0]
-        del args['electrical']
-
-    if args['thermal']:
-        args['models']['thermal'] = args['thermal'][0]
-        del args['thermal']
-
-    if args['aging']:
-        args['models']['aging'] = args['aging'][0]
-        del args['aging'] 
-    
     # Parallel execution of the experiments
     parallel_exp_config = args['config_files']
-    del args['config_files']
-
     n_cores = args['n_cores']
+    del args['config_files']
     del args['n_cores']
     
     if n_cores == 1:

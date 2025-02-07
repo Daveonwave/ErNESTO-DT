@@ -18,6 +18,13 @@ class R2CThermal(ThermalModel):
         self._soc = None
 
     @property
+    def collections_map(self):
+        return {'temperature': self.get_temp_series,
+                'heat': self.get_heat_series,
+                't_amb': self.get_t_amb_series,
+                'dVoc_dT': self.get_dVoc_dT_series}
+    
+    @property
     def soc(self):
         return self._soc
 
@@ -72,11 +79,26 @@ class R2CThermal(ThermalModel):
                     "Cannot retrieve required input variables to compute entropic coefficient!")
 
         return self._dVoc_dT.get_value(input_vars=input_vars)
+    
+    def get_dVoc_dT_series(self, k=None):
+        """
+        Getter of the specific value at step K, if specified, otherwise of the entire collection
+        """
+        if k is not None:
+            assert type(k) == int, \
+                "Cannot retrieve dVoc_dT of thermal model at step K, since it has to be an integer"
+
+            if len(self._dVoc_dT_series) > k:
+                return self._dVoc_dT_series[k]
+            else:
+                raise IndexError("dVoc_dT of thermal model at step K not computed yet")
+        return self._dVoc_dT_series
 
     def reset_model(self, **kwargs):
         self._temp_series = []
         self._heat_series = []
         self._t_amb_series = []
+        self._dVoc_dT_series = []
 
     def init_model(self, **kwargs):
         """
@@ -85,15 +107,17 @@ class R2CThermal(ThermalModel):
         temp = kwargs['temperature'] if 'temperature' in kwargs else 298.15
         heat = kwargs['dissipated_heat'] if 'dissipated_heat' in kwargs else 0
         t_amb = kwargs['t_amb'] if 't_amb' in kwargs else 298.15
+        dVoc_dT = kwargs['dVoc_dT'] if 'dVoc_dT' in kwargs else self.dVoc_dT
 
-        self.update_temp(temp)
-        self.update_heat(heat)
-        self.update_t_amb(t_amb)
+        super()._update_temp(temp)
+        super()._update_heat(heat)
+        super()._update_t_amb(t_amb)
+        self._update_dVoc_dT(dVoc_dT)
 
     def load_battery_state(self, **kwargs):
         self._soc = kwargs['soc']
 
-    def compute_temp(self, q, i, T_amb, dt, k=-1, **kwargs):
+    def compute_temp(self, q:float, i:float, T_amb:float, dt:float, k=-1, **kwargs):
         """
         Compute the current temperature with equation described in the aforementioned paper
         Args:
@@ -112,5 +136,12 @@ class R2CThermal(ThermalModel):
         t_surf = t_core + self.r_cond * (T_amb - t_core) / (self.r_cond + self.r_conv)
 
         return t_surf
+    
+    def update(self, **kwargs):
+        super().update(**kwargs)
+        self._update_dVoc_dT(self.dVoc_dT)
+    
+    def _update_dVoc_dT(self, value: float):
+        self._dVoc_dT_series.append(value)
     
 

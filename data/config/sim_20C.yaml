@@ -11,7 +11,7 @@ description: "Experiment for paper"
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "20C_check_up"
+destination_folder: "paper_dic24/20C_check_up"
 
 # Ground data (input and validation)
 # ------------------------------------------------------------------------------- #
@@ -52,10 +52,11 @@ input:
 # timestep:
 #   the timestep of the simulator in seconds.
 # ------------------------------------------------------------------------------- #
+start_at: null
 iterations: null
 timestep: null
-get_rest_after: 120
-
+check_soh_every: 1
+clear_collections_every: 50000
 # Battery options
 # ------------------------------------------------------------------------------- #
 # sign_convention:
@@ -72,7 +73,7 @@ battery:
   params:
     nominal_capacity:
       var: "capacity"
-      value: 19.4265
+      value: 20.
       unit: "F"
     v_max:
       var: "voltage"
@@ -84,13 +85,19 @@ battery:
       unit: "V"
     temp_ambient:
       var: "temperature"
-      value: 296.15
+      value: 295.75 # 24.3 degC
       unit: "K"
+
+  bounds:
+    soc:
+      low: 0.
+      high: 1.
+
   init:
-    voltage: 4.15
+    #voltage: 3.577
     current: 0.
-    temperature: 296.15 # 23 degC
-    soc: 1.
+    #temperature: 295.5825 # 23 degC
+    #soc: 0.1786
     soh: 1.
 # Plot options: how to use it?
 # --------------------------------------------------------------------------------

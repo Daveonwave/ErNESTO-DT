@@ -13,7 +13,7 @@ class BolunModel(AgingModel):
     def __init__(self,
                  components_settings: dict,
                  stress_models: dict,
-                 init_soc: float = 1.
+                 **kwargs
                  ):
         """
         Args:
@@ -41,7 +41,7 @@ class BolunModel(AgingModel):
         self._cycle_counting_mode = components_settings['cycle_counting_mode']
 
         if self._cycle_counting_mode == 'streamflow':
-            self._streamflow = self.Streamflow(init_soc=init_soc)
+            self._streamflow = self.Streamflow(init_soc=kwargs['init_soc'])
             
     @property
     def collections_map(self):
