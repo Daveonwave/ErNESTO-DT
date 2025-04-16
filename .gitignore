@@ -96,4 +96,5 @@ target/
 /reports
 /notebooks/plots
 /notebooks/online_learning/other/old
-uml/
+/uml
+/nicola
