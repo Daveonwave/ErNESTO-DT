@@ -7,6 +7,8 @@ from .driven_sim import DrivenSimulator
 from src.digital_twin.orchestrator import DrivenLoader
 from src.digital_twin.orchestrator import DataWriter
 from src.digital_twin.bess import BatteryEnergyStorageSystem
+from src.adaptation.optimizer import Optimizer
+from src.adaptation.grid import ParameterSpaceGrid
 
 logger = logging.getLogger('ErNESTO-DT')
 
@@ -115,8 +117,6 @@ class AdaptiveSimulator(BaseSimulator):
         """
         dt = self._loader.timestep if self._loader.timestep is not None else 1
         #self._pbar = tqdm(total=int(self._loader.duration), position=0, leave=True)
-        
-        print(self._init_state)
         
         # Check the initial point in the grid
         grid_point = {dim: self._init_state[dim] for dim in self._grid._dimensions}

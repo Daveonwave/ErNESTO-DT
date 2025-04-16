@@ -1,10 +1,16 @@
 import matplotlib
 import matplotlib.pyplot as plt
 from pathlib import Path
-
+import seaborn as sns
 import pandas as pd
 
 plot_types = ['scatter', 'line']
+matplotlib.rcParams.update({
+                "text.usetex" : True,
+                "text.latex.preamble": r'\usepackage{amsmath} \usepackage{amssymb}',
+                "font.family": "serif",
+                "font.serif" : ["Computer Modern Serif"],
+            })
 
 
 def ernesto_plotter(dfs: list,
@@ -16,21 +22,22 @@ def ernesto_plotter(dfs: list,
                     markers: list,
                     line_styles: list,
                     plot_type: str = 'line',
-                    title: str = '',
-<<<<<<< HEAD
-=======
                     sampling_rate: int = 1,
->>>>>>> online_learning
                     colors: list = None,
                     events: list = None,
                     save_fig: bool = False,
                     dest: Path = None, 
                     fig_name: str = '',
                     pic_format: str = 'png',
+                    save_extend_bbox: tuple = None,
                     figsize: tuple =(15, 5),
                     tick_font_size: int = 16,
                     label_font_size: int = 18,
-                    legend_font_size: int = 14
+                    legend_font_size: int = 14,
+                    legend_loc: str = 'best',
+                    legend_bbox: tuple = None,
+                    legend_ncol: int = 4,
+                    alphas: list = None
                     ):
     """
     Plot the data of multiple dataframes in the same figure for comparison.
@@ -46,10 +53,7 @@ def ernesto_plotter(dfs: list,
         line_styles (list): list of line styles for the plot.
         plot_type (str): type of plot (scatter or line).
         title (str): title of the plot.
-<<<<<<< HEAD
-=======
         sampling_rate (int): sampling rate of the data.
->>>>>>> online_learning
         colors (list, optional): list of colors for the plot. Defaults to None.
         events (list, optional): list of events to highlight in the plot. Defaults to None.
         save_fig (bool, optional): flag to save the figure or not. Defaults to False.
@@ -60,13 +64,27 @@ def ernesto_plotter(dfs: list,
         tick_font_size (int, optional): font size of the ticks. Defaults to 16.
         label_font_size (int, optional): font size of the labels. Defaults to 18.
         legend_font_size (int, optional): font size of the legend. Defaults to 14.
+        legend_loc (str, optional): location of the legend. Defaults to 'upper center'.
+        legend_bbox (tuple, optional): bounding box of the legend. Defaults to (0.5, -0.05).
+        legend_ncol (int, optional): number of columns of the legend. Defaults to 4.
     """
     if not colors:
-        colors = ['violet', 'cyan', 'purple', 'magenta']
+        colors = sns.color_palette('colorblind', len(dfs))
+    
+    if alphas is None:
+        alphas = [1] * len(dfs)
+    
+    no_legend = False
+    if labels is None:
+        no_legend = True
+        labels = [''] * len(dfs)
+    
+    #if len(dfs) > len(colors):
+    #    colors = sns.color_palette(None, len(dfs))
     
     assert plot_type in plot_types, "The plot type must be either 'scatter' or 'line'."
 
-    fig, axes = plt.subplots(len(variables), 1, figsize=(figsize[0], figsize[1] * len(variables)))
+    fig, axes = plt.subplots(len(variables), 1, figsize=(figsize[0], figsize[1] * len(variables)), tight_layout=True)
     
     # Plot iteratively all the variables
     for i, var in enumerate(variables):
@@ -81,24 +99,19 @@ def ernesto_plotter(dfs: list,
 
         for j, df in enumerate(dfs):
             if plot_type == 'scatter':
-<<<<<<< HEAD
-                ax.scatter(df[x_axes[i]], df[var], label=labels[j], color=colors[j], s=0.1, rasterized=True)
-            else:
-                ax.plot(df[x_axes[i]], df[var], label=labels[j], color=colors[j], marker=markers[j], markevery=3000, linestyle=line_styles[j])
-=======
                 ax.scatter(df[x_axes[i]][::sampling_rate], df[var][::sampling_rate], label=labels[j], color=colors[j], s=0.1, rasterized=True)
             else:
-                ax.plot(df[x_axes[i]][::sampling_rate], df[var][::sampling_rate], label=labels[j], color=colors[j], marker=markers[j], markevery=3000, linestyle=line_styles[j])
->>>>>>> online_learning
+                ax.plot(df[x_axes[i]][::sampling_rate], df[var][::sampling_rate], label=labels[j], color=colors[j], marker=markers[j], alpha=alphas[j], markevery=3000, linestyle=line_styles[j])
         
         ax.tick_params(labelsize=tick_font_size)
         ax.set_xlabel(x_labels[i], size=label_font_size)
         ax.set_ylabel(y_labels[i], size=label_font_size)
         
-        if plot_type == 'scatter':
-            ax.legend(markerscale=5, scatterpoints=5, fontsize=legend_font_size)
-        else:
-            ax.legend(fontsize=legend_font_size)
+        if not no_legend:
+            if plot_type == 'scatter':
+                ax.legend(markerscale=5, scatterpoints=5, fontsize=legend_font_size, loc=legend_loc, bbox_to_anchor=legend_bbox, ncol=legend_ncol)
+            else:
+                ax.legend(fontsize=legend_font_size, loc=legend_loc, bbox_to_anchor=legend_bbox, ncol=legend_ncol)
 
         if events:
             for j, event in enumerate(events):
@@ -113,15 +126,17 @@ def ernesto_plotter(dfs: list,
                 matplotlib.rcParams.update({
                     "pgf.texsystem": "pdflatex",
                     'font.family': 'serif',
-                    'text.usetex': True,
                     'pgf.rcfonts': False,
                 })
             
             plot_name = fig_name + '_{}.{}'.format(var, pic_format)
             file_path = dest / 'plots' / plot_name
+            save_extend_bbox = (1,1) if save_extend_bbox is None else save_extend_bbox
             extent = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-            fig.savefig(file_path, format=pic_format, transparent=True, dpi=200, bbox_inches=extent.expanded(2, 2))
+            fig.savefig(file_path, format=pic_format, transparent=True, dpi=200, bbox_inches='tight')#extent.expanded(save_extend_bbox[0], save_extend_bbox[1]))
 
+    fig.tight_layout()
+    
     plt.show()
     
 
@@ -131,10 +146,7 @@ def plot_separate_vars(df: pd.DataFrame,
                        x_ax: list,
                        x_label: str,
                        y_labels: str,
-<<<<<<< HEAD
-=======
                        sampling_rate: int = 1,
->>>>>>> online_learning
                        colors: list = None,
                        events: list = None,
                        save_fig: bool = False,
@@ -155,10 +167,7 @@ def plot_separate_vars(df: pd.DataFrame,
         x_ax (list): list of x axes for the plot.
         x_label (str): x label.
         y_labels (str): y label of each subplot.
-<<<<<<< HEAD
-=======
         sampling_rate (int): sampling rate of the data.
->>>>>>> online_learning
         titles (str): title of each subplot.
         colors (list, optional): list of colors for the plot. Defaults to None.
         events (list, optional): list of events to highlight in the plot. Defaults to None.
@@ -183,11 +192,7 @@ def plot_separate_vars(df: pd.DataFrame,
         ax.minorticks_on()
         ax.grid(visible=True, which='minor', color='beige', alpha=0.5, ls='-', lw=1)
 
-<<<<<<< HEAD
-        ax.plot(df[x_ax], df[var], label=labels[i], color=colors[i])
-=======
         ax.plot(df[x_ax][::sampling_rate], df[var][::sampling_rate], label=labels[i], color=colors[i])
->>>>>>> online_learning
         
         ax.tick_params(labelsize=tick_font_size)
         ax.set_xlabel(x_label, size=label_font_size)

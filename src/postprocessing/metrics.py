@@ -8,11 +8,7 @@ def _mse(ground: list, simulated: list):
     Args:
         ground (list): true values
         simulated (list): simulated values
-<<<<<<< HEAD
-    """
-=======
     """    
->>>>>>> online_learning
     assert len(ground) == len(simulated), ("MSE: ground and simulated data have different lengths ({}, {})".
                                            format(len(ground), len(simulated)))
     return sum([(y - x)**2 for x, y in zip(simulated, ground)]) / len(simulated)
@@ -39,7 +35,7 @@ def _max_abs_err(ground: list, simulated: list):
         ground (list): true values
         simulated (list): simulated values
     """
-    assert len(ground) == len(simulated), ("MAE: ground and simulated data have different lengths ({}, {})".
+    assert len(ground) == len(simulated), ("MaAE: ground and simulated data have different lengths ({}, {})".
                                            format(len(ground), len(simulated)))
     return max([abs(y - x) for x, y in zip(simulated, ground)])
 
@@ -55,6 +51,20 @@ def _mape(ground: list, simulated: list):
     assert len(ground) == len(simulated), ("MAPE: ground and simulated data have different lengths ({}, {})".
                                            format(len(ground), len(simulated)))
     return sum([abs(y - x) / y for x, y in zip(simulated, ground) if y != 0]) * 100 / len(simulated)
+
+
+def _pointwise_mse(ground: list, simulated: list):
+    """
+    Compute the Pointwise Mean Squared Error (PMSE) between two lists of data.
+
+    Args:
+        ground (list): true values
+        simulated (list): simulated values
+    """
+    assert len(ground) == len(simulated), ("PMSE: ground and simulated data have different lengths ({}, {})".
+                                           format(len(ground), len(simulated)))
+    return [(y - x)**2 for x, y in zip(simulated, ground)]
+    
 
 
 def compute_metrics(ground: dict, simulated: dict, vars: list, metrics:list=None, steps=None):

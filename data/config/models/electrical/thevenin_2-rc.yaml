@@ -25,7 +25,7 @@ components:
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "r0_table.csv"
+      table: "lookup_cell_2exp.csv"
       inputs:
         - var: "temperature"
           label: "temp"
@@ -44,7 +44,7 @@ components:
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "r1_table.csv"
+      table: "lookup_cell_2exp.csv"
       inputs:
         - var: "temperature"
           label: "temp"
@@ -63,7 +63,7 @@ components:
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "c1_table.csv"
+      table: "lookup_cell_2exp.csv"
       inputs:
         - var: "temperature"
           label: "temp"
@@ -73,7 +73,7 @@ components:
           unit: null
       output:
         var: "capacity"
-        label: "c"
+        label: "c1"
         unit: "F"
 
   r2:
@@ -82,7 +82,7 @@ components:
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "r1_table.csv"
+      table: "lookup_cell_2exp.csv"
       inputs:
         - var: "temperature"
           label: "temp"
@@ -92,7 +92,7 @@ components:
           unit: null
       output:
         var: "resistance"
-        label: "r1"
+        label: "r2"
         unit: "ohm"
 
   c2:
@@ -101,7 +101,7 @@ components:
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "c1_table.csv"
+      table: "lookup_cell_2exp.csv"
       inputs:
         - var: "temperature"
           label: "temp"
@@ -111,7 +111,7 @@ components:
           unit: null
       output:
         var: "capacity"
-        label: "c"
+        label: "c2"
         unit: "F"
 
   v_ocv:
@@ -120,7 +120,7 @@ components:
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "voc_table_ceell(divideby7).csv"
+      table: "lookup_cell_2exp.csv"
       inputs:
         - var: "temperature"
           label: "temp"

@@ -75,7 +75,6 @@ class ResistorCapacitorParallel(ECMComponent):
     @resistance.setter
     def resistance(self, new_value):
         self._resistance.set_value(new_value)
-        print()
 
     @capacity.setter
     def capacity(self, new_value):

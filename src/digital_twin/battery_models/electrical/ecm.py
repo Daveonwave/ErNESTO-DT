@@ -352,8 +352,8 @@ class SecondOrderThevenin(ElectricalModel):
 
         # Update the collections of variables of ECM components
         self.r0.update_step_variables(r0=r0, v_r0=v_r0)
-        self.rc1.update_step_variables(r1=r1, c=c1, v_rc=v_rc1, i_r=i_r1, i_c=i_c1)
-        self.rc1.update_step_variables(r1=r1, c=c1, v_rc=v_rc1, i_r=i_r1, i_c=i_c1)
+        self.rc1.update_step_variables(r1=r1, c=c1, v_rc=v_rc1, i_r=i_r1, i_c=i_c1, i_c2=i_c2)
+        self.rc1.update_step_variables(r1=r1, c=c1, v_rc=v_rc1, i_r=i_r1, i_c=i_c1, i_c2=i_c2)
         self.ocv_gen.update_v(value=v_ocv)
         self.update_i_load(value=i)
         self.update_v_load(value=v_load)
@@ -442,11 +442,12 @@ class SecondOrderThevenin(ElectricalModel):
         """
         results = {}
         k = kwargs['k'] if 'k' in kwargs else None
-        var_names = kwargs['var_names']
+        var_names = kwargs['var_names'] if 'var_names' in kwargs else None
 
         for key, func in self.collections_map.items():
-            if var_names is not None and key in var_names:
-                results[key] = func(k=k)
+            if var_names is not None and key not in var_names:
+                continue
+            results[key] = func(k=k)
             
         return results
     

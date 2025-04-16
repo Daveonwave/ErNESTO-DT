@@ -6,7 +6,7 @@ logger = logging.getLogger('ErNESTO-DT')
 
 schemas = {}
 
-string_pattern = Regex(r'^[a-zA-Z0-9_. ]+$',
+string_pattern = Regex(r'^[a-zA-Z0-9_./]+$',
                        error="Error in string '{}': it can only have a-z, A-Z, 0-9, and _.")
 path_pattern = Regex(r'^[a-zA-Z0-9_\-./]+$',
                      error="Error in path '{}': it can only have a-z, A-Z, 0-9, ., / and _.")
@@ -14,7 +14,7 @@ class_pattern = Regex(r'^[a-zA-Z0-9]+$',
                       error="Error in class name '{}': it can only have a-z, A-Z and 0-9.")
 var_pattern = Regex(r'^[a-zA-Z_]+$',
                     error="Error in variable '{}': it can only have a-z and _.")
-label_pattern = Regex(r'^[a-zA-Z0-9_\[\]() ]+$',
+label_pattern = Regex(r'^[a-zA-Z0-9_\[\].() ]+$',
                       error="Error in label '{}': it can only have a-z, A-Z, [,], and _.")
 unit_pattern = Regex(r'^[a-zA-Z_]+$',
                      error="Error in unit identifier '{}': it can only have a-z, A-Z.")
@@ -25,7 +25,7 @@ percentage_value = Or(float, And(int, Use(float)), lambda n: 0 <= n <= 1)
 ground_data = Schema(
     {
         # Ground data structure
-        "file": And(str, string_pattern),
+        "file": And(str, path_pattern),
         "load": And(str, var_pattern),
         "time_format": Or('seconds', 'timestamp'),
         "vars": [
@@ -100,10 +100,10 @@ adaptation = Schema(
 config_schema = Schema(
     {
         # Summary
-        Optional("experiment_name"): And(str, string_pattern),
+        Optional("experiment_name"): And(str),
         Optional("description"): And(str),
         Optional("goal"): And(str),
-        "destination_folder": And(str, string_pattern),
+        "destination_folder": And(str, path_pattern),
         
         # Ground data options
         "input": {
@@ -111,8 +111,7 @@ config_schema = Schema(
             Optional("schedule"): schedule,
         },
         # Simulation options
-        Optional("optimizer"): optimizer,
-        Optional("adaptation"): adaptation,
+        Optional("start_at"): Or(int, None),
         Optional("iterations"): Or(int, None),
         Optional("timestep"): Or(int, float, None),
         Optional("check_soh_every"): Or(int, None),

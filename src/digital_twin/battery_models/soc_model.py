@@ -44,13 +44,13 @@ class SOCEstimator:
         """
         if self._estimation_mode == "CC":
             self._soc = soc_ + i / (self._c_max * 3600) * dt
-            self.crop_soc()
+            self.clip_soc()
         else:
             raise Exception("Required mode for SoC estimation not existing or not implemented yet.")
 
         return self._soc
 
-    def crop_soc(self):
+    def clip_soc(self):
         """
 
         """

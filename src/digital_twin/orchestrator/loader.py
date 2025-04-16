@@ -48,7 +48,6 @@ class ScheduledLoader(DataLoader):
     """
     def __init__(self, config: dict):
         super().__init__()
-        assert 'schedule' in config['input'], "The schedule is not provided in the configuration file."
         
         self._schedule = Schedule(instructions=config['input']['schedule']['instructions'], 
                                   c_value=config['input']['schedule']['constants']['nominal_capacity'],
@@ -98,7 +97,8 @@ class DrivenLoader(DataLoader):
                 load_data_from_csv(csv_file=config['input']['ground_data']['file'],
                                    vars_to_retrieve=config['input']['ground_data']['vars'],
                                    time_format=config['input']['ground_data']['time_format'],
-                                   iterations=config['iterations'] if 'iterations' in config else None)
+                                   iterations=config['iterations'] if 'iterations' in config else None,
+                                   start_at=config['start_at'] if 'start_at' in config else None)
                 )
         
         if 'timestep' in config and config['timestep'] is not None:
@@ -112,7 +112,7 @@ class DrivenLoader(DataLoader):
         self._cycle_for = config['input']['ground_data']['cycle_for'] if 'cycle_for' in config['input']['ground_data'] else 1
         
         self._data['time'] = [t - self._times[0] for t in self._times]
-        self._cycle_duration = (self._times[-1] - self._times[0]) 
+        self._cycle_duration = self._times[-1] - self._times[0]
         self._duration = self._cycle_duration * self._cycle_for
         
         # If the input data has to be repeated for multiple cycles then the load_var and time are extended
@@ -124,7 +124,9 @@ class DrivenLoader(DataLoader):
             
             # Extend the input data for the number of cycles, the other variables are dropped
             #self._data[self._input_var] = self._data[self._input_var] * config['input']['ground_data']['cycle_for']
-            self._data = {self._input_var: self._data[self._input_var], 'time': self._data['time']}
+            self._data = {self._input_var: self._data[self._input_var], 
+                          't_amb': self._data['t_amb'] if 't_amb' in self._data else None,
+                          'time': self._data['time']}
         
     @property
     def input_var(self):
@@ -150,6 +152,28 @@ class DrivenLoader(DataLoader):
         Return the duration in time and the number of samples within the data collection.
         """
         return len(self._data[self._input_var])
+    
+    def get_initial_data(self, v_min:float, v_max:float):
+        """
+        Return the initial data of the experiment.
+        
+        :param v_min: minimum voltage value
+        :param v_max: maximum voltage value
+        """
+        init_dict = {}
+        
+        if 'voltage' in self._data.keys():
+            init_dict['voltage'] = self._data['voltage'][0]
+        if 'temperature' in self._data.keys():
+            init_dict['temperature'] = self._data['temperature'][0]
+        if 't_amb' in self._data.keys():
+            init_dict['t_amb'] = self._data['t_amb'][0]
+        
+        init_dict['current'] = 0.
+        init_dict['power'] = 0.
+        init_dict['soc'] = (init_dict['voltage'] - v_min) / (v_max - v_min)
+        
+        return init_dict
     
     def collection(self):
         """

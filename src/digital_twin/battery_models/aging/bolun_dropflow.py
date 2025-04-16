@@ -13,7 +13,6 @@ class BolunDropflowModel(AgingModel):
     def __init__(self,
                  components_settings: dict,
                  stress_models: dict,
-                 init_soc: float = 1.
                  ):
         """
         Args:
@@ -122,6 +121,7 @@ class BolunDropflowModel(AgingModel):
         self._update_f_cyc_series(0)
         self._update_f_cal_series(0)
         self._update_k_iter_series(0)
+        
 
     def compute_degradation(self, soc: float, temp: float, elapsed_time: float, k: int, do_check: bool = False):
         """
@@ -150,25 +150,23 @@ class BolunDropflowModel(AgingModel):
         
         half_cycles = []
                 
-        for cycle in extracted_cycles[-1::-1]:
+        for cycle in extracted_cycles:
             if cycle[2] != 0.5:
-                break
-            half_cycles.append(cycle)
-            extracted_cycles.remove(cycle)
+                half_cycles.append(cycle)
+                extracted_cycles.remove(cycle)
         
         # With Dropflow we retrieve tuples of (range, mean, count, i_start, i_end) associated to each cycle
         for rng, mean, count, i_start, i_end in half_cycles:
-            
             incomplete_f_cyc += self._compute_cyclic_aging(cycle_type=count,
                                                            cycle_dod=rng,
-                                                           avg_cycle_soc=np.mean(self._soc_history[i_start:i_end]),
+                                                           avg_cycle_soc=mean,
                                                            avg_cycle_temp=np.mean(self._temp_history[i_start:i_end])
                                                            )
             
         for rng, mean, count, i_start, i_end in extracted_cycles:
             self._f_cyc += self._compute_cyclic_aging(cycle_type=count,
                                                       cycle_dod=rng,
-                                                      avg_cycle_soc=np.mean(self._soc_history[i_start:i_end]),
+                                                      avg_cycle_soc=mean,
                                                       avg_cycle_temp=np.mean(self._temp_history[i_start:i_end])
                                                       )
             

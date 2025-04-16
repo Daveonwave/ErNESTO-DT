@@ -17,19 +17,18 @@ class DataWriter:
     saved file overcome the maximum size because the data is written in chunks. Thus, the threshold could be not
     strictly respected and it's just a way to avoid huge files.
     """
-    def __init__(self, 
-                 output_folder: str, 
-                 ):
+    def __init__(self, output_folder: str):
         """
         Args:
             output_folder (str): path to the folder where the csv files will be saved.
         """
+        super().__init__()
         self._output_folder = output_folder
         self._ground_queue = queue.Queue()
         self._sim_queue = queue.Queue()
+        self._aging_queue = queue.Queue()
         self._stop_event = threading.Event()
         
-        # Queue length before saving
         self._save_output_every = 10000
         
         # Options to split huge csv files
@@ -78,7 +77,7 @@ class DataWriter:
         # Save the remaining data
         data = [_queue.get() for _ in range(_queue.qsize())]
         _queue.task_done()
-        self._write_to_csv(data, data_type=queue_type)        
+        self._write_to_csv(data, data_type=queue_type)
         
     def _write_to_csv(self, data, data_type:str='ground'):
         """
@@ -135,4 +134,4 @@ class DataWriter:
             
         del self._ground_queue
         del self._sim_queue
-
+        

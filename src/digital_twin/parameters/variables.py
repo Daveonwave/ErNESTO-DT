@@ -87,7 +87,6 @@ class LookupTableFunction(GenericVariable):
     """
 
     """
-
     def __init__(self, name: str, y_values: list, x_names: list, x_values: list):
         super().__init__(name)
         self.y_values = y_values
@@ -95,6 +94,7 @@ class LookupTableFunction(GenericVariable):
         self.x_values = x_values
 
         self._function = None
+        self._second_step_function = None
         self._backup_function = None
 
         if len(x_names) == 1:
@@ -103,11 +103,14 @@ class LookupTableFunction(GenericVariable):
         elif len(x_names) > 1:
             x_points = [[l[i] for l in self.x_values] for i in range(len(self.x_values[0]))]
             self._function = LinearNDInterpolator(points=np.array(x_points), values=np.array(self.y_values))
-            self._backup_function = NearestNDInterpolator(x=np.array(x_points), y=np.array(self.y_values))
+            # self._backup_function = NearestNDInterpolator(x=np.array(x_points), y=np.array(self.y_values))
 
         else:
             raise Exception("Too many variables to interpolate, not implemented yet!")
-
+        
+    def __repr__(self):
+        return "LookupTableFunction(name={}, x_names={})".format(self.name, self.x_names)
+    
     def get_value(self, input_vars: dict):
         """
 
@@ -128,7 +131,13 @@ class LookupTableFunction(GenericVariable):
         elif isinstance(self._function, LinearNDInterpolator):
             res = float(self._function(*[input_val for input_val in input_values]))
             if np.isnan(res):
-                res = float(self._backup_function(*[input_val for input_val in input_values]))
+                # Multi-step interpolation: fix the input values to the boundaries of the lookup table for extrapolation
+                for i in range(len(input_values)):
+                    if input_values[i] < min(self.x_values[i]) or input_values[i] > max(self.x_values[i]):
+                        new_input_values = input_values.copy()
+                        new_input_values[i] = np.clip(input_values[i], min(self.x_values[i]), max(self.x_values[i]))
+                        res = float(self._function(*[input_val for input_val in new_input_values]))
+                # res = float(self._backup_function(*[input_val for input_val in new_input_values]))
             return res
 
         else:
@@ -185,7 +194,6 @@ def instantiate_variables(var_dict: dict) -> dict:
                                                   unit=var['unit'])
                               for var in var_dict[var]['lookup']['inputs']]
                 )
-
         else:
             raise Exception("The chosen 'type' for the variable '{}' is wrong or nonexistent! Try to select another"
                             " option among this list: ['scalar', 'function', 'lookup'].".format(var))

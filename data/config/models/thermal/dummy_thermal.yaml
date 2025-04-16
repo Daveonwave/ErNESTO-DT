@@ -9,3 +9,5 @@
 
 type: thermal
 class_name: DummyThermal
+#components:
+#  fixed_value: 313.15
