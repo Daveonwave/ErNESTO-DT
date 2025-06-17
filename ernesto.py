@@ -3,8 +3,8 @@ import logging
 import sys
 import os
 from joblib import Parallel, delayed
-from src.utils.logger import CustomFormatter
-from src.digital_twin.orchestrator.orchestrator import DTOrchestrator
+from ernesto.utils.logger import CustomFormatter
+from ernesto.digital_twin.orchestrator.orchestrator import DTOrchestrator
 
 
 def run_experiment(args, config_file):
