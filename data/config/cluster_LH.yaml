@@ -11,7 +11,7 @@ description: "Example experiment"
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "example"
+destination_folder: "cluster_LH"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
@@ -30,22 +30,22 @@ destination_folder: "example"
 # # ------------------------------------------------------------------------------- #
 input:
   ground_data:
-    file: "ground_checkup20.csv"
+    file: "ground_LH.csv"
     load: "current"
-    time_format: "timestamp"
+    time_format: "seconds"
     vars:
       - var: "current"
-        label: "Current(A)"
+        label: "Current [A]"
         unit: "A"
-      - var: "voltage"
-        label: "Voltage(V)"
-        unit: "V"
-      - var: "temperature"
-        label: "Temperature"
-        unit: "degC"
     cycle_for: 1
 
-# Simulation Options
+start_at: null
+iterations: 20000
+timestep: null
+check_soh_every: 1
+clear_collections_every: 50000
+
+# Optimiziation Options
 # ------------------------------------------------------------------------------- #
 # optimizer: specify the optimization algorithm and its parameters
 #   - algorithm: the optimization algorithm to be used
@@ -56,65 +56,75 @@ input:
 # ------------------------------------------------------------------------------- #
 optimizer:
   algorithm: "L-BFGS-B"
-  max_iter: 1000
-  tol: 0.000001
-  alpha: 0.5
-  batch_size: 10000
-  n_restarts: 5
+  max_iter: 100
+  tol: null
+  ftol: 0.0005
+  disp: False
+  alpha: 0.
+  batch_size: null
+  n_jobs: 8
+  n_guesses: 100
 
   search_bounds:
     r0:
-      low: 0.
-      high: 1000.
+      low: 0.001 #[1, 10]
+      high: 0.01
     r1:
-      low: 0.
-      high: 1000.
+      low: 0.001 #[1, 10]
+      high: 0.01
     c1:
-      low: 0.
-      high: 1000.
+      low: 5000. #[1, 10]
+      high: 50000.
 
   scale_factors:
-    r0: 0.0001
-    r1: 0.0001
-    c1: 1000
+    r0: 1000
+    r1: 1000
+    c1: 0.0002
+
+parameters_grid:
+  - original_cluster: null
+    destination_file: "cluster_LL.csv"
+    region:
+      temperature:
+        low: 273.15
+        high: 293.15
+      soc:
+        low: 0.
+        high: 0.5
+  - original_cluster: null
+    destination_file: "cluster_HL.csv"
+    region:
+      temperature:
+        low: 293.15
+        high: 323.15
+      soc:
+        low: 0.
+        high: 0.5
+  - original_cluster: null
+    destination_file: "cluster_LH.csv"
+    region:
+      temperature:
+        low: 273.15
+        high: 293.15
+      soc:
+        low: 0.5
+        high: 1.
+  - original_cluster: null
+    destination_file: "cluster_HH.csv"
+    region:
+      temperature:
+        low: 293.15
+        high: 323.15
+      soc:
+        low: 0.5
+        high: 1.
 
 adaptation:
-  grid:
-    - cluster: "nominal_cluster_0.csv"
-      region:
-        soc:
-          low: 0.
-          high: 0.5
-        temperature:
-          low: 273.15
-          high: 293.15
-
-    - cluster: "nominal_cluster_1.csv"
-      region:
-        soc:
-          low: 0.
-          high: 0.5
-        temperature:
-          low: 293.15
-          high: 323.15
-
-    - cluster: "nominal_cluster_2.csv"
-      region:
-        soc:
-          low: 0.5
-          high: 1.
-        temperature:
-          low: 273.15
-          high: 293.15
-
-    - cluster: "nominal_cluster_3.csv"
-      region:
-        soc:
-          low: 0.5
-          high: 1.
-        temperature:
-          low: 293.15
-          high: 323.15
+  param_names:
+    - "r0"
+    - "r1"
+    - "c1"
+  threshold: 0.1
 
 # Battery options
 # ------------------------------------------------------------------------------- #
@@ -145,7 +155,7 @@ battery:
       unit: "V"
     temp_ambient:
       var: "temperature"
-      value: 296.15
+      value: 283.15
       unit: "K"
 
   bounds:
@@ -154,8 +164,8 @@ battery:
       high: 1.
 
   init:
-    voltage: 4.15
+    voltage: 3.8625
     current: 0.
-    temperature: 296.15 # 23 degC
-    soc: 1.
+    temperature: 283.15 # 10 degC
+    soc: 0.75
     soh: 1.

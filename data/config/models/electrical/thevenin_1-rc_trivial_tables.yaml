@@ -25,7 +25,7 @@ components:
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "r0_table_trivial.csv"
+      table: "cell_1exp_trivial.csv"
       inputs:
         - var: "temperature"
           label: "temp"
@@ -44,7 +44,7 @@ components:
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "r1_table_trivial.csv"
+      table: "cell_1exp_trivial.csv"
       inputs:
         - var: "temperature"
           label: "temp"
@@ -57,13 +57,13 @@ components:
         label: "r1"
         unit: "ohm"
 
-  c:
+  c1:
     selected_type: lookup
 
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "c1_table_trivial.csv"
+      table: "cell_1exp_trivial.csv"
       inputs:
         - var: "temperature"
           label: "temp"
@@ -82,7 +82,7 @@ components:
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "voc_table.csv"
+      table: "lookup_cell_1exp.csv"
       inputs:
         - var: "temperature"
           label: "temp"

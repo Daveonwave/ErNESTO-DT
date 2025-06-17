@@ -1,17 +1,17 @@
 # ------------------------------------------------------------------------------- #
-# MODE: Compared Simulation
+# MODE: Adaptive Simulation
 # ------------------------------------------------------------------------------- #
 # The purpose of the experiment is to compare the behavior of the DT with
 # real-world (ground) data and evaluate the accuracy of the system.
 # ------------------------------------------------------------------------------- #
 
 # Summary of the experiment
-experiment_name: "Compared Simulation"
+experiment_name: "Adaptive Simulation"
 description: "Example experiment"
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "paper_dic24/salto_termico_nuovo-only_soc_feb25"
+destination_folder: "cluster_HH"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
@@ -30,40 +30,76 @@ destination_folder: "paper_dic24/salto_termico_nuovo-only_soc_feb25"
 # # ------------------------------------------------------------------------------- #
 input:
   ground_data:
-    file: "paper_dic24/salto_termico_18-12.csv"
+    file: "ground_HH.csv"
     load: "current"
-    time_format: "timestamp"
+    time_format: "seconds"
     vars:
       - var: "current"
-        label: "Current(A)"
+        label: "Current [A]"
         unit: "A"
-      - var: "voltage"
-        label: "Voltage(V)"
-        unit: "V"
-      - var: "temperature"
-        label: "Temp(degC)"
-        unit: "degC"
-      - var: "t_amb"
-        label: "T_amb"
-        unit: "degC"
-      - var: "power"
-        label: "Power(W)"
-        unit: "W"
     cycle_for: 1
 
-# Simulation Options
-# ------------------------------------------------------------------------------- #
-# iterations:
-#   the number of iterations of the simulated experiment (null -> full experiment).
-# timestep:
-#   the timestep of the simulator in seconds.
-# ------------------------------------------------------------------------------- #
 start_at: null
-iterations: null
+iterations: 100000
 timestep: null
 check_soh_every: 1
 clear_collections_every: 50000
-# todo: interp_ground_data: null
+
+# Optimiziation Options
+# ------------------------------------------------------------------------------- #
+# optimizer: specify the optimization algorithm and its parameters
+#   - algorithm: the optimization algorithm to be used
+#   - max_iter: the maximum number of iterations
+#   - tol: the tolerance for the optimization algorithm
+#   - search_bounds: specify the search bounds for the optimization algorithm
+#   - scale_factors: specify the scale factors for the optimization algorithm
+# ------------------------------------------------------------------------------- #
+optimizer:
+  algorithm: "L-BFGS-B"
+  max_iter: 100
+  tol: null
+  ftol: 0.0005
+  disp: False
+  alpha: 0.
+  beta: 0. #0.1
+  batch_size: 10000
+  n_jobs: 4
+  n_guesses: 4
+
+  search_bounds:
+    r0:
+      low: 0.001 #[1, 10]
+      high: 0.01
+    r1:
+      low: 0.001 #[1, 10]
+      high: 0.01
+    c1:
+      low: 5000. #[1, 10]
+      high: 50000.
+
+  scale_factors:
+    r0: 1000
+    r1: 1000
+    c1: 0.0002
+
+clusters:
+  - original_cluster: "cluster-1.csv"
+    name: "outliers"
+  - original_cluster: "cluster0.csv"
+    name: "0"
+  - original_cluster: "cluster1.csv"
+    name: "1"
+  - original_cluster: "cluster2.csv"
+    name: "2"
+  - original_cluster: "cluster3.csv"
+    name: "3"
+
+adaptation:
+  param_names:
+    - "r0"
+    - "r1"
+    - "c1"
+  threshold: 0.1
 
 # Battery options
 # ------------------------------------------------------------------------------- #
@@ -86,7 +122,7 @@ battery:
       unit: "F"
     v_max:
       var: "voltage"
-      value: 4.2
+      value: 4.15
       unit: "V"
     v_min:
       var: "voltage"
@@ -94,7 +130,7 @@ battery:
       unit: "V"
     temp_ambient:
       var: "temperature"
-      value: 305.19 # 32 degC
+      value: 303.15
       unit: "K"
 
   bounds:
@@ -103,6 +139,8 @@ battery:
       high: 1.
 
   init:
+    voltage: 3.8625
     current: 0.
-    soc: 0.937
+    temperature: 303.15 # 23 degC
+    soc: 0.75
     soh: 1.

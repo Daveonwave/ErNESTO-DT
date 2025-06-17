@@ -20,61 +20,16 @@ class_name: FirstOrderThevenin
 # ----------------------------------------------------------------------------
 components:
   r0:
-    selected_type: lookup
-
+    selected_type: scalar
     scalar: 10.
-    # function: To be implemented, maybe useless!
-    lookup:
-      table: "r0_table.csv"
-      inputs:
-        - var: "temperature"
-          label: "temp"
-          unit: "degC"
-        - var: "soc"
-          label: "soc"
-          unit: null
-      output:
-        var: "resistance"
-        label: "r0"
-        unit: "ohm"
 
   r1:
-    selected_type: lookup
-
+    selected_type: scalar
     scalar: 10.
-    # function: To be implemented, maybe useless!
-    lookup:
-      table: "r1_table.csv"
-      inputs:
-        - var: "temperature"
-          label: "temp"
-          unit: "degC"
-        - var: "soc"
-          label: "soc"
-          unit: null
-      output:
-        var: "resistance"
-        label: "r1"
-        unit: "ohm"
 
-  c:
-    selected_type: lookup
-
+  c1:
+    selected_type: scalar
     scalar: 10.
-    # function: To be implemented, maybe useless!
-    lookup:
-      table: "c1_table.csv"
-      inputs:
-        - var: "temperature"
-          label: "temp"
-          unit: "degC"
-        - var: "soc"
-          label: "soc"
-          unit: null
-      output:
-        var: "capacity"
-        label: "c"
-        unit: "F"
 
   v_ocv:
     selected_type: lookup
@@ -82,7 +37,7 @@ components:
     scalar: 10.
     # function: To be implemented, maybe useless!
     lookup:
-      table: "voc_table.csv"
+      table: "lookup_cell_1exp.csv"
       inputs:
         - var: "temperature"
           label: "temp"

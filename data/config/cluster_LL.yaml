@@ -1,17 +1,17 @@
 # ------------------------------------------------------------------------------- #
-# MODE: Compared Simulation
+# MODE: Adaptive Simulation
 # ------------------------------------------------------------------------------- #
 # The purpose of the experiment is to compare the behavior of the DT with
 # real-world (ground) data and evaluate the accuracy of the system.
 # ------------------------------------------------------------------------------- #
 
 # Summary of the experiment
-experiment_name: "Compared Simulation"
+experiment_name: "Adaptive Simulation"
 description: "Example experiment"
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "paper_dic24/invecchiamento_no_SEI_cella1"
+destination_folder: "cluster_LL"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
@@ -30,44 +30,101 @@ destination_folder: "paper_dic24/invecchiamento_no_SEI_cella1"
 # # ------------------------------------------------------------------------------- #
 input:
   ground_data:
-    file: "paper_dic24/aging_cella1_CU2-4.csv"
+    file: "ground_LL.csv"
     load: "current"
-    time_format: "timestamp"
+    time_format: "seconds"
     vars:
       - var: "current"
-        label: "Corrente[A]"
+        label: "Current [A]"
         unit: "A"
-      - var: "voltage"
-        label: "Tensione[V]"
-        unit: "V"
-      - var: "temperature"
-        label: "Temperatura[degC]"
-        unit: "degC"
-      - var: "t_amb"
-        label: "T_ambiente[degC]"
-        unit: "degC"
     cycle_for: 1
 
-# Simulation Options
-# ------------------------------------------------------------------------------- #
-# iterations:
-#   the number of iterations of the simulated experiment (null -> full experiment).
-# timestep:
-#   the timestep of the simulator in seconds.
-# ------------------------------------------------------------------------------- #
 start_at: null
-iterations: null #CU2
+iterations: 20000
 timestep: null
-check_soh_every: 427326
+check_soh_every: 1
 clear_collections_every: 50000
-# todo: interp_ground_data: null
 
-# CU prova Modulo (celle 3-12)
-# step: CU2 = 3369120, CU3 =  5233222, CU4 = 7642381
-# soh:  CU2 = 0.999335, CU3 = 0.963521, CU4 = 0.928935
-# sim:  CU2 = 0.99031, CU3 = 0.973622, CU4 = 0.944785
+# Optimiziation Options
+# ------------------------------------------------------------------------------- #
+# optimizer: specify the optimization algorithm and its parameters
+#   - algorithm: the optimization algorithm to be used
+#   - max_iter: the maximum number of iterations
+#   - tol: the tolerance for the optimization algorithm
+#   - search_bounds: specify the search bounds for the optimization algorithm
+#   - scale_factors: specify the scale factors for the optimization algorithm
+# ------------------------------------------------------------------------------- #
+optimizer:
+  algorithm: "L-BFGS-B"
+  max_iter: 100
+  tol: null
+  ftol: 0.0005
+  disp: False
+  alpha: 0.
+  batch_size: null
+  n_jobs: 8
+  n_guesses: 100
 
-# CU4 - CU2 = 4273260
+  search_bounds:
+    r0:
+      low: 0.001 #[1, 10]
+      high: 0.01
+    r1:
+      low: 0.001 #[1, 10]
+      high: 0.01
+    c1:
+      low: 5000. #[1, 10]
+      high: 50000.
+
+  scale_factors:
+    r0: 1000
+    r1: 1000
+    c1: 0.0002
+
+parameters_grid:
+  - original_cluster: null
+    destination_file: "cluster_LL.csv"
+    region:
+      temperature:
+        low: 273.15
+        high: 293.15
+      soc:
+        low: 0.
+        high: 0.5
+  - original_cluster: null
+    destination_file: "cluster_HL.csv"
+    region:
+      temperature:
+        low: 293.15
+        high: 323.15
+      soc:
+        low: 0.
+        high: 0.5
+  - original_cluster: null
+    destination_file: "cluster_LH.csv"
+    region:
+      temperature:
+        low: 273.15
+        high: 293.15
+      soc:
+        low: 0.5
+        high: 1.
+  - original_cluster: null
+    destination_file: "cluster_HH.csv"
+    region:
+      temperature:
+        low: 293.15
+        high: 323.15
+      soc:
+        low: 0.5
+        high: 1.
+
+adaptation:
+  param_names:
+    - "r0"
+    - "r1"
+    - "c1"
+  threshold: 0.1
 
 # Battery options
 # ------------------------------------------------------------------------------- #
@@ -86,16 +143,20 @@ battery:
   params:
     nominal_capacity:
       var: "capacity"
-      value: 20.991442
+      value: 20.
       unit: "F"
     v_max:
       var: "voltage"
-      value: 4.2
+      value: 4.15
       unit: "V"
     v_min:
       var: "voltage"
       value: 3.
       unit: "V"
+    temp_ambient:
+      var: "temperature"
+      value: 283.15
+      unit: "K"
 
   bounds:
     soc:
@@ -103,22 +164,8 @@ battery:
       high: 1.
 
   init:
-    #voltage: 3.577
+    voltage: 3.115
     current: 0.
-    #temperature: 295.5825 # 23 degC
-    #soc: 0.1786
+    temperature: 283.15 # 10 degC
+    soc: 0.1
     soh: 1.
-# Plot options: how to use it?
-# --------------------------------------------------------------------------------
-#
-# Among 'vars' are enlisted the variables that the user desires to plot:
-#   - 'var' has to be a string among [current, voltage, power, temperature]
-# --------------------------------------------------------------------------------
-#
-# plots:
-#   compared:
-#     - 'voltage'
-#     - 'temperature'
-#     - 'power'
-#   single:
-#     - 'voltage'

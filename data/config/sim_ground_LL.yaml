@@ -94,7 +94,7 @@ battery:
   init:
     voltage: 3.115
     current: 0.
-    temperature: 283.15 # 23 degC
+    temperature: 283.15 # 10 degC
     soc: 0.1
     soh: 1.
 # Plot options: how to use it?
