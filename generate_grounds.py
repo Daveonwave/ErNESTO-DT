@@ -1,13 +1,15 @@
 import numpy as np
 from joblib import Parallel, delayed
-from src.utils.logger import CustomFormatter
-from src.digital_twin.orchestrator.orchestrator import DTOrchestrator
+from ernesto.utils.logger import CustomFormatter
+from ernesto.digital_twin.orchestrator.orchestrator import DTOrchestrator
 from ernesto import get_args, run_experiment, parse_submodels
-from src.preprocessing.schema import read_yaml
+from ernesto.preprocessing.schema import read_yaml
 from rich import pretty
 from copy import deepcopy
 
 
+# Code to generate groun truth data for online learning using different ambient temperatures
+# We are not gonna use this script for the moment, but it is useful to have it in case we need more realistic experiments
 if __name__ == '__main__':
     args = get_args()
     parse_submodels(args)

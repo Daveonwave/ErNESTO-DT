@@ -1,4 +1,4 @@
-python ernesto.py \
+python main.py \
     --electrical thevenin_2-rc \
     --thermal r2c_cell_paper \
     --verbose \

@@ -1,4 +1,4 @@
-python ernesto.py \
+python main.py \
     --battery_model first_order_thevenin \
     --thermal_model dummy_thermal \
     --verbose \

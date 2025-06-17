@@ -1,6 +1,6 @@
-from src.online_learning.battery_adaptation_one_outliers_set import BatteryAdaptation
-from src.online_learning.utils import load_from_yaml, load_cluster
-from src.online_learning.cluster import Cluster
+from ernesto.online_learning.battery_adaptation_one_outliers_set import BatteryAdaptation
+from ernesto.online_learning.utils import load_from_yaml, load_cluster
+from ernesto.online_learning.cluster import Cluster
 import pandas as pd
 
 

@@ -1,7 +1,7 @@
 import unittest
 from pint import UnitRegistry
 ureg = UnitRegistry()
-from src.digital_twin.battery_models.electrical.ecm_components.resistor import Resistor
+from ernesto.digital_twin.battery_models.electrical.ecm_components.resistor import Resistor
 
 
 class ResistorTest(unittest.TestCase):
