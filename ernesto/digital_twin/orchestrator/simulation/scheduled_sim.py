@@ -4,9 +4,9 @@ import pandas as pd
 from tqdm import tqdm
 
 from . import BaseSimulator 
-from src.digital_twin.orchestrator import DataWriter
-from src.digital_twin.orchestrator import ScheduledLoader
-from src.digital_twin.bess import BatteryEnergyStorageSystem
+from ernesto.digital_twin.orchestrator import DataWriter
+from ernesto.digital_twin.orchestrator import ScheduledLoader
+from ernesto.digital_twin.bess import BatteryEnergyStorageSystem
 
 
 logger = logging.getLogger('ErNESTO-DT')

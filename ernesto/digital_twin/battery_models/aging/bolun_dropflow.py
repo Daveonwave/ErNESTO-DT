@@ -2,8 +2,8 @@ import numpy as np
 from .dropflow import Dropflow
 from enum import Enum
 
-from src.digital_twin.battery_models.generic_models import AgingModel
-from src.digital_twin.battery_models.aging import stress_functions
+from ernesto.digital_twin.battery_models.generic_models import AgingModel
+from ernesto.digital_twin.battery_models.aging import stress_functions
 
 
 class BolunDropflowModel(AgingModel):
@@ -150,10 +150,11 @@ class BolunDropflowModel(AgingModel):
         
         half_cycles = []
                 
-        for cycle in extracted_cycles:
+        for cycle in extracted_cycles[-1::-1]:
             if cycle[2] != 0.5:
-                half_cycles.append(cycle)
-                extracted_cycles.remove(cycle)
+                break
+            half_cycles.append(cycle)
+            extracted_cycles.remove(cycle)
         
         # With Dropflow we retrieve tuples of (range, mean, count, i_start, i_end) associated to each cycle
         for rng, mean, count, i_start, i_end in half_cycles:
@@ -176,7 +177,7 @@ class BolunDropflowModel(AgingModel):
         # Compute degradation considering the SEI film factor
         deg = np.clip(1 - self._alpha_sei * np.exp(-self._beta_sei * f_d) - (1 - self._alpha_sei) * np.exp(-f_d),
                     a_min=0., a_max=1.)
-                
+                        
         self.update_deg(deg)
         self._update_k_iter_series(k)
         
@@ -191,8 +192,8 @@ class BolunDropflowModel(AgingModel):
         :param avg_temp:
         :param avg_soc:
         """
-        cal_aging = 1
-
+        cal_aging = 1.0
+        
         # For each defined stress model we get the stress function with relative parameters
         for factor in self._calendar_factors.keys():
             stress_func = getattr(stress_functions, factor + '_stress')

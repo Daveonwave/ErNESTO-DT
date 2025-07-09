@@ -6,11 +6,11 @@ from pathlib import Path
 import pandas as pd
 from rich.pretty import pretty_repr
 
-from src.preprocessing.schema import read_yaml
-from src.preprocessing.data_preparation import validate_parameters_unit
-from src.digital_twin.orchestrator import DataLoader
-from src.digital_twin.orchestrator import DataWriter
-from src.digital_twin.orchestrator.simulation.base_simulator import BaseSimulator
+from ernesto.preprocessing.schema import read_yaml
+from ernesto.preprocessing.data_preparation import validate_parameters_unit
+from ernesto.digital_twin.orchestrator import DataLoader
+from ernesto.digital_twin.orchestrator import DataWriter
+from ernesto.digital_twin.orchestrator.simulation.base_simulator import BaseSimulator
 
 logger = logging.getLogger('ErNESTO-DT')
 

@@ -11,7 +11,7 @@ description: "Example experiment"
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "paper_dic24/prova_normale_with_Tamb_offset"
+destination_folder: "demo_RSE/profiloPV"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
@@ -30,7 +30,7 @@ destination_folder: "paper_dic24/prova_normale_with_Tamb_offset"
 # # ------------------------------------------------------------------------------- #
 input:
   ground_data:
-    file: "paper_dic24/prova_normale_with_Tamb_offset.csv"
+    file: "paper_dic24/prova_normale.csv"
     load: "power"
     time_format: "timestamp"
     vars:
@@ -92,6 +92,10 @@ battery:
       var: "voltage"
       value: 3.
       unit: "V"
+    #temp_ambient:
+    #  var: "temperature"
+    #  value: 283.15
+    #  unit: "K"
 
   bounds:
     soc:
@@ -101,20 +105,6 @@ battery:
   init:
     #voltage: 3.577
     current: 0.
-    #temperature: 295.5825 # 23 degC
+    #temperature: 283.15 # 23 degC
     soc: 0.1786
     soh: 1.
-# Plot options: how to use it?
-# --------------------------------------------------------------------------------
-#
-# Among 'vars' are enlisted the variables that the user desires to plot:
-#   - 'var' has to be a string among [current, voltage, power, temperature]
-# --------------------------------------------------------------------------------
-#
-# plots:
-#   compared:
-#     - 'voltage'
-#     - 'temperature'
-#     - 'power'
-#   single:
-#     - 'voltage'

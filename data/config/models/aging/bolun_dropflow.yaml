@@ -20,7 +20,7 @@ class_name: BolunDropflowModel
 # ----------------------------------------------------------------------------
 components:
   SEI:
-    alpha_sei: 0.0575
+    alpha_sei: 0.0225 # originale = 0.0575
     beta_sei: 121
 
   stress_factors:

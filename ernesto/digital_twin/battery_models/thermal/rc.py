@@ -1,5 +1,5 @@
-from src.digital_twin.battery_models.generic_models import ThermalModel
-from src.digital_twin.parameters import Scalar, instantiate_variables
+from ernesto.digital_twin.battery_models.generic_models import ThermalModel
+from ernesto.digital_twin.parameters import Scalar, instantiate_variables
 
 
 class RCThermal(ThermalModel):

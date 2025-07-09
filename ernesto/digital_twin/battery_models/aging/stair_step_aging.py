@@ -1,4 +1,4 @@
-from src.digital_twin.battery_models.generic_models import AgingModel
+from ernesto.digital_twin.battery_models.generic_models import AgingModel
 
 
 class StairStepAging(AgingModel):

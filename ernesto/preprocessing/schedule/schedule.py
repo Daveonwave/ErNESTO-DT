@@ -1,6 +1,6 @@
-from src.preprocessing.schedule.lexer import ScheduleLexer
-from src.preprocessing.schedule.parser import ScheduleParser
-from src.preprocessing.data_preparation import validate_parameters_unit
+from ernesto.preprocessing.schedule.lexer import ScheduleLexer
+from ernesto.preprocessing.schedule.parser import ScheduleParser
+from ernesto.preprocessing.data_preparation import validate_parameters_unit
 
 
 class Schedule:

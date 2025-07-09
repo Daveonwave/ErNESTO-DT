@@ -1,6 +1,6 @@
 import yaml
 from pathlib import Path
-from src.preprocessing.schema import read_yaml, _check_schema
+from ernesto.preprocessing.schema import read_yaml, _check_schema
 import os
 
 

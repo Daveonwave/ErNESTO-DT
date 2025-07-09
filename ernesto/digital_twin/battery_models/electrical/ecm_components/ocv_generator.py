@@ -1,7 +1,7 @@
 from typing import Union
 
-from src.digital_twin.battery_models.electrical.ecm_components.generic_component import ECMComponent
-from src.digital_twin.parameters.variables import Scalar, ParametricFunction, LookupTableFunction
+from ernesto.digital_twin.battery_models.electrical.ecm_components.generic_component import ECMComponent
+from ernesto.digital_twin.parameters.variables import Scalar, ParametricFunction, LookupTableFunction
 
 
 class OCVGenerator(ECMComponent):

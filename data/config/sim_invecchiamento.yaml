@@ -11,7 +11,7 @@ description: "Example experiment"
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "paper_dic24/invecchiamento_no_SEI_cella1_new_dropflow"
+destination_folder: "prova/invecchiamento_no_SEI_cella1_new_dropflow"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
@@ -58,7 +58,7 @@ input:
 start_at: null
 iterations: null #CU2
 timestep: null
-check_soh_every: 427326
+check_soh_every: 1
 clear_collections_every: 50000
 # todo: interp_ground_data: null
 

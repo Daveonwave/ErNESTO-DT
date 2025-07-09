@@ -1,7 +1,7 @@
 import numpy as np
 from joblib import Parallel, delayed
 from scipy.optimize import minimize
-from src.digital_twin.bess import BatteryEnergyStorageSystem
+from ernesto.digital_twin.bess import BatteryEnergyStorageSystem
 
 
 class Optimizer:

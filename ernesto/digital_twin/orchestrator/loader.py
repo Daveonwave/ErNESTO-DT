@@ -1,5 +1,5 @@
-from src.preprocessing.data_preparation import load_data_from_csv, sync_data_with_step
-from src.preprocessing.schedule.schedule import Schedule
+from ernesto.preprocessing.data_preparation import load_data_from_csv, sync_data_with_step
+from ernesto.preprocessing.schedule.schedule import Schedule
 import logging
 
 logger = logging.getLogger('ErNESTO-DT')

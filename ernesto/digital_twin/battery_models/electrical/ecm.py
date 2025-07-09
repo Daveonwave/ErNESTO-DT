@@ -1,8 +1,8 @@
-from src.digital_twin.battery_models.generic_models import ElectricalModel
-from src.digital_twin.battery_models.electrical.ecm_components import Resistor
-from src.digital_twin.battery_models.electrical.ecm_components import ResistorCapacitorParallel
-from src.digital_twin.battery_models.electrical.ecm_components import OCVGenerator
-from src.digital_twin.parameters import instantiate_variables
+from ernesto.digital_twin.battery_models.generic_models import ElectricalModel
+from ernesto.digital_twin.battery_models.electrical.ecm_components import Resistor
+from ernesto.digital_twin.battery_models.electrical.ecm_components import ResistorCapacitorParallel
+from ernesto.digital_twin.battery_models.electrical.ecm_components import OCVGenerator
+from ernesto.digital_twin.parameters import instantiate_variables
 
 
 class FirstOrderThevenin(ElectricalModel):

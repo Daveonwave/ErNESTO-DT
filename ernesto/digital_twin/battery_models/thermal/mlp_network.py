@@ -1,6 +1,6 @@
 import pandas as pd
 
-from src.digital_twin.battery_models.generic_models import ThermalModel
+from ernesto.digital_twin.battery_models.generic_models import ThermalModel
 import joblib
 import torch
 import torch.nn as nn

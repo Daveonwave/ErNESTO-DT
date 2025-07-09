@@ -2,8 +2,8 @@ import numpy as np
 import rainflow
 from enum import Enum
 
-from src.digital_twin.battery_models.generic_models import AgingModel
-from src.digital_twin.battery_models.aging import stress_functions
+from ernesto.digital_twin.battery_models.generic_models import AgingModel
+from ernesto.digital_twin.battery_models.aging import stress_functions
 
 
 class BolunModel(AgingModel):

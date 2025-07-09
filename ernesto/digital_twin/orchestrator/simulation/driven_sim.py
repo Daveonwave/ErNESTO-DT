@@ -3,9 +3,9 @@ import logging
 from tqdm.rich import tqdm
 
 from . import BaseSimulator
-from src.digital_twin.orchestrator import DrivenLoader
-from src.digital_twin.orchestrator import DataWriter
-from src.digital_twin.bess import BatteryEnergyStorageSystem
+from ernesto.digital_twin.orchestrator import DrivenLoader
+from ernesto.digital_twin.orchestrator import DataWriter
+from ernesto.digital_twin.bess import BatteryEnergyStorageSystem
 
 logger = logging.getLogger('ErNESTO-DT')
 
@@ -120,7 +120,6 @@ class DrivenSimulator(BaseSimulator):
             # Normal operating step of the battery system.
             ground_temp = sample['temperature'] if 'temperature' in sample else None
             t_amb = sample['t_amb'] if 't_amb' in sample else self.battery.temp_amb
-            t_amb = 40 + 273.15
             
             # If dt == 0 then no progresses have been made.
             if self._loader.timestep is None and dt > self._get_rest_after:

@@ -1,6 +1,6 @@
 import logging
 import ply.yacc as yacc
-from src.preprocessing.schedule.lexer import ScheduleLexer
+from ernesto.preprocessing.schedule.lexer import ScheduleLexer
 
 
 class ScheduleParser:

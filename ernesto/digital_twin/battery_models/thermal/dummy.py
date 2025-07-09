@@ -1,4 +1,4 @@
-from src.digital_twin.battery_models.generic_models import ThermalModel
+from ernesto.digital_twin.battery_models.generic_models import ThermalModel
 
 
 class DummyThermal(ThermalModel):

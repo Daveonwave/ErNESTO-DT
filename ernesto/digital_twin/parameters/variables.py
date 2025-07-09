@@ -2,7 +2,7 @@ from typing import Union
 
 import numpy as np
 from scipy.interpolate import interp1d, LinearNDInterpolator, NearestNDInterpolator
-from src.preprocessing.data_preparation import _validate_data_unit
+from ernesto.preprocessing.data_preparation import _validate_data_unit
 import pandas as pd
 
 params_csv_folder = 'data/config/params/'

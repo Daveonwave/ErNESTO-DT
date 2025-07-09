@@ -4,11 +4,11 @@ from tqdm.rich import tqdm
 
 from . import BaseSimulator
 from .driven_sim import DrivenSimulator
-from src.digital_twin.orchestrator import DrivenLoader
-from src.digital_twin.orchestrator import DataWriter
-from src.digital_twin.bess import BatteryEnergyStorageSystem
-from src.adaptation.optimizer import Optimizer
-from src.adaptation.grid import ParameterSpaceGrid
+from ernesto.digital_twin.orchestrator import DrivenLoader
+from ernesto.digital_twin.orchestrator import DataWriter
+from ernesto.digital_twin.bess import BatteryEnergyStorageSystem
+from ernesto.adaptation.optimizer import Optimizer
+from ernesto.adaptation.grid import ParameterSpaceGrid
 
 logger = logging.getLogger('ErNESTO-DT')
 
