@@ -62,7 +62,7 @@ class Optimizer:
 
     def estimate_cluster(self, init_state: dict, input_batch: dict):
         """
-        Perform a step of the optimization process to create the cluster of a region.
+        Perform a step of the optimization process during the training phase to create the cluster of a region.
         This method a set of parameters that minimize the loss function.
 
         Args:
@@ -72,12 +72,9 @@ class Optimizer:
         Returns:
             _type_: _description_
         """
-        scaled_bounds = [(low * s, high * s) for (low, high), s in zip(self._bounds, self._scale_factors)]
-        print(scaled_bounds)
-        
+        scaled_bounds = [(low * s, high * s) for (low, high), s in zip(self._bounds, self._scale_factors)]        
         initial_guesses = [np.array([np.random.uniform(b[0], b[1]) for b in scaled_bounds]) 
                            for _ in range(self._n_guesses)]
-        print(initial_guesses[0])
         
         args = (input_batch, init_state, self._battery_config, self._scale_factors, self._alpha, self._beta)
         loss = lambda x: scaled_loss(x, *args)
@@ -87,16 +84,15 @@ class Optimizer:
                                                 for guess in tqdm(initial_guesses))
         
         final_params = [(res.x / self._scale_factors).tolist() for res in results]
-        print("FINAL: ", final_params)
         return final_params
             
     
-    def estimate_new_theta(self, init_state: dict, input_batch: dict):
+    def estimate_new_theta(self, init_state: dict, input_batch: dict, centroid: list = None):
         """
         Perform a step of the optimization process during the adaptation phase.
         This method return the best parameters found during the optimization process.
         The parameters are the ones that minimize the loss function.
-        The loss function is the one defined in the loss.py file.
+        The loss function is defined in the loss.py file.
 
         Args:
             init_state (dict): _description_
@@ -106,23 +102,29 @@ class Optimizer:
             _type_: _description_
         """
         best_value = float('inf')
-        best_result = None
+        best_new_params = None
         
-        initial_guesses = [np.array([np.random.uniform(elem[0], elem[1]) for elem in self._bounds]) for _ in range(self._n_guesses)]
-        # initial_guesses = [np.array([0.0021978138785408, 0.0024798304568691, 22966.77861303526])]
+        scaled_bounds = [(low * s, high * s) for (low, high), s in zip(self._bounds, self._scale_factors)]    
         
+        if centroid is not None:
+            # Create random point following a normal centered into the scaled centroid
+            initial_guesses = np.random.normal(loc=centroid * self._scale_factors, scale=0.1, size=(self._n_guesses, len(centroid)))
+        else:
+             # Scale the bounds according to the scale factors and create initial guesses    
+            initial_guesses = [np.array([np.random.uniform(b[0], b[1]) for b in scaled_bounds]) 
+                               for _ in range(self._n_guesses)]
+                
+        # Define the loss function with the scaled parameters
         args = (input_batch, init_state, self._battery_config, self._scale_factors, self._alpha, self._beta)
-        loss = lambda x: loss_first_order_thevenin(x, *args)
-        
-        results = []
+        loss = lambda x: scaled_loss(x, *args)
 
-        res = Parallel(n_jobs=self._n_jobs)(delayed(minimize)(
-            loss, x0=guess, method=self._alg, bounds=self._bounds,options=self._options)
+        results = Parallel(n_jobs=self._n_jobs)(delayed(minimize)(
+            loss, x0=guess, method=self._alg, bounds=scaled_bounds, options=self._options)
                                                 for guess in tqdm(initial_guesses))
         
-        results = [(res.fun, res.x) for res in res]
+        res = min(results, key=lambda res: res.fun)
+        print(res)
+        best_new_params, best_loss = res.x, res.fun
         
-        if results.fun < best_value:
-            pass 
-        
-        return results
+        print(f"New theta:{best_new_params / self._scale_factors}, loss:{best_loss}")
+        return best_new_params / self._scale_factors

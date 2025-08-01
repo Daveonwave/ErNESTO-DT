@@ -73,9 +73,6 @@ def get_args():
         adaptive_parser.add_argument("--config_files", nargs='*', default=["./data/config/sim_adaptive.yaml"],
                                      help="Specifies the list of files containing parameters for each parallel experiment.")
         
-        adaptive_parser.add_argument("--dual_electrical", default="./data/config/models/electrical/thevenin_1-rc_scalar.yaml", type=str,
-                                     help="Specifies the file containing the dual electrical model used during the optimization phase.")
-        
         adaptive_parser.add_argument("--clusters_folder", default="./data/config/clusters/", type=str,
                                      help="Specifies the folder containing the clusters.")
         

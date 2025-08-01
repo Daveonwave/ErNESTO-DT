@@ -29,7 +29,7 @@ class DrivenSimulator(BaseSimulator):
         # Simulation variables
         self._sample = None
         self._inputs = None
-        self._get_rest_after = 60
+        self._get_rest_after = 900
         
         # Time variables
         self._prev_time = None

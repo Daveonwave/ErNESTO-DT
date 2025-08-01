@@ -7,11 +7,14 @@
 
 # Summary of the experiment
 experiment_name: "Adaptive Simulation"
-description: "TEMPLATE for adaptive simulation experiment."
+description:
+  "Esperimento con region shift ground. Il cluster iniziale è quello a 30-40 gradi.
+  L'esperimento ha l'obiettivo di testare l'adattamento del modello a un nuovo cluster di dati
+  dopo un cambio di temperatura fino a 10 gradi."
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "test_optimization"
+destination_folder: "region_shift_experiment/test_optimization"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
@@ -30,19 +33,19 @@ destination_folder: "test_optimization"
 # # ------------------------------------------------------------------------------- #
 input:
   ground_data:
-    file: "ground_PV.csv"
+    file: "region_shift_ground.csv"
     load: "current"
     time_format: "timestamp"
     vars:
       - var: "current"
-        label: "Current(A)"
+        label: "current"
         unit: "A"
       - var: "voltage"
-        label: "Voltage(V)"
+        label: "voltage"
         unit: "V"
-      - var: "temperature"
-        label: "Temperature"
-        unit: "degC"
+      - var: "t_amb"
+        label: "t_amb"
+        unit: "K"
     cycle_for: 1
 
 start_at: null
@@ -97,16 +100,8 @@ parameter_space:
     - "r1"
     - "c1"
   clusters:
-    #- original_csv: "cluster-1.csv"
-    #  name: "outliers"
-    - original_csv: "cluster0.csv"
-      name: "0"
-    - original_csv: "cluster1.csv"
-      name: "1"
-    - original_csv: "cluster2.csv"
-      name: "2"
     - original_csv: "cluster3.csv"
-      name: "3"
+      name: "nominal_temp_40"
 
 adaptation:
   param_names:
@@ -142,10 +137,10 @@ battery:
       var: "voltage"
       value: 3.
       unit: "V"
-    temp_ambient:
-      var: "temperature"
-      value: 303.15
-      unit: "K"
+    # temp_ambient:
+    #   var: "temperature"
+    #   value: 303.15
+    #   unit: "K"
 
   bounds:
     soc:
@@ -153,8 +148,8 @@ battery:
       high: 1.
 
   init:
-    voltage: 3.8625
+    voltage: 3.7426
     current: 0.
-    temperature: 303.15 # 23 degC
-    soc: 0.75
+    temperature: 313.15 # 23 degC
+    soc: 0.5
     soh: 1.

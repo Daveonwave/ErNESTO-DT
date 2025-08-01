@@ -22,7 +22,7 @@ def loss_first_order_thevenin(params: list,
     c_max = init_state['c_max']
     v = init_state['voltage']
     q = 0    
-    
+        
     # Parse the components that change within the model
     components = {}
     
@@ -52,7 +52,7 @@ def loss_first_order_thevenin(params: list,
         # Normal operating step of the battery system.
         t_amb = sample['t_amb'] if 't_amb' in sample else init_state['t_amb']
         dt = input_batch[k+1]['time'] - sample['time']
-        
+                
         # Electrical model operation
         v_ocv = ocv_gen.ocv_potential
         
@@ -74,16 +74,20 @@ def loss_first_order_thevenin(params: list,
         # Compute SoC with Coulomb counting
         soc = np.clip(soc + i / (c_max * 3600) * dt, a_min=0, a_max=1)
         
-        # Compute temperature with R2C thermal model
-        q = r0 * i**2 + r1 * i_rc**2
-        dVoc_dT = dVoc_dT_table.get_value(input_vars={'soc': soc})
-        
-        term_1 = c_term / dt * temp
-        term_2 = t_amb / (r_cond + r_conv)
-        denominator = c_term/dt + 1/(r_cond + r_conv) - (dVoc_dT * i)
+        # Ground temperature available
+        if 'temperature' in sample:
+            temp = sample['temperature']
+        else:
+            # Compute temperature with R2C thermal model
+            q = r0 * i**2 + r1 * i_rc**2
+            dVoc_dT = dVoc_dT_table.get_value(input_vars={'soc': soc})
+            
+            term_1 = c_term / dt * temp
+            term_2 = t_amb / (r_cond + r_conv)
+            denominator = c_term/dt + 1/(r_cond + r_conv) - (dVoc_dT * i)
 
-        t_core = (term_1 + term_2 + q) / denominator
-        temp = t_core + r_cond * (t_amb - t_core) / (r_cond + r_conv)
+            t_core = (term_1 + term_2 + q) / denominator
+            temp = t_core + r_cond * (t_amb - t_core) / (r_cond + r_conv)
         
         # Update the OCV generator
         ocv_gen.soc = soc
@@ -103,9 +107,7 @@ def loss_first_order_thevenin(params: list,
     """
     #print(f"Voltage loss: {voltage_loss}")
     regularization = alpha * np.sum(np.array(params) ** 2)
-    reg_gauss = gaussian_penalty(estimated_v)
-    #print("Total loss: ", voltage_loss + regularization, "regularization: ", regularization)
-    return voltage_loss + regularization + beta * reg_gauss
+    return voltage_loss + regularization #+ beta * reg_gauss
 
 
 def scaled_loss(scaled_params, input_batch, init_state, battery_config, scale_factors, alpha, beta):

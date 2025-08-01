@@ -8,8 +8,7 @@ from ernesto.digital_twin.orchestrator import DrivenLoader
 from ernesto.digital_twin.orchestrator import DataWriter
 from ernesto.digital_twin.bess import BatteryEnergyStorageSystem
 from ernesto.adaptation.optimizer import Optimizer
-from ernesto.adaptation.parameter_space import ParameterSpace
-from ernesto.postprocessing.metrics import _mse, _mape, _max_abs_err
+from ernesto.adaptation.parameter_grid import ParameterSpaceGrid
 
 logger = logging.getLogger('ErNESTO-DT')
 
@@ -45,10 +44,10 @@ class AdaptiveSimulator(BaseSimulator):
         
         self._enable_adaptation = kwargs['enable_adaptation']
         self._param_names = sim_config['adaptation']['param_names']
-                
+        
         # Simulation variables
         self._input_batch = []
-        self._batch_size = kwargs['batch_size'] if kwargs['batch_size'] is not None else sim_config['optimizer']['batch_size']
+        self._batch_size = kwargs['batch_size'] if 'batch_size' in kwargs else sim_config['optimizer']['batch_size']
         self._init_state = {}
         
         # Data loader and writer
@@ -70,9 +69,12 @@ class AdaptiveSimulator(BaseSimulator):
                                     enabled_adaptation=self._enable_adaptation,
                                     )
         
-        self._param_space = ParameterSpace(parameter_space_config=sim_config['parameter_space'],
-                                           clusters_folder=clusters_folder,
-                                           output_folder=kwargs['output_folder'])
+        self._grid = ParameterSpaceGrid(grid_config=sim_config['parameters_grid'], 
+                                        clusters_folder=clusters_folder,
+                                        output_folder=kwargs['output_folder'])
+        
+        self._region = None
+        
         
     def _add_to_batch(self, sample: dict):
         """
@@ -81,8 +83,6 @@ class AdaptiveSimulator(BaseSimulator):
         Args:
             sample (dict): The sample to add to the batch
         """
-        sample['soc'] = self._driven_sim.battery.soc_series[-1]
-        sample['temperature'] = self._driven_sim.battery._thermal_model.get_temp_series(k=-1)
         self._input_batch.append(sample)
             
     def _clear_batch(self):
@@ -99,20 +99,8 @@ class AdaptiveSimulator(BaseSimulator):
         self._driven_sim.init()
         self._init_state = self._driven_sim.battery.get_snapshot()
         
-        # Check the initial point in the parameter space
-        domain_point = {dim: self._init_state[dim] for dim in self._param_space._domain_variables}
-        self._param_space.select_active_region(point=domain_point)
-        
-        # Set the parameters of the electrical model for the DT
-        self._driven_sim.battery._electrical_model.params = self._param_space.active_region.centroid_dict
-        
         self._driven_sim.init_loader()
         self._driven_sim.load_sample()
-        
-        # Check the initial point in the parameter space
-        domain_point = {dim: self._init_state[dim] for dim in self._param_space._domain_variables}
-        self._param_space.select_active_region(point=domain_point)
-        print("Current region: ", self._param_space.active_region)
         
         self._clear_batch()
                   
@@ -121,40 +109,37 @@ class AdaptiveSimulator(BaseSimulator):
         Run the adaptive simulation for the whole duration.
         """
         dt = self._loader.timestep if self._loader.timestep is not None else 1
-        self._add_to_batch(self._driven_sim.sample)
+        
+        # Check the initial point in the grid
+        grid_point = {dim: self._init_state[dim] for dim in self._grid._dimensions}
+        self._region = self._grid.check_region(points=[grid_point])
+        print("Current region: ", self._region)
+        
+        # The cluster is initially empty, so we need to add the initial point to the cluster
+        if self._region.cluster.is_empty():
+            params = self._driven_sim.battery._electrical_model.params
+            self._region.cluster.add([params[name] for name in self._param_names])
+            print("Added initial point to the cluster: ", params)
+        
+        # Get the centroid of the cluster and set it as the initial parameters of the battery
+        centroid = self._region.cluster.centroid
+        self._driven_sim.battery._electrical_model.params = {label: centroid[i] for i, label in enumerate(self._param_names)}
+        print("centroid: ", centroid) 
+        print("params: ", self._driven_sim.battery._electrical_model.params)
+        exit()
         
         if self._batch_size is None:
             self._batch_size = self._loader.duration
         
         while not self._driven_sim.done:     
             self._init_state = self._driven_sim.battery.get_snapshot()
-            
-            print("batch size: ", self._batch_size)
-            
+        
             # Run the digital twin battery for a batch of data
             for _ in tqdm(range(self._batch_size)):
-                # This is done in the training
-                #if 'voltage' not in self._driven_sim.sample:
-                #    self._driven_sim.sample['voltage'] = self._driven_sim.battery.get_v()
+                self._driven_sim.sample['voltage'] = self._driven_sim.battery.get_v()
+                self._add_to_batch(self._driven_sim.sample)
                 self._driven_sim.step(dt=dt, sample=self._driven_sim.sample, input_var=self._loader.input_var)
-                dt = self._driven_sim.fetch_next()  
-                if dt != 0:
-                    self._add_to_batch(self._driven_sim.sample)
-                
-                # Compute the moving average of SoC and temperature within the batch 
-                mean_domain = self._param_space.check_batch_mean_domain(input_batch=self._input_batch, window_size=60)
-                self._param_space.select_active_region(point=mean_domain)
-                
-                # Set the parameters of the electrical model for the DT
-                self._driven_sim.battery._electrical_model.params = self._param_space.active_region.centroid_dict
-                # print(mean_soc, mean_temp)
-                #print("Current region: ", str(self._param_space.active_region))
-            
-            print(self._driven_sim.battery._electrical_model.get_v_series())
-            exit()
-            print("MSE:", _mse(simulated=self._driven_sim.battery._electrical_model.get_v_series(), ground=[elem['voltage'] for elem in self._input_batch]),)
-            print("MAPE:", _mape(simulated=self._driven_sim.battery._electrical_model.get_v_series(), ground=[elem['voltage'] for elem in self._input_batch]),)
-            print("MaAE:", _max_abs_err(simulated=self._driven_sim.battery._electrical_model.get_v_series(), ground=[elem['voltage'] for elem in self._input_batch]),)
+                dt = self._driven_sim.fetch_next()            
             
             # Perform the optimization and the adaptation
             self._step()
@@ -175,21 +160,11 @@ class AdaptiveSimulator(BaseSimulator):
         If the hypothesis test fails, the new theta is added to the outlier set.
         Otherwise, the new theta is added to the cluster or nothing happens.
         """
-        theta = self._optimizer.estimate_new_theta(self._init_state, self._input_batch, centroid=self._param_space.active_region.centroid)
-        # self.check_cluster() -> check if the theta is contained within the cluster
-        # faulty_cluster_creation() -> create a new cluster with the faulty points
-        print("Cluter centroid: ", self._param_space.active_region.centroid, "Estimated parameters: ", theta)
-        
-        mean_domain = self._param_space.check_batch_mean_domain(input_batch=self._input_batch)
-        print("Mean domain: ", mean_domain)
-        self._param_space.select_active_region(point=mean_domain)
-        
-        print("Current region: ", self._param_space.active_region)
-        self._param_space.add_params(params=[{dim: val for dim, val in zip(self._param_space._param_variables, theta)}], region=self._param_space.active_region)
-        
-        exit()
-        
         if self._enable_adaptation:
+            theta = self._optimizer.estimate_new_heta(self._init_state, self._input_batch)
+            # self.check_cluster() -> check if the theta is contained within the cluster
+            # faulty_cluster_creation() -> create a new cluster with the faulty points
+        
             grid_point = {dim: self._init_state[dim] for dim in self._grid._dimensions}
             self._grid.is_region_changed(point=grid_point)
             
@@ -197,7 +172,11 @@ class AdaptiveSimulator(BaseSimulator):
             
             # Call adaptation methods and do stuff with clusters
             # check cluster -> update params with centroids
-    
+        else:
+            points = self._optimizer.estimate_cluster(self._init_state, self._input_batch)
+            
+            self._grid.current_region.cluster.add(points)
+        
     def _stop(self):
         """
         Pause the interactive simulation.
@@ -212,19 +191,6 @@ class AdaptiveSimulator(BaseSimulator):
         self._run()
         self._store_sample()
         self._close()
-        
-    def _train(self):
-        """
-        # TODO: differentiate between training and adaptation
-        Create the clusters starting from a current profile. This method use the adaptive simulator just to
-        collect the data and create the clusters, but it does not perform any adaptation.
-        """
-        self._init()
-        ...
-        
-        points = self._optimizer.estimate_cluster(self._init_state, self._input_batch)
-        self._grid.current_region.cluster.add(points)
-            
     
     def _store_sample(self):
         """

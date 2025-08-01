@@ -24,7 +24,7 @@ internal_units = dict(
 )
 
 
-def load_data_from_csv(csv_file: Path, vars_to_retrieve: [{dict}], **kwargs):
+def load_data_from_csv(csv_file: Path, vars_to_retrieve:list, **kwargs):
     """
     Function to preprocess preprocessing that need to be read from a csv table.
 
@@ -52,7 +52,9 @@ def load_data_from_csv(csv_file: Path, vars_to_retrieve: [{dict}], **kwargs):
         except KeyError:
             raise KeyError("The column 'Time' is not present in the csv file or it is just misspelled.")
     elif kwargs['time_format'] == 'timestamp':
-        timestamps = pd.to_datetime(df['Time'], format="%Y/%m/%d %H:%M:%S.%f").values.astype(float) // 10 ** 9
+        timestamps = pd.to_datetime(df['Time'], errors='coerce')  # auto-detects format
+        timestamps = timestamps.values.astype('float') // 10 ** 9
+        #timestamps = pd.to_datetime(df['Time'], format="%Y/%m/%d %H:%M:%S.%f").values.astype(float) // 10 ** 9
     else:
         raise ValueError("The time format specified is not valid.")
     vars_data = {}

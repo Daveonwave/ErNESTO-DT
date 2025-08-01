@@ -57,7 +57,7 @@ components:
         label: "r1"
         unit: "ohm"
 
-  c:
+  c1:
     selected_type: lookup
 
     scalar: 10.

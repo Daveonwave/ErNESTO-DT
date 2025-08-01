@@ -58,7 +58,7 @@ class FirstOrderThevenin(ElectricalModel):
     def params(self, value: dict):
         """
         Update the parameters of the model
-        """
+        """        
         if isinstance(self.r0._resistance, Scalar):
             self.r0.resistance = value['r0']
         else:

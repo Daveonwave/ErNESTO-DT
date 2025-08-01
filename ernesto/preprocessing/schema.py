@@ -90,14 +90,22 @@ optimizer = Schema(
     }
 )
 
-parameters_grid = Schema(
-    [{
-        "original_cluster": Or(And(str, path_pattern), None),
-        "destination_file": Or(And(str, path_pattern), None),
+cluster_config = Schema(
+    {
+        "original_csv": Or(And(str, path_pattern), None),
+        Optional("destination_file"): Or(And(str, path_pattern), None),
         "name": And(str, label_pattern),
-        "region" : {
+        Optional("region") : {
             And(str, var_pattern): bound_param},    
-    }]
+    }
+)
+
+parameter_space = Schema(
+    {
+        "domain_variables": [And(str, label_pattern)],
+        "param_variables": [And(str, label_pattern)],
+        "clusters": [cluster_config]
+    }
 )
 
 adaptation = Schema(
@@ -130,7 +138,7 @@ config_schema = Schema(
         # Adaptation options
         Optional("adaptation"): adaptation,
         Optional("optimizer"): optimizer,
-        Optional("parameters_grid"): parameters_grid,
+        Optional("parameter_space"): parameter_space,
         
         # Battery parameters
         "battery": battery,
