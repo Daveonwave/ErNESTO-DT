@@ -37,7 +37,8 @@ def ernesto_plotter(dfs: list,
                     legend_loc: str = 'best',
                     legend_bbox: tuple = None,
                     legend_ncol: int = 4,
-                    alphas: list = None
+                    alphas: list = None,
+                    font: str = 'serif'
                     ):
     """
     Plot the data of multiple dataframes in the same figure for comparison.
@@ -73,6 +74,19 @@ def ernesto_plotter(dfs: list,
     
     if alphas is None:
         alphas = [1] * len(dfs)
+        
+    if font != 'serif':
+        matplotlib.rcParams.update({
+            "font.family": font,
+            "text.usetex" : False,
+        })
+    else:
+        matplotlib.rcParams.update({
+                "text.usetex" : True,
+                "text.latex.preamble": r'\usepackage{amsmath} \usepackage{amssymb}',
+                "font.family": "serif",
+                "font.serif" : ["Computer Modern Serif"],
+            })
     
     no_legend = False
     if labels is None:
@@ -125,8 +139,8 @@ def ernesto_plotter(dfs: list,
             if pic_format == 'pgf':
                 matplotlib.rcParams.update({
                     "pgf.texsystem": "pdflatex",
-                    'font.family': 'serif',
-                    'pgf.rcfonts': False,
+                    "font.family": "serif",
+                    "pgf.rcfonts": False,
                 })
             
             plot_name = fig_name + '_{}.{}'.format(var, pic_format)
