@@ -61,7 +61,18 @@ Parallely, we are working to employ the DT also in other fields, such as:
 [comment]: <> (### Examples)
 
 ## :paperclip: Citing
-
+```tex
+@article{salaorni2025ernesto,
+title = {A novel digital twin for battery energy storage systems in micro-grids},
+journal = {Journal of Energy Storage},
+volume = {132},
+pages = {117745},
+year = {2025},
+issn = {2352-152X},
+doi = {https://doi.org/10.1016/j.est.2025.117745},
+url = {https://www.sciencedirect.com/science/article/pii/S2352152X25024582},
+author = {Davide Salaorni and Federico Bianchi and Silvia Colnago and Andrea Barisione and Francesco Trovò and Marcello Restelli},
+keywords = {Digital twin, Energy storage, Micro-grid}
+}
 ```
 
-```
