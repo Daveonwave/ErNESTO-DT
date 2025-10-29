@@ -1,7 +1,7 @@
 import numpy as np
 import itertools
 
-from .region import Cluster, load_cluster_points
+from ..regime_shift.region import Cluster, load_cluster_points
 
 
 class GridRegion:

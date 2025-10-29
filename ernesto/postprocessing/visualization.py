@@ -221,3 +221,5 @@ def plot_separate_vars(df: pd.DataFrame,
         plt.savefig(file_path, format=pic_format, transparent=True, dpi=200)
 
     plt.show()
+    
+    

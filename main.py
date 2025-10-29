@@ -3,7 +3,7 @@ import logging
 import sys
 import os
 from joblib import Parallel, delayed
-from ernesto.utils.logger import CustomFormatter
+from ernesto.utils.logger import setup_logger
 from ernesto.digital_twin.orchestrator.orchestrator import DTOrchestrator
 import cProfile, pstats, functools
 
@@ -165,16 +165,8 @@ if __name__ == '__main__':
     parse_submodels(args)
     
     # Setup logger
-    logging.basicConfig(format='%(asctime)s | %(name)s-%(levelname)s: %(message)s')
-    logger = logging.getLogger(name="ErNESTO-DT")
-    ch = logging.StreamHandler()
-
-    if args['verbose']:
-        logger.setLevel(logging.DEBUG)
-        ch.setLevel(logging.DEBUG)
-
-    ch.setFormatter(CustomFormatter())
-    logger.addHandler(ch)
+    logger = setup_logger(verbose=args['verbose'])
+    logger.info("Main started")
 
     # Parallel execution of the experiments
     parallel_exp_config = args['config_files']

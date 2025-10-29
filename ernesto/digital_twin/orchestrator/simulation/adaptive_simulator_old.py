@@ -8,7 +8,7 @@ from ernesto.digital_twin.orchestrator import DrivenLoader
 from ernesto.digital_twin.orchestrator import DataWriter
 from ernesto.digital_twin.bess import BatteryEnergyStorageSystem
 from ernesto.adaptation.optimizer import Optimizer
-from ernesto.adaptation.parameter_grid import ParameterSpaceGrid
+from ernesto.adaptation.grid_domain.parameter_grid import ParameterSpaceGrid
 
 logger = logging.getLogger('ErNESTO-DT')
 

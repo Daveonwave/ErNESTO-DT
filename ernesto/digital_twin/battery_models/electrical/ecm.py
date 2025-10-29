@@ -6,6 +6,201 @@ from ernesto.digital_twin.parameters import *
 from warnings import warn
 
 
+class ZeroOrderThevenin(ElectricalModel):
+    """
+    CLass
+    """
+    def __init__(self,
+                 components_settings: dict,
+                 sign_convention='active',
+                 **kwargs
+                 ):
+        """
+
+        Args:
+            components_settings ():
+            sign_convention ():
+            **kwargs ():
+        """
+        super().__init__(name='Zero Order Thevenin')
+        self._sign_convention = sign_convention
+
+        self._init_components = instantiate_variables(components_settings)
+
+        self.r0 = Resistor(name='R0', resistance=self._init_components['r0'])
+        self.ocv_gen = OCVGenerator(name='OCV', ocv_potential=self._init_components['v_ocv'])
+    
+    @property
+    def collections_map(self):
+        return {'voltage': self.get_v_series,
+                'current': self.get_i_series,
+                'power': self.get_power_series,
+                'v_oc': self.ocv_gen.get_v_series,
+                'r0': self.r0.get_r0_series,
+                'v_r0': self.r0.get_v_series
+                }
+    
+    @property
+    def params(self):
+        return {
+            'r0': self.r0.resistance
+        }
+        
+    @params.setter
+    def params(self, value: dict):
+        """
+        Update the parameters of the model
+        """        
+        if isinstance(self.r0._resistance, Scalar):
+            self.r0.resistance = value['r0']
+        else:
+            warn(f"Warning: r0 is not a scalar, cannot update the value. It is a {type(self.r0.resistance)}")
+    
+    def reset_model(self, **kwargs):
+        self._v_load_series = []
+        self._i_load_series = []
+        self.r0.reset_data()
+        self.ocv_gen.reset_data()
+        
+    def init_model(self, **kwargs):
+        """
+        Initialize the model at t=0
+        """
+        v = kwargs['voltage'] if kwargs['voltage'] else 0
+        i = kwargs['current'] if kwargs['current'] else 0
+        p = v * i
+
+        self.update_v_load(v)
+        self.update_i_load(i)
+        self.update_power(p)
+
+        r0 = kwargs['r0'] if 'r0' in kwargs else None
+        v_r0 = kwargs['v_r0'] if 'v_r0' in kwargs else None
+        v_ocv = kwargs['v_ocv'] if 'v_ocv' in kwargs else 0
+
+        self.r0.init_component(r0=r0, v=v_r0)
+        self.ocv_gen.init_component(v=v_ocv)
+        
+    def load_battery_state(self, temp=None, soc=None, soh=None):
+        """
+        Update the SoC and SoH for the current simulation step
+        """
+        for component in [self.r0, self.ocv_gen]:
+            if temp is not None:
+                component.temp = temp
+            if soc is not None:
+                component.soc = soc
+            if soh is not None:
+                component.soh = soh
+    
+    def step_voltage_driven(self, v_load, dt, k):
+        """
+        CV mode
+        """
+        # Solve the equation to get I
+        r0 = self.r0.resistance
+        v_ocv = self.ocv_gen.ocv_potential
+
+        i = (v_load - v_ocv) / r0
+
+        if self._sign_convention == "passive":
+            i = -i
+
+        # Compute V_r0
+        v_r0 = self.r0.compute_v(i=i)
+
+        # Compute power
+        power = v_load * i
+
+        # Update the collections of variables of ECM components
+        self.r0.update_step_variables(r0=r0, v_r0=v_r0)
+        self.ocv_gen.update_v(value=v_ocv)
+        self.update_i_load(value=i)
+        self.update_v_load(value=v_load)
+        self.update_power(value=power)
+
+        return v_load, i
+    
+    def step_current_driven(self, i_load, dt, k, p_load=None):
+        """
+        CC mode
+        """
+        # Solve the equation to get V
+        r0 = self.r0.resistance
+        v_ocv = self.ocv_gen.ocv_potential
+
+        if self._sign_convention == 'passive':
+            i_load = -i_load
+
+        # Compute V_r0
+        v_r0 = self.r0.compute_v(i=i_load)
+
+        # Compute V
+        v = v_ocv + v_r0
+
+        if p_load is not None:
+            i_load = -i_load
+
+        # Compute power
+        if p_load is not None:
+            power = p_load
+        else:
+            power = v * i_load
+            if self._sign_convention == 'passive':
+                power = -power
+
+        # Update the collections of variables of ECM components
+        self.r0.update_step_variables(r0=r0, v_r0=v_r0)
+        self.ocv_gen.update_v(value=v_ocv)
+        self.update_v_load(value=v)
+        self.update_i_load(value=i_load)
+        self.update_power(value=power)
+
+        return v, i_load
+    
+    def step_power_driven(self, p_load, dt, k):
+        """
+        CP mode: to simplify the power driven case, we pose I = P / V(t-1), having a little shift in computed data
+        """
+        if self._sign_convention == 'passive':
+            return self.step_current_driven(i_load=p_load / self._v_load_series[-1], dt=dt, k=k, p_load=p_load)
+        else:
+            return self.step_current_driven(i_load=p_load / self._v_load_series[-1], dt=dt, k=k, p_load=p_load) 
+        
+    def compute_generated_heat(self, k=-1):
+        """
+        Compute the generated heat that can be used to feed the thermal model (when required).
+        For Zero order circuit it is: [P = V * I].
+
+        Inputs:
+        :param k: step for which compute the heat generation
+        """
+        return self.r0.get_r0_series(k=k) * self.get_i_series(k=k) ** 2
+
+    def get_results(self, **kwargs):
+        """
+        Returns a dictionary with results
+        """
+        results = {}
+        k = kwargs['k'] if 'k' in kwargs else None
+        var_names = kwargs['var_names'] if 'var_names' in kwargs else None
+
+        for key, func in self.collections_map.items():
+            if var_names is not None and key not in var_names:
+                continue
+            results[key] = func(k=k)
+            
+        return results
+    
+    def clear_collections(self, **kwargs):
+        """
+        Clear data collected during the simulation
+        """
+        super().clear_collections(**kwargs)
+        self.r0.clear_collections()
+        self.ocv_gen.clear_collections()
+    
+
 class FirstOrderThevenin(ElectricalModel):
     """
     CLass

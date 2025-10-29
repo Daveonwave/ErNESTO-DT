@@ -14,7 +14,8 @@ def loss_first_order_thevenin(params: list,
                               init_state: dict, 
                               battery_config: dict, 
                               alpha: float,
-                              beta: float):
+                              beta: float
+                              ):
     
     # Read the parameters of electrical model
     r0, r1, c = params
@@ -105,9 +106,8 @@ def loss_first_order_thevenin(params: list,
         temperature_diff = self.t_hat - self._t_real
         temperature_loss = np.sum(temperature_diff ** 2)
     """
-    #print(f"Voltage loss: {voltage_loss}")
     regularization = alpha * np.sum(np.array(params) ** 2)
-    return voltage_loss + regularization #+ beta * reg_gauss
+    return voltage_loss + regularization 
 
 
 def scaled_loss(scaled_params, input_batch, init_state, battery_config, scale_factors, alpha, beta):

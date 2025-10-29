@@ -11,7 +11,7 @@ description: "Region Shift experiment"
 goal: "For Online Learning"
 
 # Folder where the results will be saved
-destination_folder: "region_shift_experiment/ground_for_OL"
+destination_folder: "region_multiple_shift_experiment/ground_for_OL"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
@@ -30,7 +30,7 @@ destination_folder: "region_shift_experiment/ground_for_OL"
 # # ------------------------------------------------------------------------------- #
 input:
   ground_data:
-    file: "region_shift_ground_generator_profile.csv"
+    file: "region_multiple_shift_ground_generator_profile-4_5M.csv"
     load: "current"
     time_format: "seconds"
     vars:

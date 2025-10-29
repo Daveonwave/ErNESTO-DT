@@ -14,7 +14,7 @@ description:
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "region_shift_experiment/test_optimization"
+destination_folder: "region_shift_experiment/test_complete_routine_with_noise"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
@@ -33,23 +33,32 @@ destination_folder: "region_shift_experiment/test_optimization"
 # # ------------------------------------------------------------------------------- #
 input:
   ground_data:
-    file: "region_shift_ground.csv"
+    file: "online_learning/region_shift_validation.csv"
     load: "current"
-    time_format: "timestamp"
+    time_format: "seconds"
     vars:
       - var: "current"
-        label: "current"
+        label: "Current [A]"
         unit: "A"
       - var: "voltage"
-        label: "voltage"
+        label: "Voltage [V]"
         unit: "V"
       - var: "t_amb"
-        label: "t_amb"
+        label: "Ambient Temperature [K]"
         unit: "K"
+      # - var: "current"
+      #   label: "current"
+      #   unit: "A"
+      # - var: "voltage"
+      #   label: "voltage"
+      #   unit: "V"
+      # - var: "t_amb"
+      #   label: "t_amb"
+      #   unit: "K"
     cycle_for: 1
 
 start_at: null
-iterations: 100000
+iterations: null
 timestep: null
 check_soh_every: 1
 clear_collections_every: 50000
@@ -67,13 +76,17 @@ optimizer:
   algorithm: "L-BFGS-B"
   max_iter: 100
   tol: null
-  ftol: 0.0005
+  ftol: 0.000001
+  gtol: 0.0001
   disp: False
   alpha: 0.
   beta: 0. #0.1
-  batch_size: 2000
+  batch_size: 6000
   n_jobs: 4
   n_guesses: 4
+  random_init: False
+  workers: 1
+  noise_SNR: 50 # in dB, set to 'null' for no noise
 
   search_bounds:
     r0:
@@ -91,6 +104,10 @@ optimizer:
     r1: 1000
     c1: 0.0002
 
+# Algorithm chosen for the adaptive method
+adaptive_routine: "RegimeShiftAdaptiveRoutine"
+render: False
+
 parameter_space:
   domain_variables:
     - "soc"
@@ -102,13 +119,28 @@ parameter_space:
   clusters:
     - original_csv: "cluster3.csv"
       name: "nominal_temp_40"
+  outliers: []
+  # Modality with the selction of active cluster
+  # - "closest": closest cluster in the domain space
+  # - "latest": latest created cluster
+  cluster_selection_mode: "latest" #"closest"
 
 adaptation:
   param_names:
     - "r0"
     - "r1"
     - "c1"
-  threshold: 0.1
+  min_number_outliers: 30
+  ks_test:
+    alpha: 0.01
+  mountain_method:
+    lambda: 0.8
+    radius: 0.1
+    eta: 0.000001
+    max_iter: 100
+  mcd:
+    max_iter_factor: 10
+    support_fraction: 0.75
 
 # Battery options
 # ------------------------------------------------------------------------------- #

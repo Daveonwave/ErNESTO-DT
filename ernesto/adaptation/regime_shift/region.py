@@ -1,8 +1,7 @@
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import mahalanobis
-from scipy import stats
-from scipy.stats import f
+from ernesto.adaptation.regime_shift.stats import maha2_fisher_threshold, maha2_chi2_threshold, maha2_empirical_threshold
 
 
 def load_cluster_points(folder: str, csv_file: str, cols:list):
@@ -14,22 +13,22 @@ def load_cluster_points(folder: str, csv_file: str, cols:list):
     # Load the data points from the CSV file
     if csv_file is not None:
         data_points = pd.read_csv(folder + csv_file, usecols=cols)
+        data_points['time'] = 0 * len(data_points)  # Initialize time to zero
     return data_points
 
 
 class Region:
     def __init__(self, 
-                 cluster:pd.DataFrame,
-                 destination_file:str,
-                 domain_variables:list,
-                 param_variables:list,
-                 name:str
+                 cluster: pd.DataFrame,
+                 domain_variables: list,
+                 param_variables: list,
+                 creation_time: float = None,
+                 name: str = " "
                  ):
         """_summary_
 
         Args:
             cluster (list): _description_
-            destination_file (str): _description_
             domain_variables (list): _description_
             param_variables (list): _description_
             name (str): _description_
@@ -40,14 +39,15 @@ class Region:
         self._covariance = None
         self._domain_mean = None
         
+        self._metric = 'fisher_mahalanobis'  # 'empirical_mahalanobis' or 'theoretical_mahalanobis'
+        
         self._domain_variables = domain_variables if domain_variables is not None else []
         self._param_variables = param_variables if param_variables is not None else []
+        self._creation_time = creation_time if creation_time is not None else 0.0
         
         self._df_cluster = cluster if cluster is not None else None
-        self._df_outliers = pd.DataFrame(columns=self._domain_variables + self._param_variables)
-                
-        self._destination_file = destination_file
-        
+        #self._df_outliers = pd.DataFrame(columns=self._domain_variables + self._param_variables)
+                        
         self.compute_centroid()
         self.compute_covariance()
         self.compute_domain_mean_point()
@@ -59,12 +59,12 @@ class Region:
         return f"Region: {self._name}"
     
     @property
-    def cluster(self):
-        return self._cluster
-    
+    def name(self):
+        return self._name
+
     @property
-    def outliers(self):
-        return self._df_outliers
+    def cluster(self):
+        return self._df_cluster
     
     @property
     def domain_points(self):
@@ -105,17 +105,6 @@ class Region:
         if points is None:
             return
         self._df_cluster = pd.concat([self._df_cluster, pd.DataFrame.from_records(points)], ignore_index=True)
-        
-    def discard(self, points: list):
-        """
-        Add points to the outliers set.
-
-        Args:
-            points (list): list of dictionaries representing the points to be added.
-        """
-        if points is None:
-            return
-        self._df_outliers = pd.concat([self._df_outliers, pd.DataFrame.from_records(points)], ignore_index=True)
     
     def compute_domain_mean_point(self):
         """
@@ -154,7 +143,7 @@ class Region:
         else:
             return None  # or raise an exception if you prefer
     
-    def compute_covariance_inverse(self):
+    def compute_inverse_covariance(self):
         """
         Compute the inverse of the covariance matrix.
 
@@ -168,34 +157,7 @@ class Region:
         else:
             raise ValueError("Covariance matrix is not defined or cluster is empty.")
         
-    def compute_distances(self, cov_inv: np.ndarray = None):
-        """
-        Compute the Mahalanobis distances of the points in the cluster from the centroid.
-
-        Args:
-            cov_inv (np.ndarray, optional): _description_. Defaults to None.
-
-        Returns:
-            _type_: _description_
-        """
-        return [mahalanobis(x, self._centroid, cov_inv) for x in self._df_cluster[self._param_variables].values]
-    
-    def is_in_cluster(self, point, cov_inv, threshold):
-        """
-        Check if a point is within the cluster using the Mahalanobis distance.
-
-        Args:
-            point (_type_): _description_
-            cov_inv (_type_): _description_
-            threshold (_type_): _description_
-
-        Returns:
-            _type_: _description_
-        """
-        dist = mahalanobis(point, self._centroid, cov_inv)
-        return dist <= threshold, dist
-        
-    def affinity_test(self, point: dict, alpha: float = 0.05):
+    def affinity_test(self, points: list, alpha: float = 0.05):
         """
         Hypothesis test to check if the point is within the cluster.
         # TODO: implement a non-parametric test to check if the point is within the cluster.
@@ -206,58 +168,26 @@ class Region:
         Returns:
             _type_: _description_
         """
-        point = np.array(list(point.values()))
-        covariance_inverse = self.compute_covariance_inverse()
+        points = np.array(points)
         
-        # Empirical Mahalanobis threshold based on the cluster distances
-        mahal_distances = self.compute_distances(cov_inv=covariance_inverse)
-        threshold = np.percentile(mahal_distances, 100 * (1 - alpha))
+        # Empirical Mahalanobis distance based on the cluster distances
+        if self._metric == 'empirical_mahalanobis':
+            results = maha2_empirical_threshold(X=points, mean=self._centroid, cov=self._covariance, alpha=alpha)
 
-        is_in, distance = self.is_in_cluster(point, covariance_inverse, threshold)
-        
-        print(f"Threshold for Mahalanobis distance: {threshold}, Distance: {distance}")
-        return is_in
-        
+        # Theoretical Mahalanobis distance based on Fisher distribution
+        elif self._metric == 'fisher_mahalanobis':
+            results = maha2_fisher_threshold(X=points, mean=self._centroid, cov=self._covariance, n=len(self._df_cluster), alpha=alpha)
 
-        ## Non-parametric test: Wilcoxon signed-rank test
-        # p_values = []
-        # for i in range(point.shape[0]):
-        #     result = stats.wilcoxon(data_points_array[:, i] - point[i], alternative='two-sided')
-        #     if isinstance(result, tuple):
-        #         p_value = result[1]
-        #     else:
-        #         p_value = result
-        #     p_values.append(float(p_value))  # Ensure p_value is treated as a float
+        # Chi-squared Mahalanobis distance based on Chi-squared distribution
+        elif self._metric == 'chi2_mahalanobis':
+            results = maha2_chi2_threshold(X=points, mean=self._centroid, cov=self._covariance, alpha=alpha)
 
-        ## Mahalanobis distance based on Fisher's F-distribution
-        # p = len(self._param_variables)
-        # n = len(self._df_cluster)
-        # if n <= p:
-        #     raise ValueError("Number of points in the cluster must be greater than the number of parameters.")
-        # Quantile for the F-distribution
-        #f_val = f.ppf(1 - alpha, p, n - p)
-        #threshold = f_val * (p * (n**2 - 1)) / (n * (n - p))
-        
-        print(f"Mahalanobis distance: {mahalanobis_dist}, Threshold: {threshold}")
-        
-        return mahalanobis_dist <= threshold, mahalanobis_dist
+        else:
+            raise ValueError("Metric not recognized. Use 'empirical_mahalanobis' or 'theoretical_mahalanobis'.")
+
+        return results
     
-    def check_affinity_and_add(self, points: list):
-        """
-        Check if the points are within the cluster and add them if they are.
-
-        Args:
-            points (list): list of dictionaries representing the points to be added.
-        """
-        for point in points:
-            if self.affinity_test(point):
-                print(f"Point {point} is in the cluster, adding to cluster.")
-                self.add([point])
-            else:
-                print(f"Point {point} is not in the cluster, adding to outliers.")
-                self.discard([point])
-    
-    def save(self, labels: list = None):
+    def save(self, filepath: str):
         """
         Save the cluster points to a CSV file.
 
@@ -266,5 +196,5 @@ class Region:
             csv_file (str): _description_
         """
         if self._df_cluster is not None:
-            self._df_cluster.to_csv(self._destination_file, index=False)
+            self._df_cluster.to_csv(filepath, index=False)
 

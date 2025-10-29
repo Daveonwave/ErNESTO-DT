@@ -78,15 +78,19 @@ optimizer = Schema(
         "algorithm": Or(str, None),
         "max_iter": Or(int, None),
         "disp": Or(bool, None),
-        "tol": Or(float, int, None),
-        "ftol": Or(float, int, None),
+        "tol": Or(float, None),
+        "ftol": Or(float, None),
+        "gtol": Or(float, None),
         "alpha": Or(float, int, None),
         "beta": Or(float, int, None),
         "batch_size": Or(int, None),
         "n_guesses": Or(int, None),
         "n_jobs": Or(int, None),
+        "random_init": Or(bool, None),
         "search_bounds": {And(str, label_pattern): bound_param},
         "scale_factors": {And(str, label_pattern): Or(float, int)},
+        "workers": Or(int, None),
+        "noise_SNR": Or(float, int, None)
     }
 )
 
@@ -104,14 +108,29 @@ parameter_space = Schema(
     {
         "domain_variables": [And(str, label_pattern)],
         "param_variables": [And(str, label_pattern)],
-        "clusters": [cluster_config]
+        "clusters": [cluster_config],
+        "outliers": [Or(And(str, path_pattern), None)],
+        "cluster_selection_mode": Or('closest', 'latest')   
     }
 )
 
 adaptation = Schema(
     {   
         "param_names": [And(str, label_pattern)],
-        "threshold": Or(float, int),
+        "min_number_outliers": Or(int, None),
+        "ks_test": {
+            "alpha": Or(float, And(int, Use(float))),
+        },
+        "mountain_method": {
+            "lambda": Or(float, And(int, Use(float)), None),
+            "radius": Or(float, And(int, Use(float)), None),
+            "eta": Or(float, And(int, Use(float)), None),
+            "max_iter": Or(float, And(int, Use(float)), None)
+        },
+        "mcd": {
+            "max_iter_factor": Or(int, None),
+            "support_fraction": Or(float, And(int, Use(float)), None)
+        },
     }
 )
 
@@ -138,6 +157,8 @@ config_schema = Schema(
         # Adaptation options
         Optional("adaptation"): adaptation,
         Optional("optimizer"): optimizer,
+        Optional("adaptive_routine"): And(str, var_pattern),
+        Optional("render"): Or(bool),
         Optional("parameter_space"): parameter_space,
         
         # Battery parameters

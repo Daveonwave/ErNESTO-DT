@@ -1,14 +1,16 @@
 import pandas as pd
 import logging
 from tqdm.rich import tqdm
+import os
 
 from .base_simulator import BaseSimulator
 from .driven_sim import DrivenSimulator
 from ernesto.digital_twin.orchestrator import DrivenLoader
 from ernesto.digital_twin.orchestrator import DataWriter
+from ernesto.adaptation import RegimeShiftAdaptiveRoutine
 from ernesto.digital_twin.bess import BatteryEnergyStorageSystem
 from ernesto.adaptation.optimizer import Optimizer
-from ernesto.adaptation.parameter_space import ParameterSpace
+from ernesto.adaptation.regime_shift.parameter_space import ParameterSpace
 from ernesto.postprocessing.metrics import _mse, _mape, _max_abs_err
 
 logger = logging.getLogger('ErNESTO-DT')
@@ -39,17 +41,9 @@ class AdaptiveSimulator(BaseSimulator):
             data_writer (DataWriter): _description_
         """
         self._mode = "adaptive"
-        logger.info("Instantiated the {} experiment to simulate a specific profile.".format(self.__class__.__name__))
+        logger.info("Instantiated the {} experiment to enable online adaptation for the estimate of model parameters.".format(self.__class__.__name__))
 
         super().__init__()
-        
-        self._enable_adaptation = kwargs['enable_adaptation']
-        self._param_names = sim_config['adaptation']['param_names']
-                
-        # Simulation variables
-        self._input_batch = []
-        self._batch_size = kwargs['batch_size'] if kwargs['batch_size'] is not None else sim_config['optimizer']['batch_size']
-        self._init_state = {}
         
         # Data loader and writer
         self._loader = data_loader
@@ -60,144 +54,62 @@ class AdaptiveSimulator(BaseSimulator):
                                            sim_config=sim_config,
                                            data_loader=data_loader,
                                            data_writer=data_writer)
-        
-        optim_info = sim_config['optimizer']
-        
-        # Adaptive structures
-        self._optimizer = Optimizer(battery_config={'models_config': model_config, 
-                                                    'battery_options': sim_config['battery']},
-                                    **optim_info,
-                                    enabled_adaptation=self._enable_adaptation,
-                                    )
-        
-        self._param_space = ParameterSpace(parameter_space_config=sim_config['parameter_space'],
-                                           clusters_folder=clusters_folder,
-                                           output_folder=kwargs['output_folder'])
-        
-    def _add_to_batch(self, sample: dict):
-        """
-        Add the sample to the batch.
-        
-        Args:
-            sample (dict): The sample to add to the batch
-        """
-        sample['soc'] = self._driven_sim.battery.soc_series[-1]
-        sample['temperature'] = self._driven_sim.battery._thermal_model.get_temp_series(k=-1)
-        self._input_batch.append(sample)
-            
-    def _clear_batch(self):
-        """
-        Clear the batch.
-        """
-        self._input_batch = []
-        
+
+        self._adapter = globals()[sim_config['adaptive_routine']](
+            model_config=model_config,
+            sim_config=sim_config,
+            clusters_folder=clusters_folder,
+            render=sim_config.get('render', False),
+            **kwargs
+        )
+
     def _init(self):
         """
         Initialize the adaptive simulation.
         """
         logger.info("'Adaptive Simulation' started...")
         self._driven_sim.init()
-        self._init_state = self._driven_sim.battery.get_snapshot()
-        
-        # Check the initial point in the parameter space
-        domain_point = {dim: self._init_state[dim] for dim in self._param_space._domain_variables}
-        self._param_space.select_active_region(point=domain_point)
-        
-        # Set the parameters of the electrical model for the DT
-        self._driven_sim.battery._electrical_model.params = self._param_space.active_region.centroid_dict
-        
+        #self._init_state = self._driven_sim.battery.get_snapshot()
+        self._adapter.reset()
+
         self._driven_sim.init_loader()
         self._driven_sim.load_sample()
         
-        # Check the initial point in the parameter space
-        domain_point = {dim: self._init_state[dim] for dim in self._param_space._domain_variables}
-        self._param_space.select_active_region(point=domain_point)
-        print("Current region: ", self._param_space.active_region)
-        
-        self._clear_batch()
-                  
+        self._adapter.track_simulation_state(sample=self._driven_sim.sample, 
+                                             #domain_vars={dim: self._driven_sim.battery.get_snapshot()[dim] for dim in self._adapter.get_domain_vars()})
+                                             domain_vars=self._driven_sim.battery.get_snapshot())
+        self._driven_sim.battery._electrical_model.params = self._adapter.get_estimated_params()
+                          
     def _run(self):
         """
         Run the adaptive simulation for the whole duration.
         """
         dt = self._loader.timestep if self._loader.timestep is not None else 1
-        self._add_to_batch(self._driven_sim.sample)
-        
-        if self._batch_size is None:
-            self._batch_size = self._loader.duration
-        
+        self._pbar = tqdm(total=int(self._loader.duration), position=0, leave=True)
+    
         while not self._driven_sim.done:     
-            self._init_state = self._driven_sim.battery.get_snapshot()
-            
-            print("batch size: ", self._batch_size)
-            
-            # Run the digital twin battery for a batch of data
-            for _ in tqdm(range(self._batch_size)):
-                # This is done in the training
-                #if 'voltage' not in self._driven_sim.sample:
-                #    self._driven_sim.sample['voltage'] = self._driven_sim.battery.get_v()
+            self._adapter.set_init_state(self._driven_sim.battery.get_snapshot())
+
+            # Run the digital twin battery while the adaptation routine is monitoring
+            while self._adapter.keep_monitoring() and not self._driven_sim.done:
+                # Step the digital twin simulator
                 self._driven_sim.step(dt=dt, sample=self._driven_sim.sample, input_var=self._loader.input_var)
+                self._pbar.update(dt)
                 dt = self._driven_sim.fetch_next()  
+                
                 if dt != 0:
-                    self._add_to_batch(self._driven_sim.sample)
+                    self._adapter.track_simulation_state(sample=self._driven_sim.sample,
+                                                         domain_vars=self._driven_sim.battery.get_snapshot())
+                    # Set the parameters of the electrical model for the DT
+                    self._driven_sim.battery._electrical_model.params = self._adapter.get_estimated_params()
                 
-                # Compute the moving average of SoC and temperature within the batch 
-                mean_domain = self._param_space.check_batch_mean_domain(input_batch=self._input_batch, window_size=60)
-                self._param_space.select_active_region(point=mean_domain)
-                
-                # Set the parameters of the electrical model for the DT
-                self._driven_sim.battery._electrical_model.params = self._param_space.active_region.centroid_dict
-                # print(mean_soc, mean_temp)
-                #print("Current region: ", str(self._param_space.active_region))
-            
-            print(self._driven_sim.battery._electrical_model.get_v_series())
-            exit()
-            print("MSE:", _mse(simulated=self._driven_sim.battery._electrical_model.get_v_series(), ground=[elem['voltage'] for elem in self._input_batch]),)
-            print("MAPE:", _mape(simulated=self._driven_sim.battery._electrical_model.get_v_series(), ground=[elem['voltage'] for elem in self._input_batch]),)
-            print("MaAE:", _max_abs_err(simulated=self._driven_sim.battery._electrical_model.get_v_series(), ground=[elem['voltage'] for elem in self._input_batch]),)
-            
             # Perform the optimization and the adaptation
-            self._step()
-            
-            #self._pbar.update(self._batch_size)
-            self._clear_batch()
+            self._adapter.step()
             self._driven_sim.battery.clear_collections()
         
-    def _step(self):
-        """
-        Optimization phase: 
-        -------------------
-        Perform the optimization for the current input batch by estimating the optimal parameters.
-        
-        Adaptive phase:
-        ---------------
-        Check if the estimated parameters are within the cluster with an hypothesis test.
-        If the hypothesis test fails, the new theta is added to the outlier set.
-        Otherwise, the new theta is added to the cluster or nothing happens.
-        """
-        theta = self._optimizer.estimate_new_theta(self._init_state, self._input_batch, centroid=self._param_space.active_region.centroid)
-        # self.check_cluster() -> check if the theta is contained within the cluster
-        # faulty_cluster_creation() -> create a new cluster with the faulty points
-        print("Cluter centroid: ", self._param_space.active_region.centroid, "Estimated parameters: ", theta)
-        
-        mean_domain = self._param_space.check_batch_mean_domain(input_batch=self._input_batch)
-        print("Mean domain: ", mean_domain)
-        self._param_space.select_active_region(point=mean_domain)
-        
-        print("Current region: ", self._param_space.active_region)
-        self._param_space.add_params(params=[{dim: val for dim, val in zip(self._param_space._param_variables, theta)}], region=self._param_space.active_region)
-        
-        exit()
-        
-        if self._enable_adaptation:
-            grid_point = {dim: self._init_state[dim] for dim in self._grid._dimensions}
-            self._grid.is_region_changed(point=grid_point)
-            
-            # self._update_params() 
-            
-            # Call adaptation methods and do stuff with clusters
-            # check cluster -> update params with centroids
-    
+        self._pbar.close()
+        logger.info("'Adaptive Simulation' solved without errors!")
+
     def _stop(self):
         """
         Pause the interactive simulation.
@@ -210,32 +122,36 @@ class AdaptiveSimulator(BaseSimulator):
         """
         self._init()
         self._run()
-        self._store_sample()
+        #self._store_sample()
         self._close()
         
-    def _train(self):
-        """
-        # TODO: differentiate between training and adaptation
-        Create the clusters starting from a current profile. This method use the adaptive simulator just to
-        collect the data and create the clusters, but it does not perform any adaptation.
-        """
-        self._init()
-        ...
+    # def _train(self):
+    #     """
+    #     # TODO: differentiate between training and adaptation
+    #     Create the clusters starting from a current profile. This method use the adaptive simulator just to
+    #     collect the data and create the clusters, but it does not perform any adaptation.
+    #     """
+    #     self._init()
+    #     ...
         
-        points = self._optimizer.estimate_cluster(self._init_state, self._input_batch)
-        self._grid.current_region.cluster.add(points)
+    #     points = self._optimizer.estimate_cluster(self._init_state, self._input_batch)
+    #     self._grid.current_region.cluster.add(points)
             
     
-    def _store_sample(self):
-        """
-        Add the ground and simulated data to the writer queues.
-        """
-        for region in self._grid._regions:
-            region.cluster.save(labels=self._param_names)
+    # def _store_sample(self):
+    #     """
+    #     Add the ground and simulated data to the writer queues.
+    #     """
+    #     for region in self._grid._regions:
+    #         region.cluster.save(labels=self._param_names)
     
     def clear(self):
         self._battery.clear_collections()
     
     def _close(self):
+        # Export time series data
+        if hasattr(self._adapter, 'export_data_history'):
+            self._adapter.export_data_history(self._writer._output_folder)
+        
         self._loader.destroy()
-        self._driven_sim.close()    
+        self._driven_sim.close()

@@ -9,7 +9,7 @@
 # ############################################################################
 
 type: electrical
-class_name: FirstOrderThevenin
+class_name: ZeroOrderThevenin
 
 # ----------------------------------------------------------------------------
 # Components can be instantiated in 3 different ways:
@@ -22,14 +22,6 @@ components:
   r0:
     selected_type: scalar
     scalar: 0.002036
-
-  r1:
-    selected_type: scalar
-    scalar: 0.002390
-
-  c1:
-    selected_type: scalar
-    scalar: 24490.909512
 
   v_ocv:
     selected_type: lookup
