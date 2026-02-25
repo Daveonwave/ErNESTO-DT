@@ -7,7 +7,7 @@ from .base_simulator import BaseSimulator
 from .driven_sim import DrivenSimulator
 from ernesto.digital_twin.orchestrator import DrivenLoader
 from ernesto.digital_twin.orchestrator import DataWriter
-from ernesto.adaptation import RegimeShiftAdaptiveRoutine
+from ernesto.adaptation import EvolvingClusteringRoutine, PassiveEvolutionRoutine, ClusterShiftRoutine
 from ernesto.digital_twin.bess import BatteryEnergyStorageSystem
 from ernesto.adaptation.optimizer import Optimizer
 from ernesto.adaptation.regime_shift.parameter_space import ParameterSpace
@@ -70,13 +70,12 @@ class AdaptiveSimulator(BaseSimulator):
         logger.info("'Adaptive Simulation' started...")
         self._driven_sim.init()
         #self._init_state = self._driven_sim.battery.get_snapshot()
-        self._adapter.reset()
+        self._adapter.reset(**self._driven_sim.battery.get_snapshot())
 
         self._driven_sim.init_loader()
         self._driven_sim.load_sample()
         
         self._adapter.track_simulation_state(sample=self._driven_sim.sample, 
-                                             #domain_vars={dim: self._driven_sim.battery.get_snapshot()[dim] for dim in self._adapter.get_domain_vars()})
                                              domain_vars=self._driven_sim.battery.get_snapshot())
         self._driven_sim.battery._electrical_model.params = self._adapter.get_estimated_params()
                           

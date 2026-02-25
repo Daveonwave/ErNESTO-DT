@@ -12,6 +12,48 @@ matplotlib.rcParams.update({
                 "font.serif" : ["Computer Modern Serif"],
             })
 
+# 2. Define the visual style
+sns.set_style('whitegrid', {
+    'grid.linestyle': '--', 
+    'grid.alpha': 0.5,          # Lower alpha for less intrusive grid
+    'grid.color': '.8',
+    'axes.edgecolor': '0.15',
+    'font.family': 'serif',     # Matches LaTeX default
+    'font.serif': ['Times New Roman', 'Computer Modern Roman', 'DejaVu Serif'],
+})
+
+# 3. Fine-tune Matplotlib params for Publication Quality
+plt.rcParams.update({
+    # Figure Size: 6x3.7 is close to the Golden Ratio for A4/Letter width
+    'figure.figsize': (6.0, 3.75), 
+    
+    # Line width: Thicker for the main mean line
+    'lines.linewidth': 2.0,     
+    
+    # Fonts: Ensure math looks like LaTeX
+    'mathtext.fontset': 'cm',   # 'cm' = Computer Modern (LaTeX standard)
+    'mathtext.rm': 'serif',
+    
+    # Axes and Ticks
+    'axes.linewidth': 1.2,
+    'xtick.direction': 'in',
+    'ytick.direction': 'in',
+    'xtick.major.size': 4,
+    'ytick.major.size': 4,
+    'xtick.bottom': True,       # Ensure ticks are visible
+    'ytick.left': True,
+    
+    # Legend: Clean and readable
+    'legend.frameon': True,
+    'legend.framealpha': 0.9,
+    'legend.fancybox': False,   # Square corners match academic style better
+    'legend.edgecolor': '0.8',
+})
+
+# 4. Color Palette: High contrast, colorblind safe
+# Using 'bright' or 'colorblind' is best for distinguishing RL agents
+plot_colors = sns.color_palette("colorblind")
+
 
 def ernesto_plotter(dfs: list,
                     variables: list,
@@ -31,9 +73,9 @@ def ernesto_plotter(dfs: list,
                     pic_format: str = 'png',
                     save_extend_bbox: tuple = None,
                     figsize: tuple =(15, 5),
-                    tick_font_size: int = 16,
-                    label_font_size: int = 18,
-                    legend_font_size: int = 14,
+                    tick_font_size: int = None,
+                    label_font_size: int = None,
+                    legend_font_size: int = None,
                     legend_loc: str = 'best',
                     legend_bbox: tuple = None,
                     legend_ncol: int = 4,

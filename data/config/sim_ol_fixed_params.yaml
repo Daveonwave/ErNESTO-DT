@@ -1,26 +1,24 @@
 # ------------------------------------------------------------------------------- #
-# MODE: Adaptive Simulation
+# MODE: Compared Simulation
 # ------------------------------------------------------------------------------- #
 # The purpose of the experiment is to compare the behavior of the DT with
 # real-world (ground) data and evaluate the accuracy of the system.
 # ------------------------------------------------------------------------------- #
 
 # Summary of the experiment
-experiment_name: "Adaptive Simulation"
+experiment_name: "Driven Simulation"
 description: "Example experiment"
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "cluster_HL"
+destination_folder: "phdThesis/region_shift_validation/"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
 # 1. specify the .csv file from which we have to read real-world data
 # 2. specify variables used as input and output (for validation)
 # 3. specify the format of 'Time' column ('seconds' or 'timestamp')
-# 4. specify the number of times the experiment has to be repeated by providing
-#    the ground data in input. Defailt is 1.
-# 5. specify for all the variables:
+# 4. specify for all the variables:
 #   - 'var' has to be a variable among [current, voltage, power, temperature].
 #   - 'label' is the column name of the variable inside the csv file.
 #      Example: {'Voltage [V]', 'Current [A]', 'Power [W]'}
@@ -30,101 +28,26 @@ destination_folder: "cluster_HL"
 # # ------------------------------------------------------------------------------- #
 input:
   ground_data:
-    file: "ground_HL.csv"
+    file: "online_learning/region_shift_validation.csv"
     load: "current"
     time_format: "seconds"
     vars:
       - var: "current"
         label: "Current [A]"
         unit: "A"
+      - var: "voltage"
+        label: "Voltage [V]"
+        unit: "V"
+      - var: "t_amb"
+        label: "Ambient Temperature [K]"
+        unit: "K"
     cycle_for: 1
 
 start_at: null
-iterations: 20000
+iterations: null
 timestep: null
 check_soh_every: 1
 clear_collections_every: 50000
-
-# Optimiziation Options
-# ------------------------------------------------------------------------------- #
-# optimizer: specify the optimization algorithm and its parameters
-#   - algorithm: the optimization algorithm to be used
-#   - max_iter: the maximum number of iterations
-#   - tol: the tolerance for the optimization algorithm
-#   - search_bounds: specify the search bounds for the optimization algorithm
-#   - scale_factors: specify the scale factors for the optimization algorithm
-# ------------------------------------------------------------------------------- #
-optimizer:
-  algorithm: "L-BFGS-B"
-  max_iter: 100
-  tol: null
-  ftol: 0.0005
-  disp: False
-  alpha: 0.
-  batch_size: null
-  n_jobs: 8
-  n_guesses: 100
-
-  search_bounds:
-    r0:
-      low: 0.001 #[1, 10]
-      high: 0.01
-    r1:
-      low: 0.001 #[1, 10]
-      high: 0.01
-    c1:
-      low: 5000. #[1, 10]
-      high: 50000.
-
-  scale_factors:
-    r0: 1000
-    r1: 1000
-    c1: 0.0002
-
-parameters_grid:
-  - original_cluster: null
-    destination_file: "cluster_LL.csv"
-    region:
-      temperature:
-        low: 273.15
-        high: 293.15
-      soc:
-        low: 0.
-        high: 0.5
-  - original_cluster: null
-    destination_file: "cluster_HL.csv"
-    region:
-      temperature:
-        low: 293.15
-        high: 323.15
-      soc:
-        low: 0.
-        high: 0.5
-  - original_cluster: null
-    destination_file: "cluster_LH.csv"
-    region:
-      temperature:
-        low: 273.15
-        high: 293.15
-      soc:
-        low: 0.5
-        high: 1.
-  - original_cluster: null
-    destination_file: "cluster_HH.csv"
-    region:
-      temperature:
-        low: 293.15
-        high: 323.15
-      soc:
-        low: 0.5
-        high: 1.
-
-adaptation:
-  param_names:
-    - "r0"
-    - "r1"
-    - "c1"
-  threshold: 0.1
 
 # Battery options
 # ------------------------------------------------------------------------------- #
@@ -137,6 +60,7 @@ adaptation:
 #   - 'unit' specifies the unit of the parameter that will be transformed to
 #      Digital Twin internal default units.
 # ------------------------------------------------------------------------------- #
+
 battery:
   sign_convention: "passive"
 
@@ -153,10 +77,10 @@ battery:
       var: "voltage"
       value: 3.
       unit: "V"
-    temp_ambient:
-      var: "temperature"
-      value: 303.15
-      unit: "K"
+    # temp_ambient:
+    #   var: "temperature"
+    #   value: 303.15
+    #   unit: "K"
 
   bounds:
     soc:
@@ -164,8 +88,8 @@ battery:
       high: 1.
 
   init:
-    voltage: 3.115
+    voltage: 3.89722 #3.7426
     current: 0.
-    temperature: 303.15 # 30 degC
-    soc: 0.1
+    temperature: 313.21 # 313.15 # 23 degC
+    soc: 0.7 #0.5
     soh: 1.

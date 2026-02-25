@@ -14,7 +14,7 @@ description:
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "region_shift_experiment/test_complete_routine_with_noise"
+destination_folder: "phdThesis/region_shift_validation/"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
@@ -46,15 +46,6 @@ input:
       - var: "t_amb"
         label: "Ambient Temperature [K]"
         unit: "K"
-      # - var: "current"
-      #   label: "current"
-      #   unit: "A"
-      # - var: "voltage"
-      #   label: "voltage"
-      #   unit: "V"
-      # - var: "t_amb"
-      #   label: "t_amb"
-      #   unit: "K"
     cycle_for: 1
 
 start_at: null
@@ -81,12 +72,12 @@ optimizer:
   disp: False
   alpha: 0.
   beta: 0. #0.1
-  batch_size: 6000
+  batch_size: 3000
   n_jobs: 4
   n_guesses: 4
   random_init: False
   workers: 1
-  noise_SNR: 50 # in dB, set to 'null' for no noise
+  noise_SNR: null #40 # in dB, set to 'null' for no noise
 
   search_bounds:
     r0:
@@ -104,8 +95,8 @@ optimizer:
     r1: 1000
     c1: 0.0002
 
-# Algorithm chosen for the adaptive method
-adaptive_routine: "RegimeShiftAdaptiveRoutine"
+# Algorithm chosen for the adaptive method "EvolvingClusteringRoutine", "PassiveEvolutionRoutine" or "ClusterShiftRoutine"
+adaptive_routine: "ClusterShiftRoutine"
 render: False
 
 parameter_space:
@@ -134,7 +125,7 @@ adaptation:
   ks_test:
     alpha: 0.01
   mountain_method:
-    lambda: 0.8
+    lambda: 0.95
     radius: 0.1
     eta: 0.000001
     max_iter: 100
@@ -180,8 +171,8 @@ battery:
       high: 1.
 
   init:
-    voltage: 3.7426
+    voltage: 3.89722
     current: 0.
-    temperature: 313.15 # 23 degC
-    soc: 0.5
+    temperature: 313.21 # 23 degC
+    soc: 0.7
     soh: 1.

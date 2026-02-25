@@ -14,7 +14,7 @@ def loss_first_order_thevenin(params: list,
                               init_state: dict, 
                               battery_config: dict, 
                               alpha: float,
-                              beta: float
+                              beta: float,
                               ):
     
     # Read the parameters of electrical model

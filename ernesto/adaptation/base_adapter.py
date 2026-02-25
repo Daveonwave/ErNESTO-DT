@@ -7,6 +7,12 @@ class BaseAdapter:
     def __init__(self, **kwargs):
         pass
     
+    def reset(self, **kwargs):
+        """
+        Reset the adapter to its initial state.
+        """
+        pass
+    
     def get_estimated_params(self):
         """
         Load the estimated parameters from the file.

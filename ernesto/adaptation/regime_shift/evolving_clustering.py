@@ -14,7 +14,7 @@ from ernesto.postprocessing.interactive_plot import ParameterSpaceVisualizer
 from ernesto.adaptation.regime_shift.stats import *
 
 
-class RegimeShiftAdaptiveRoutine(BaseAdapter):
+class EvolvingClusteringRoutine(BaseAdapter):
     """
     Adaptation routine for regime shifts in the parameter space.
     """
@@ -37,6 +37,7 @@ class RegimeShiftAdaptiveRoutine(BaseAdapter):
             clusters_folder (str): Path to the folder containing cluster data.
             batch_size (int, optional): _description_. Defaults to None.
             enable_adaptation (bool, optional): _description_. Defaults to True.
+            immediate_adaptation (bool, optional): _description_. Defaults to False.    
             output_folder (str, optional): _description_. Defaults to None.
             render (bool, optional): _description_. Defaults to False.
         """
@@ -75,7 +76,7 @@ class RegimeShiftAdaptiveRoutine(BaseAdapter):
     def get_estimated_params(self):
         """
         Get the estimated parameters.
-        """
+        """   
         return self._param_space.active_region.centroid_dict
     
     def _add_to_batch(self, sample: dict):
@@ -110,7 +111,7 @@ class RegimeShiftAdaptiveRoutine(BaseAdapter):
             self._data_history['is_outlier'].append(is_outlier)
             self._data_history['active_cluster'].append(self._param_space.active_region.name)
 
-    def reset(self):
+    def reset(self, **kwargs):
         """
         Reset the adapter.
         """
@@ -225,12 +226,12 @@ class RegimeShiftAdaptiveRoutine(BaseAdapter):
                 outliers = self._param_space.outliers[self._param_space.param_variables].to_numpy()
                 times = self._param_space.outliers['time'].to_numpy()
                 _, indices, _, _ = trovo_mountain_method(points=outliers, 
-                                                              times=times,
-                                                              curr_time=self._adaptation_time_step,
-                                                              lambda_=self._adaptation_options['mountain_method'].get('lambda', 0.8),
-                                                              radius=self._adaptation_options['mountain_method'].get('radius', 0.2),
-                                                              eta=self._adaptation_options['mountain_method'].get('eta', 1e-6),
-                                                              max_iter=self._adaptation_options['mountain_method'].get('max_iter', 100))
+                                                         times=times,
+                                                         curr_time=self._adaptation_time_step,
+                                                         lambda_=self._adaptation_options['mountain_method'].get('lambda', 0.8),
+                                                         radius=self._adaptation_options['mountain_method'].get('radius', 0.2),
+                                                         eta=self._adaptation_options['mountain_method'].get('eta', 1e-6),
+                                                         max_iter=self._adaptation_options['mountain_method'].get('max_iter', 100))
                 support = outliers[indices]
             
                 if len(support) > len(self._param_space.param_variables):

@@ -1,5 +1,5 @@
 python main.py \
-    --battery_model first_order_thevenin \
-    --thermal_model dummy_thermal \
+    --electrical thevenin_1-rc_scalar \
+    --thermal r2c_cell_paper \
     --verbose \
-    driven --config_files ./data/config/sim_ol_baseline.yaml
+    driven --config_files ./data/config/sim_ol_fixed_params.yaml

@@ -1,1 +1,3 @@
-from .regime_shift.regime_shift_adapter import RegimeShiftAdaptiveRoutine
+from .regime_shift.evolving_clustering import EvolvingClusteringRoutine
+from .regime_shift.passive_evolution import PassiveEvolutionRoutine
+from .regime_shift.cluster_shift import ClusterShiftRoutine
