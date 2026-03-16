@@ -41,7 +41,7 @@ class SOCEstimator:
     def compute_soc(self, soc_, i, dt):
         """
         CC = Coulomb Counting
-        """
+        """        
         if self._estimation_mode == "CC":
             self._soc = soc_ + i / (self._c_max * 3600) * dt
             self.clip_soc()

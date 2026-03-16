@@ -14,7 +14,7 @@ description:
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "phdThesis/region_shift_validation/"
+destination_folder: "phdThesis/prova_validation_new/"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
@@ -33,7 +33,7 @@ destination_folder: "phdThesis/region_shift_validation/"
 # # ------------------------------------------------------------------------------- #
 input:
   ground_data:
-    file: "online_learning/region_shift_validation.csv"
+    file: "online_learning/region_shift_validation_new.csv"
     load: "current"
     time_format: "seconds"
     vars:
@@ -44,8 +44,8 @@ input:
         label: "Voltage [V]"
         unit: "V"
       - var: "t_amb"
-        label: "Ambient Temperature [K]"
-        unit: "K"
+        label: "Ambient Temperature [degC]"
+        unit: "degC"
     cycle_for: 1
 
 start_at: null
@@ -65,17 +65,17 @@ clear_collections_every: 50000
 # ------------------------------------------------------------------------------- #
 optimizer:
   algorithm: "L-BFGS-B"
-  max_iter: 100
+  max_iter: 1000
   tol: null
   ftol: 0.000001
   gtol: 0.0001
   disp: False
   alpha: 0.
   beta: 0. #0.1
-  batch_size: 3000
+  batch_size: 2700
   n_jobs: 4
   n_guesses: 4
-  random_init: False
+  random_init: True
   workers: 1
   noise_SNR: null #40 # in dB, set to 'null' for no noise
 
@@ -91,12 +91,12 @@ optimizer:
       high: 50000.
 
   scale_factors:
-    r0: 1000
-    r1: 1000
-    c1: 0.0002
+    r0: 1000 #1000
+    r1: 1000 #1000
+    c1: 0.0002 #0.0002
 
 # Algorithm chosen for the adaptive method "EvolvingClusteringRoutine", "PassiveEvolutionRoutine" or "ClusterShiftRoutine"
-adaptive_routine: "ClusterShiftRoutine"
+adaptive_routine: "PassiveEvolutionRoutine"
 render: False
 
 parameter_space:
@@ -132,6 +132,7 @@ adaptation:
   mcd:
     max_iter_factor: 10
     support_fraction: 0.75
+  drop_all_outliers: True
 
 # Battery options
 # ------------------------------------------------------------------------------- #
@@ -174,5 +175,5 @@ battery:
     voltage: 3.89722
     current: 0.
     temperature: 313.21 # 23 degC
-    soc: 0.7
+    soc: 0.716714
     soh: 1.

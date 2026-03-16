@@ -16,14 +16,13 @@ def loss_first_order_thevenin(params: list,
                               alpha: float,
                               beta: float,
                               ):
-    
     # Read the parameters of electrical model
     r0, r1, c = params
     v_rc = 0   
     c_max = init_state['c_max']
     v = init_state['voltage']
     q = 0    
-        
+            
     # Parse the components that change within the model
     components = {}
     
@@ -59,6 +58,8 @@ def loss_first_order_thevenin(params: list,
         
         if battery_config['battery_options']['sign_convention'] == 'passive':
             i = -sample['current']
+        else:
+            i = sample['current']
         
         # Compute V_r0 and V_rc
         v_r0 = r0 * i
@@ -93,11 +94,23 @@ def loss_first_order_thevenin(params: list,
         # Update the OCV generator
         ocv_gen.soc = soc
         ocv_gen.temp = temp
-    
+            
     # Compare the estimated voltage with the real one with the MSE
     estimated_v = np.array(estimated_v)
     true_voltage = np.array([sample['voltage'] for sample in input_batch[1:]])
-    voltage_loss = np.sum((estimated_v - true_voltage) ** 2)
+    
+    # print(f"Estimated voltage: {estimated_v[:5]}")
+    # print(f"True voltage: {true_voltage[:5]}\n")
+    
+    # Weight the voltage loss in the first 500 samples of the transint phase
+    if beta > 0:
+        error = estimated_v - true_voltage
+        weights = np.ones_like(error)
+        weights[:500] = beta  # Higher weight for the first 500 samples
+        weights[1500:2000] = beta  # Higher weight for the samples around 1500
+        voltage_loss = np.sum(weights * error ** 2)
+    else:
+        voltage_loss = np.sum((estimated_v - true_voltage) ** 2)
     """
     temperature_loss = 0
     if self.temperature_loss:

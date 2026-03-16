@@ -117,7 +117,7 @@ class Optimizer:
 
         Returns:
             _type_: _description_
-        """        
+        """                
         scaled_bounds = [(low * s, high * s) for (low, high), s in zip(self._bounds, self._scale_factors)]    
         
         if centroid is not None and not self._random_init:
@@ -134,7 +134,7 @@ class Optimizer:
         # Define the loss function with the scaled parameters
         args = (input_batch, init_state, self._battery_config, self._scale_factors, self._alpha, self._beta)
         loss = lambda x: scaled_loss(x, *args)
-
+                
         results = Parallel(n_jobs=self._n_jobs)(delayed(minimize)(
             loss, x0=guess, method=self._alg, bounds=scaled_bounds, options=self._options)
                                                 for guess in initial_guesses)

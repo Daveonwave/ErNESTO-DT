@@ -14,7 +14,7 @@ description:
 goal: "GOAL"
 
 # Folder where the results will be saved
-destination_folder: "phdThesis/region_single_shift_experiment/routine_with_noise"
+destination_folder: "phdThesis/region_single_shift_experiment/extrapolation"
 
 # Ground Data (input and validation)
 # ------------------------------------------------------------------------------- #
@@ -33,7 +33,7 @@ destination_folder: "phdThesis/region_single_shift_experiment/routine_with_noise
 # # ------------------------------------------------------------------------------- #
 input:
   ground_data:
-    file: "online_learning/region_shift_ground-1_5M.csv"
+    file: "online_learning/region_shift_ground-1_5M-extrapolation.csv"
     load: "current"
     time_format: "seconds"
     vars:
@@ -132,6 +132,7 @@ adaptation:
   mcd:
     max_iter_factor: 10
     support_fraction: 0.75
+  drop_all_outliers: True
 
 # Battery options
 # ------------------------------------------------------------------------------- #

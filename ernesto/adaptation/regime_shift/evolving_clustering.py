@@ -245,7 +245,11 @@ class EvolvingClusteringRoutine(BaseAdapter):
 
                         self._n_faulty_clusters += 1
                         # Remove the points from the outliers
-                        self._param_space._df_outliers = self._param_space._df_outliers.drop(self._param_space._df_outliers.index[np.array(indices)[idx_list]])
+                        if self._adaptation_options.get('drop_all_outliers', False):
+                            self._param_space._df_outliers = self._param_space._df_outliers.drop(self._param_space._df_outliers.index)
+                        else:
+                            self._param_space._df_outliers = self._param_space._df_outliers.drop(self._param_space._df_outliers.index[np.array(indices)[idx_list]])
+                        
                         print(f">>> New cluster created with {len(idx_list)} points.\n")
                     
                     else:

@@ -131,6 +131,7 @@ adaptation = Schema(
             "max_iter_factor": Or(int, None),
             "support_fraction": Or(float, And(int, Use(float)), None)
         },
+        "drop_all_outliers": Or(bool, None)
     }
 )
 
