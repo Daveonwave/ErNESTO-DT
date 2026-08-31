@@ -95,8 +95,11 @@ class ClusterShiftRoutine(BaseAdapter):
                 "tau1": [],
                 "ocv_dt": [],
                 "ocv_error": [],
+                "ocv_offset_charge": [],
+                "ocv_offset_discharge": [],
             }
-            self._ocv_offset = 0.0
+            self._ocv_offset_charge = 0.0
+            self._ocv_offset_discharge = 0.0
             self._ocv_offset_alpha = sim_config.get("arx_rls", {}).get("ocv_offset_alpha", 0.1)
             self._ocv_offset_limit = sim_config.get("arx_rls", {}).get("ocv_offset_limit", 0.08)
             self._enable_ocv_offset = sim_config.get("arx_rls", {}).get("enable_ocv_offset", False)
@@ -120,7 +123,8 @@ class ClusterShiftRoutine(BaseAdapter):
         params = self._param_space.active_region.centroid_dict.copy()
 
         if self._estimation_method == "arx_rls" and self._enable_ocv_offset:
-            params["ocv_offset"] = self._ocv_offset
+            params["ocv_offset_charge"] = self._ocv_offset_charge
+            params["ocv_offset_discharge"] = self._ocv_offset_discharge
 
         return params
 
@@ -195,8 +199,14 @@ class ClusterShiftRoutine(BaseAdapter):
         for key in self.get_domain_vars():
             sample[key] = domain_vars[key]
 
-        if self._estimation_method == "arx_rls" and "v_oc" in domain_vars:
-            sample["v_oc"] = domain_vars["v_oc"]    
+        if self._estimation_method == "arx_rls":
+            if "v_oc_lut" in domain_vars:
+                sample["v_oc_lut"] = domain_vars["v_oc_lut"]
+            elif "v_oc" in domain_vars:
+                # Fallback for a model without a dedicated LUT-only key --
+                # note this is the model's own previous output (may already
+                # include an offset), not a clean reference.
+                sample["v_oc_lut"] = domain_vars["v_oc"]
             
         # With more than one regions, we need to select the active region
         if len(self._param_space.regions) > 1:
@@ -246,26 +256,50 @@ class ClusterShiftRoutine(BaseAdapter):
 
             if full is not None:
                 ocv_dt_values = [
-                    sample["v_oc"]
+                    sample["v_oc_lut"]
                     for sample in self._input_batch
-                    if "v_oc" in sample and np.isfinite(sample["v_oc"])
+                    if "v_oc_lut" in sample and np.isfinite(sample["v_oc_lut"])
                 ]
 
                 if ocv_dt_values:
                     ocv_dt = np.median(ocv_dt_values)
-                    # raw_offset = full["ocv"] - ocv_dt
+                    raw_offset = full["ocv"] - ocv_dt
+                    raw_offset = np.clip(
+                        raw_offset,
+                        -self._ocv_offset_limit,
+                        self._ocv_offset_limit,
+                    )
 
-                    # raw_offset = np.clip(
-                    #     raw_offset,
-                    #     -self._ocv_offset_limit,
-                    #     self._ocv_offset_limit,
-                    # )
+                    # ARXRLS1RCEstimator negates raw current internally
+                    # (matching this experiment's battery.sign_convention:
+                    # "passive", which ecm.py also negates before use), so
+                    # raw current < 0 corresponds to physical discharge
+                    # (i_load > 0 post-flip) -- see ecm.py's
+                    # step_current_driven for the same convention. Only the
+                    # offset matching the batch's dominant *raw* current
+                    # sign is refreshed here; the other regime's offset is
+                    # left untouched until data from that regime dominates
+                    # a batch again. This avoids applying a single
+                    # batch-level ARX/RLS estimate -- still one continuous,
+                    # regime-blind filter under the hood -- to both
+                    # charge and discharge alike.
+                    batch_currents = [
+                        sample["current"]
+                        for sample in self._input_batch
+                        if "current" in sample and np.isfinite(sample["current"])
+                    ]
+                    dominant_raw_current = np.median(batch_currents) if batch_currents else 0.0
 
-                    # self._ocv_offset = (
-                    #     (1.0 - self._ocv_offset_alpha) * self._ocv_offset
-                    #     + self._ocv_offset_alpha * raw_offset
-                    # )
-                    self._ocv_offset = full["ocv"]
+                    if dominant_raw_current < 0:
+                        self._ocv_offset_discharge = (
+                            (1.0 - self._ocv_offset_alpha) * self._ocv_offset_discharge
+                            + self._ocv_offset_alpha * raw_offset
+                        )
+                    else:
+                        self._ocv_offset_charge = (
+                            (1.0 - self._ocv_offset_alpha) * self._ocv_offset_charge
+                            + self._ocv_offset_alpha * raw_offset
+                        )
 
 
 
@@ -283,6 +317,8 @@ class ClusterShiftRoutine(BaseAdapter):
                 self._arx_rls_history["tau1"].append(full["tau1"])
                 self._arx_rls_history["ocv_dt"].append(ocv_dt)
                 self._arx_rls_history["ocv_error"].append(ocv_arx - ocv_dt)
+                self._arx_rls_history["ocv_offset_charge"].append(self._ocv_offset_charge)
+                self._arx_rls_history["ocv_offset_discharge"].append(self._ocv_offset_discharge)
 
 
         # Check the affinity of the new theta with the active region

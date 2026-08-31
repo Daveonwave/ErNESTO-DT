@@ -231,6 +231,11 @@ class FirstOrderThevenin(ElectricalModel):
                 'current': self.get_i_series,
                 'power': self.get_power_series,
                 'v_oc': self.ocv_gen.get_v_series,
+                # Live lookup-table-only OCV (no offset baked in), unlike
+                # 'v_oc' above which is the model's own previously-applied,
+                # already-offset-inclusive output. Needed as a clean
+                # reference for the OCV-offset correction in cluster_shift.py.
+                'v_oc_lut': lambda k=None: self.ocv_gen.ocv_potential,
                 'r0': self.r0.get_r0_series,
                 'r1': self.rc.get_r_series,
                 'c1': self.rc.get_c_series,
@@ -266,9 +271,10 @@ class FirstOrderThevenin(ElectricalModel):
         else:
             warn("Warning: c1 is not a scalar, cannot update the value")
 
-        if "ocv_offset" in value:
-            # self._ocv_offset = value["ocv_offset"]
-            self._ocv_offset = value["ocv_offset"]
+        if "ocv_offset_charge" in value:
+            self._ocv_offset_charge = value["ocv_offset_charge"]
+        if "ocv_offset_discharge" in value:
+            self._ocv_offset_discharge = value["ocv_offset_discharge"]
 
     
     def reset_model(self, **kwargs):
@@ -300,7 +306,8 @@ class FirstOrderThevenin(ElectricalModel):
         self.r0.init_component(r0=r0, v=v_r0)
         self.rc.init_component(r=r1, c=c, v_rc=v_rc)
         self.ocv_gen.init_component(v=v_ocv)
-        self._ocv_offset = 0.0
+        self._ocv_offset_charge = 0.0
+        self._ocv_offset_discharge = 0.0
 
 
     def load_battery_state(self, temp=None, soc=None, soh=None):
@@ -323,10 +330,20 @@ class FirstOrderThevenin(ElectricalModel):
         r0 = self.r0.resistance
         r1 = self.rc.resistance
         c = self.rc.capacity
-        # v_ocv = self.ocv_gen.ocv_potential
-        # v_ocv = self.ocv_gen.ocv_potential + self._ocv_offset
-        v_ocv = self._ocv_offset
 
+        # Current is the unknown being solved for here, so we can't gate on
+        # its own sign yet; approximate with the previous step's resolved
+        # current sign (i > 0 => discharge). Not exercised by the
+        # current-driven experiments this branch has been validated
+        # against -- see step_current_driven for the exact (non-lagged)
+        # version of this selection.
+        try:
+            prev_i = self.get_i_series(k=-1)
+        except IndexError:
+            prev_i = 0.0
+        v_ocv = self.ocv_gen.ocv_potential + (
+            self._ocv_offset_discharge if prev_i > 0 else self._ocv_offset_charge
+        )
 
         # Compute V_c with finite difference method
         term_1 = self.rc.get_v_series(k=-1) / dt
@@ -367,13 +384,18 @@ class FirstOrderThevenin(ElectricalModel):
         r0 = self.r0.resistance
         r1 = self.rc.resistance
         c = self.rc.capacity
-        # v_ocv = self.ocv_gen.ocv_potential
-        # v_ocv = self.ocv_gen.ocv_potential + self._ocv_offset
-        v_ocv = self._ocv_offset
-
 
         if self._sign_convention == 'passive':
             i_load = -i_load
+
+        # i_load > 0 => discharge (matches "v = v_ocv - v_r0 - v_rc" below,
+        # the "active"-convention equation this always uses post-flip).
+        # Select the matching persistent OCV offset so the switch reacts
+        # instantly to a sign flip, sample-by-sample, rather than only at
+        # batch boundaries.
+        v_ocv = self.ocv_gen.ocv_potential + (
+            self._ocv_offset_discharge if i_load > 0 else self._ocv_offset_charge
+        )
 
         # Compute V_r0 and V_rc
         v_r0 = self.r0.compute_v(i=i_load)
