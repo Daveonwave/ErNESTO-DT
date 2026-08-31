@@ -1,0 +1,190 @@
+# ------------------------------------------------------------------------------- #
+# MODE: Adaptive Simulation
+# ------------------------------------------------------------------------------- #
+# The purpose of the experiment is to compare the behavior of the DT with
+# real-world (ground) data and evaluate the accuracy of the system.
+# ------------------------------------------------------------------------------- #
+
+# Summary of the experiment
+experiment_name: "Adaptive Simulation"
+description:
+  "Esperimento con region shift ground. Il cluster iniziale è quello a 30-40 gradi.
+  L'esperimento ha l'obiettivo di testare l'adattamento del modello a un nuovo cluster di dati
+  dopo un cambio di temperatura fino a 10 gradi."
+goal: "GOAL"
+
+# Folder where the results will be saved
+destination_folder: "phdThesis/prova_validation_evolving_oe_subset/"
+
+# Ground Data (input and validation)
+# ------------------------------------------------------------------------------- #
+# 1. specify the .csv file from which we have to read real-world data
+# 2. specify variables used as input and output (for validation)
+# 3. specify the format of 'Time' column ('seconds' or 'timestamp')
+# 4. specify the number of times the experiment has to be repeated by providing
+#    the ground data in input. Defailt is 1.
+# 5. specify for all the variables:
+#   - 'var' has to be a variable among [current, voltage, power, temperature].
+#   - 'label' is the column name of the variable inside the csv file.
+#      Example: {'Voltage [V]', 'Current [A]', 'Power [W]'}
+#      --> [NOTE: there must be always a 'Time' column within the csv]
+#    - 'unit' specifies the unit of input and output preprocessing that will be
+#       transformed to Digital Twin internal default units.
+# # ------------------------------------------------------------------------------- #
+input:
+  ground_data:
+    file: "online_learning/region_shift_validation_subset_35k_55k.csv"
+    load: "current"
+    time_format: "seconds"
+    vars:
+      - var: "current"
+        label: "Current [A]"
+        unit: "A"
+      - var: "voltage"
+        label: "Voltage [V]"
+        unit: "V"
+      - var: "t_amb"
+        label: "Ambient Temperature [degC]"
+        unit: "degC"
+    cycle_for: 1
+
+start_at: null
+iterations: null
+timestep: null
+check_soh_every: 1
+clear_collections_every: 50000
+
+# Optimiziation Options
+# ------------------------------------------------------------------------------- #
+# optimizer: specify the optimization algorithm and its parameters
+#   - algorithm: the optimization algorithm to be used
+#   - max_iter: the maximum number of iterations
+#   - tol: the tolerance for the optimization algorithm
+#   - search_bounds: specify the search bounds for the optimization algorithm
+#   - scale_factors: specify the scale factors for the optimization algorithm
+# ------------------------------------------------------------------------------- #
+optimizer:
+  algorithm: "L-BFGS-B"
+  max_iter: 1000
+  tol: null
+  ftol: 0.000001
+  gtol: 0.0001
+  disp: False
+  alpha: 0.
+  beta: 0. #0.1
+  batch_size: 1500
+  n_jobs: 4
+  n_guesses: 4
+  random_init: True
+  workers: 1
+  noise_SNR: null #40 # in dB, set to 'null' for no noise
+
+  search_bounds:
+    r0:
+      low: 0.001 #[1, 10]
+      high: 0.01
+    r1:
+      low: 0.001 #[1, 10]
+      high: 0.01
+    c1:
+      low: 5000. #[1, 10]
+      high: 50000.
+
+  scale_factors:
+    r0: 1000 #1000
+    r1: 1000 #1000
+    c1: 0.0002 #0.0002
+
+estimation_method: "optimizer"
+
+arx_rls:
+  Ts: 0.1
+  forgetting_factor: 0.999
+  P0_scale: 1000000000.0
+  warmup_samples: 20
+  enable_ocv_offset: True
+  ocv_offset_alpha: 1
+  ocv_offset_limit: 0.5
+
+# Algorithm chosen for the adaptive method "EvolvingClusteringRoutine", "PassiveEvolutionRoutine" or "ClusterShiftRoutine"
+adaptive_routine: "EvolvingClusteringRoutine"
+render: False
+
+parameter_space:
+  domain_variables:
+    - "soc"
+    - "temperature"
+  param_variables:
+    - "r0"
+    - "r1"
+    - "c1"
+  clusters:
+    - original_csv: "cluster3.csv"
+      name: "nominal_temp_40"
+  outliers: []
+  # Modality with the selction of active cluster
+  # - "closest": closest cluster in the domain space
+  # - "latest": latest created cluster
+  cluster_selection_mode: "latest" #"closest"
+
+adaptation:
+  param_names:
+    - "r0"
+    - "r1"
+    - "c1"
+  min_number_outliers: 30
+  ks_test:
+    alpha: 0.01
+  mountain_method:
+    lambda: 0.95
+    radius: 0.1
+    eta: 0.000001
+    max_iter: 100
+  mcd:
+    max_iter_factor: 10
+    support_fraction: 0.75
+  drop_all_outliers: True
+
+# Battery options
+# ------------------------------------------------------------------------------- #
+# sign_convention:
+#   - active: (power sources) p<0 and current exiting => i>0 during discharge (default for Thevenin)
+#   - passive: (loads) with p>0 and current entering => i<0 during discharge
+# other params:
+#   - 'var' has to be a variable among of the parameter.
+#   - 'value' is the float value of the parameter.
+#   - 'unit' specifies the unit of the parameter that will be transformed to
+#      Digital Twin internal default units.
+# ------------------------------------------------------------------------------- #
+battery:
+  sign_convention: "passive"
+
+  params:
+    nominal_capacity:
+      var: "capacity"
+      value: 20.
+      unit: "F"
+    v_max:
+      var: "voltage"
+      value: 4.15
+      unit: "V"
+    v_min:
+      var: "voltage"
+      value: 3.
+      unit: "V"
+    # temp_ambient:
+    #   var: "temperature"
+    #   value: 303.15
+    #   unit: "K"
+
+  bounds:
+    soc:
+      low: 0.
+      high: 1.
+
+  init:
+    voltage: 4.0
+    current: 0.
+    temperature: 313.21 # 23 degC
+    soc: 0.8
+    soh: 1.
