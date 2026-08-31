@@ -38,7 +38,8 @@ def load_data_from_csv(csv_file: Path, vars_to_retrieve:list, **kwargs):
 
     df = None
     try:
-        df = pd.read_csv(csv_file, encoding='unicode_escape')
+        # df = pd.read_csv(csv_file, encoding='unicode_escape')
+        df = pd.read_csv(csv_file, encoding='utf-8-sig')
 
         if kwargs['iterations']:
             df = df.iloc[:kwargs['iterations']]

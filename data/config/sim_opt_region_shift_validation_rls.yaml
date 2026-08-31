@@ -33,7 +33,7 @@ destination_folder: "phdThesis/prova_validation_new/"
 # # ------------------------------------------------------------------------------- #
 input:
   ground_data:
-    file: "online_learning/region_shift_validation_new.csv"
+    file: "online_learning/Nuova_prova_OL_formatted_correct.csv"
     load: "current"
     time_format: "seconds"
     vars:
@@ -72,7 +72,7 @@ optimizer:
   disp: False
   alpha: 0.
   beta: 0. #0.1
-  batch_size: 4500
+  batch_size: 15000
   n_jobs: 4
   n_guesses: 4
   random_init: True
@@ -95,8 +95,19 @@ optimizer:
     r1: 1000 #1000
     c1: 0.0002 #0.0002
 
+estimation_method: "arx_rls"
+
+arx_rls:
+  Ts: 1
+  forgetting_factor: 0.999
+  P0_scale: 1000000000.0
+  warmup_samples: 20
+  enable_ocv_offset: False
+  ocv_offset_alpha: 1
+  ocv_offset_limit: 0.5
+
 # Algorithm chosen for the adaptive method "EvolvingClusteringRoutine", "PassiveEvolutionRoutine" or "ClusterShiftRoutine"
-adaptive_routine: "PassiveEvolutionRoutine"
+adaptive_routine: "ClusterShiftRoutine"
 render: False
 
 parameter_space:

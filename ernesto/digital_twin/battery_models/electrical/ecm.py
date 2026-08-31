@@ -55,7 +55,6 @@ class ZeroOrderThevenin(ElectricalModel):
             self.r0.resistance = value['r0']
         else:
             warn(f"Warning: r0 is not a scalar, cannot update the value. It is a {type(self.r0.resistance)}")
-    
     def reset_model(self, **kwargs):
         self._v_load_series = []
         self._i_load_series = []
@@ -266,6 +265,11 @@ class FirstOrderThevenin(ElectricalModel):
             self.rc.capacity = value['c1']
         else:
             warn("Warning: c1 is not a scalar, cannot update the value")
+
+        if "ocv_offset" in value:
+            # self._ocv_offset = value["ocv_offset"]
+            self._ocv_offset = value["ocv_offset"]
+
     
     def reset_model(self, **kwargs):
         self._v_load_series = []
@@ -296,6 +300,8 @@ class FirstOrderThevenin(ElectricalModel):
         self.r0.init_component(r0=r0, v=v_r0)
         self.rc.init_component(r=r1, c=c, v_rc=v_rc)
         self.ocv_gen.init_component(v=v_ocv)
+        self._ocv_offset = 0.0
+
 
     def load_battery_state(self, temp=None, soc=None, soh=None):
         """
@@ -317,7 +323,10 @@ class FirstOrderThevenin(ElectricalModel):
         r0 = self.r0.resistance
         r1 = self.rc.resistance
         c = self.rc.capacity
-        v_ocv = self.ocv_gen.ocv_potential
+        # v_ocv = self.ocv_gen.ocv_potential
+        # v_ocv = self.ocv_gen.ocv_potential + self._ocv_offset
+        v_ocv = self._ocv_offset
+
 
         # Compute V_c with finite difference method
         term_1 = self.rc.get_v_series(k=-1) / dt
@@ -358,7 +367,10 @@ class FirstOrderThevenin(ElectricalModel):
         r0 = self.r0.resistance
         r1 = self.rc.resistance
         c = self.rc.capacity
-        v_ocv = self.ocv_gen.ocv_potential
+        # v_ocv = self.ocv_gen.ocv_potential
+        # v_ocv = self.ocv_gen.ocv_potential + self._ocv_offset
+        v_ocv = self._ocv_offset
+
 
         if self._sign_convention == 'passive':
             i_load = -i_load

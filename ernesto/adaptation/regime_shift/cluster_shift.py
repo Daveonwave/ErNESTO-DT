@@ -12,6 +12,7 @@ from ernesto.adaptation.optimizer import Optimizer
 from ernesto.adaptation.regime_shift.parameter_space import ParameterSpace
 from ernesto.postprocessing.interactive_plot import ParameterSpaceVisualizer
 from ernesto.adaptation.regime_shift.stats import *
+from ernesto.adaptation.arx_rls_estimator import ARXRLS1RCEstimator
 
 
 class ClusterShiftRoutine(BaseAdapter):
@@ -67,6 +68,44 @@ class ClusterShiftRoutine(BaseAdapter):
         self._data_history = dict(zip(self.get_domain_vars() + self._param_space.param_variables + ['cluster', 'time'], 
                                       [list() for _ in range(len(self.get_domain_vars() + self._param_space.param_variables + ['cluster', 'time']))]))
 
+        self._estimation_method = sim_config.get(
+            "estimation_method",
+            "optimizer",
+        )
+
+        if self._estimation_method == "arx_rls":
+            arx_config = sim_config.get("arx_rls", {})
+
+            self._arx_rls = ARXRLS1RCEstimator(
+                Ts=arx_config.get("Ts", 1.0),
+                forgetting_factor=arx_config.get("forgetting_factor", 0.999),
+                P0_scale=arx_config.get("P0_scale", 1e9),
+                warmup_samples=arx_config.get("warmup_samples", 20),
+                bounds=sim_config["optimizer"]["search_bounds"],
+            )
+            self._arx_rls_history = {
+                "time": [],
+                "soc": [],
+                "temperature": [],
+                "r0": [],
+                "r1": [],
+                "c1": [],
+                "ocv_arx": [],
+                "alpha": [],
+                "tau1": [],
+                "ocv_dt": [],
+                "ocv_error": [],
+            }
+            self._ocv_offset = 0.0
+            self._ocv_offset_alpha = sim_config.get("arx_rls", {}).get("ocv_offset_alpha", 0.1)
+            self._ocv_offset_limit = sim_config.get("arx_rls", {}).get("ocv_offset_limit", 0.08)
+            self._enable_ocv_offset = sim_config.get("arx_rls", {}).get("enable_ocv_offset", False)
+        else:
+            self._arx_rls = None
+
+            
+
+
     def get_domain_vars(self):
         """
         Get the domain variables of the parameter space.
@@ -77,8 +116,15 @@ class ClusterShiftRoutine(BaseAdapter):
         """
         Get the estimated parameters.
         """   
-        return self._param_space.active_region.centroid_dict
-    
+        # return self._param_space.active_region.centroid_dict
+        params = self._param_space.active_region.centroid_dict.copy()
+
+        if self._estimation_method == "arx_rls" and self._enable_ocv_offset:
+            params["ocv_offset"] = self._ocv_offset
+
+        return params
+
+
     def _add_to_batch(self, sample: dict):
         """
         Add the sample to the batch.
@@ -116,6 +162,9 @@ class ClusterShiftRoutine(BaseAdapter):
         self._init_state = {}
         self._param_space.select_active_region()    # 'Latest' by default
         self._adaptation_time_step = 0
+
+        if self._arx_rls is not None:
+            self._arx_rls.reset()
         
         for region in self._param_space.regions:
             self._collect_data_points(points=region.cluster.to_dict(orient='records'),
@@ -145,6 +194,9 @@ class ClusterShiftRoutine(BaseAdapter):
         """
         for key in self.get_domain_vars():
             sample[key] = domain_vars[key]
+
+        if self._estimation_method == "arx_rls" and "v_oc" in domain_vars:
+            sample["v_oc"] = domain_vars["v_oc"]    
             
         # With more than one regions, we need to select the active region
         if len(self._param_space.regions) > 1:
@@ -163,10 +215,76 @@ class ClusterShiftRoutine(BaseAdapter):
         """
         Enhanced step method with time series visualization support.
         """
-        # Theta is associated to the mean of the domain variables in the batch      
-        theta = self._optimizer.estimate_new_theta(self._init_state, self._input_batch, centroid=self._param_space.active_region.centroid)
+        if self._estimation_method == "arx_rls":
+            print(
+                "ARX/RLS batch debug:",
+                f"batch_len={len(self._input_batch)}",
+                f"first_keys={list(self._input_batch[0].keys()) if self._input_batch else None}",
+            )
+            theta = self._arx_rls.estimate_from_batch(self._input_batch)
+
+            if theta is None:
+                print(
+                    "ARX/RLS produced no valid theta. "
+                    f"updates={self._arx_rls.n_updates}, "
+                    f"reason={self._arx_rls.last_rejection_reason}"
+                )
+                self._clear_batch()
+                return
+        else:
+            theta = self._optimizer.estimate_new_theta(
+                self._init_state,
+                self._input_batch,
+                centroid=self._param_space.active_region.centroid,
+            )
+        # # Theta is associated to the mean of the domain variables in the batch      
+        # theta = self._optimizer.estimate_new_theta(self._init_state, self._input_batch, centroid=self._param_space.active_region.centroid)
         mean_domain = self._param_space.check_batch_mean_domain(input_batch=self._input_batch)
-        
+
+        if self._estimation_method == "arx_rls":
+            full = self._arx_rls.last_valid_full_params
+
+            if full is not None:
+                ocv_dt_values = [
+                    sample["v_oc"]
+                    for sample in self._input_batch
+                    if "v_oc" in sample and np.isfinite(sample["v_oc"])
+                ]
+
+                if ocv_dt_values:
+                    ocv_dt = np.median(ocv_dt_values)
+                    # raw_offset = full["ocv"] - ocv_dt
+
+                    # raw_offset = np.clip(
+                    #     raw_offset,
+                    #     -self._ocv_offset_limit,
+                    #     self._ocv_offset_limit,
+                    # )
+
+                    # self._ocv_offset = (
+                    #     (1.0 - self._ocv_offset_alpha) * self._ocv_offset
+                    #     + self._ocv_offset_alpha * raw_offset
+                    # )
+                    self._ocv_offset = full["ocv"]
+
+
+
+                ocv_dt = np.median(ocv_dt_values) if ocv_dt_values else np.nan
+                ocv_arx = full["ocv"]
+
+                self._arx_rls_history["time"].append(self._adaptation_time_step + 1)
+                self._arx_rls_history["soc"].append(mean_domain.get("soc", np.nan))
+                self._arx_rls_history["temperature"].append(mean_domain.get("temperature", np.nan))
+                self._arx_rls_history["r0"].append(full["r0"])
+                self._arx_rls_history["r1"].append(full["r1"])
+                self._arx_rls_history["c1"].append(full["c1"])
+                self._arx_rls_history["ocv_arx"].append(ocv_arx)
+                self._arx_rls_history["alpha"].append(full["alpha"])
+                self._arx_rls_history["tau1"].append(full["tau1"])
+                self._arx_rls_history["ocv_dt"].append(ocv_dt)
+                self._arx_rls_history["ocv_error"].append(ocv_arx - ocv_dt)
+
+
         # Check the affinity of the new theta with the active region
         if len(self._param_space.clusters) > 1:
             self._param_space.select_active_region(point=mean_domain)
@@ -197,5 +315,11 @@ class ClusterShiftRoutine(BaseAdapter):
         
         for region in self._param_space.regions:
             region.cluster.to_csv(f"{filepath}/cluster_{region.name}.csv", index=False)
-        
-        print(f"Data exported to {filepath}")
+
+        print(f"Data exported to {filepath}\n")
+
+        if self._estimation_method == "arx_rls" and self._arx_rls_history["time"]:
+            df_arx = pd.DataFrame(self._arx_rls_history)
+            df_arx.to_csv(f"{filepath}/arx_rls_diagnostics.csv", index=False)
+
+        print(f"Data exported to {filepath}/arx_rls_diagnostics.csv")

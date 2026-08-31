@@ -160,6 +160,27 @@ def get_args():
     return main_args
 
 
+# if __name__ == '__main__':
+#     args = get_args()
+#     parse_submodels(args)
+    
+#     # Setup logger
+#     logger = setup_logger(verbose=args['verbose'])
+#     logger.info("Main started")
+
+#     # Parallel execution of the experiments
+#     parallel_exp_config = args['config_files']
+#     n_cores = args['n_cores']
+#     del args['config_files']
+#     del args['n_cores']
+    
+#     if n_cores == 1:
+#         run_experiment(args, parallel_exp_config[0])
+#     else:
+#         Parallel(n_jobs=n_cores)(delayed(run_experiment)(args, config) for config in parallel_exp_config)
+
+
+
 if __name__ == '__main__':
     args = get_args()
     parse_submodels(args)
@@ -167,6 +188,7 @@ if __name__ == '__main__':
     # Setup logger
     logger = setup_logger(verbose=args['verbose'])
     logger.info("Main started")
+    # Setup logger
 
     # Parallel execution of the experiments
     parallel_exp_config = args['config_files']

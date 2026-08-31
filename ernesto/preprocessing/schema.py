@@ -158,6 +158,16 @@ config_schema = Schema(
         # Adaptation options
         Optional("adaptation"): adaptation,
         Optional("optimizer"): optimizer,
+        Optional("estimation_method"): Or("optimizer", "arx_rls"),
+        Optional("arx_rls"): {
+            Optional("Ts"): Or(float, int),
+            Optional("forgetting_factor"): Or(float, int),
+            Optional("P0_scale"): Or(float, int),
+            Optional("warmup_samples"): int,
+            Optional("enable_ocv_offset"): bool,
+            Optional("ocv_offset_alpha"): Or(float, int),
+            Optional("ocv_offset_limit"): Or(float, int)
+        },        
         Optional("adaptive_routine"): And(str, var_pattern),
         Optional("render"): Or(bool),
         Optional("parameter_space"): parameter_space,
